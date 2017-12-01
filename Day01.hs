@@ -15,7 +15,7 @@ sumdigits = sum . map c2i
   where
     c2i c = ord c - ord '0'
 
-go2 lst = 2 * (sumdigits $ map fst $ filter (uncurry (==)) $ splitintwo lst)
+go2 lst = 2 * sumdigits (map fst $ filter (uncurry (==)) $ splitintwo lst)
 
 splitintwo lst = zip (take half lst) (drop half lst)
   where
