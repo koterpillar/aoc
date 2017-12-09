@@ -25,6 +25,7 @@ dependencies:
 - cryptonite
 - MissingH
 - mtl
+- parsec
 - split
 - utf8-string
 
