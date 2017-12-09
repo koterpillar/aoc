@@ -66,4 +66,4 @@ processAll :: Computer -> [Instr] -> Computer
 processAll = foldl' process
 
 cMax :: Computer -> Value
-cMax = maximum . (0:) . Map.elems
+cMax = maximum . (0 :) . Map.elems
