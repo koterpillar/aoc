@@ -40,8 +40,11 @@ iterateWhile continue fn v
     in v : iterateWhile continue fn v'
   | otherwise = []
 
+pad' :: Char -> Int -> String -> String
+pad' fill sz str = replicate (sz - length str) fill ++ str
+
 pad :: Int -> String -> String
-pad sz str = replicate (sz - length str) ' ' ++ str
+pad = pad' ' '
 
 sset :: Int -> a -> [a] -> [a]
 sset idx val lst = take idx lst ++ [val] ++ drop (idx + 1) lst
