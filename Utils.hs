@@ -15,6 +15,9 @@ data Direction4
   | S
   deriving (Enum, Eq, Ord, Show)
 
+allDir4 :: [Direction4]
+allDir4 = [E, N, W, S]
+
 turnLeft :: Direction4 -> Direction4
 turnLeft S = E
 turnLeft d = succ d

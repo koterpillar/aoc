@@ -10,6 +10,7 @@ import Data.Monoid
 import Data.Set (Set)
 import qualified Data.Set as Set
 
+import Graph
 import Utils
 
 type Program = Int
@@ -29,33 +30,3 @@ parsePipes =
           ps = map read ps'
       in [(p, Set.singleton p2) | p2 <- ps] ++
          [(p2, Set.singleton p) | p2 <- ps]
-
-expand :: Pipes -> Set Program -> Set Program
-expand pipes ps = ps <> mconcat (mapMaybe (`Map.lookup` pipes) $ Set.toList ps)
-
-fixPoint :: Eq a => (a -> a) -> a -> a
-fixPoint f x =
-  let x' = f x
-  in if x == x'
-       then x
-       else fixPoint f x'
-
-reachableFrom :: Pipes -> Program -> Set Program
-reachableFrom pipes p = fixPoint (expand pipes) (Set.singleton p)
-
-allPrograms :: Pipes -> Set Program
-allPrograms = Map.keysSet
-
-unreachableFrom :: Pipes -> Program -> Set Program
-unreachableFrom pipes p =
-  allPrograms pipes `Set.difference` reachableFrom pipes p
-
-connectedComponents :: Pipes -> [Set Program]
-connectedComponents pipes = go (allPrograms pipes)
-  where
-    go candidates
-      | Set.null candidates = []
-      | otherwise =
-        let candidate = head $ Set.toList candidates
-            component = reachableFrom pipes candidate
-        in component : go (candidates `Set.difference` component)
