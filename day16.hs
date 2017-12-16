@@ -28,7 +28,7 @@ initial :: Int -> Scene
 initial sz = Scene $ Map.fromList $ zip [0 .. sz - 1] (take sz ['a' ..])
 
 instance Show Scene where
-  show (Scene m) = Map.elems m
+  show (Scene m) = "Scene [" ++ Map.elems m ++ "]"
 
 data Move
   = Spin Int
@@ -71,7 +71,7 @@ example = commands "s1,x3/4,pe/b"
 data Moves =
   Moves !(Map Int Int)
         !(Map Program Program)
-  deriving (Show)
+  deriving (Eq, Ord, Show)
 
 iempty :: Int -> Map Int Int
 iempty sz = idmap [0..sz - 1]
@@ -103,3 +103,34 @@ pswap sz a b = Map.insert a b $ Map.insert b a $ pempty sz
 
 applyMoves :: Moves -> Scene -> Scene
 applyMoves (Moves im pm) (Scene m) = Scene $ im `mmult` m `mmult` pm
+
+mmmult :: Moves -> Moves -> Moves
+mmmult (Moves im pm) (Moves im' pm') = Moves (im `mmult` im') (pm `mmult` pm')
+
+mmpower :: Int -> Moves -> Moves
+mmpower 1 mm = mm
+mmpower n mm = mmpower (n - 1) mm `mmmult` mm
+
+mmexample :: Moves
+mmexample = toMoves 5 example
+
+powersof2 :: Int -> [Int]
+powersof2 x =
+  let pwrs = zip [0 ..] $ iterate (* 2) 1
+      candidates = reverse $ takeWhile (\(i, p) -> x >= p) pwrs
+      go x [] = []
+      go x ((i, p):ps)
+        | x >= p = i : go (x - p) ps
+        | otherwise = go x ps
+  in go x candidates
+
+bypowers :: (a -> a -> a) -> a -> a -> Int -> a
+bypowers mul one base x =
+  let sqr a = mul a a
+      pwrs = iterate sqr base
+      needed = powersof2 x
+      neededVals = map (\n -> pwrs !! n) needed
+  in foldr mul one neededVals
+
+mmpower' :: Int -> Int -> Moves -> Moves
+mmpower' sz n x = bypowers mmmult (emptyMoves sz) x n
