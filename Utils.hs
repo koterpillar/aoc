@@ -1,5 +1,7 @@
 module Utils where
 
+import Debug.Trace
+
 readLines :: IO [String]
 readLines =
   getLine >>=
@@ -57,3 +59,7 @@ sremove idx lst = (lst !! idx, take idx lst ++ drop (idx + 1) lst)
 
 sinsert :: Int -> a -> [a] -> [a]
 sinsert idx val lst = let (hd, tl) = splitAt idx lst in hd ++ (val:tl)
+
+progress :: Int -> Int -> a -> a
+progress milestone amount val | amount `mod` milestone == 0 = traceShow amount val
+                              | otherwise = val

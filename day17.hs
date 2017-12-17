@@ -85,7 +85,8 @@ new :: SpinList
 new = SpinList {slCurrent = 0, slContents = Leaf 0}
 
 spin :: Int -> SpinList -> Int -> SpinList
-spin amount l inserted = SpinList {slCurrent = cur' + 1, slContents = t'}
+spin amount l inserted =
+  progress 10000 inserted SpinList {slCurrent = cur' + 1, slContents = t'}
   where
     cur = slCurrent l
     cur' = slAdd l cur amount
