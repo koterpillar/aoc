@@ -1,10 +1,9 @@
 #!/usr/bin/env stack
 -- stack runghc
+import Control.Applicative
 import Control.Monad
 
 import Data.Char
-
-import Data.IORef
 
 import Data.List
 import Data.List.Split
@@ -20,146 +19,105 @@ import Data.Monoid
 import Data.Set (Set)
 import qualified Data.Set as Set
 
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as M
-
 import System.Environment (getArgs)
 
 import Utils
 
+data Tree a
+  = Tree { tSizeCache :: !Int
+         , tLeft :: !(Tree a)
+         , tRight :: !(Tree a) }
+  | Leaf { tValue :: !a }
+  deriving (Show)
+
+tSize :: Tree a -> Int
+tSize t@Tree {} = tSizeCache t
+tSize t@Leaf {} = 1
+
+tAt :: Int -> Tree a -> a
+tAt 0 (Leaf v) = v
+tAt e (Leaf v) = error $ "Cannot look up " ++ show e ++ " in a leaf"
+tAt n (Tree _ l r)
+  | n < tSize l = tAt n l
+  | otherwise = tAt (n - tSize l) r
+
+tInsertAfter :: Int -> a -> Tree a -> Tree a
+tInsertAfter 0 v t@(Leaf _) = Tree 2 t (Leaf v)
+tInsertAfter e v t@(Leaf _) = error $ "Cannot insert into leaf at " ++ show e
+tInsertAfter n v t@Tree {}
+  | n < tSize (tLeft t) =
+    Tree (tSize t + 1) (tInsertAfter n v (tLeft t)) (tRight t)
+  | otherwise =
+    Tree
+      (tSize t + 1)
+      (tLeft t)
+      (tInsertAfter (n - tSize (tLeft t)) v (tRight t))
+
+tFlatten :: Tree a -> [a]
+tFlatten (Leaf v) = [v]
+tFlatten (Tree _ l r) = tFlatten l <> tFlatten r
+
+tIndexOf :: Eq a => a -> Tree a -> Maybe Int
+tIndexOf a (Leaf b)
+  | a == b = Just 0
+  | otherwise = Nothing
+tIndexOf a t@Tree {} = i1 <|> i2
+  where
+    i1 = tIndexOf a (tLeft t)
+    i2 = (+ tSize (tLeft t)) <$> tIndexOf a (tRight t)
+
 data SpinList = SpinList
-  { slCurrentRef :: !(IORef Int)
-  , slContents :: !(M.IOVector Int)
-  , slLengthRef :: !(IORef Int)
-  , slSkipSize :: !Int
-  , slSkips :: !(M.IOVector Int)
+  { slCurrent :: !Int
+  , slContents :: !(Tree Int)
   }
 
-slCurrent :: SpinList -> IO Int
-slCurrent = readIORef . slCurrentRef
-
-slLength :: SpinList -> IO Int
-slLength = readIORef . slLengthRef
+slLength :: SpinList -> Int
+slLength = tSize . slContents
 
 instance Show SpinList where
-  show _ = "SpinList (...)"
+  show l = unwords $ zipWith showCurrent (tFlatten (slContents l)) [0 ..]
+    where
+      showCurrent n i
+        | i == slCurrent l = "(" ++ show n ++ ")"
+        | otherwise = show n
 
-slPrint :: SpinList -> IO ()
-slPrint l = do
-  cur <- slCurrent l
-  go cur 0
-  putStrLn ""
-  putStrLn $ "skip size = " ++ show (slSkipSize l)
-  U.freeze (slSkips l) >>= print
-  print $ M.length $ slContents l
+new :: SpinList
+new = SpinList {slCurrent = 0, slContents = Leaf 0}
+
+spin :: Int -> SpinList -> Int -> SpinList
+spin amount l inserted = SpinList {slCurrent = cur' + 1, slContents = t'}
   where
-    go cur i = do
-      showCur cur i
-      putStr " "
-      next <- slNext l i
-      goNext cur next
-    showCur cur i
-      | i == cur = putStr $ "(" ++ show i ++ ")"
-      | otherwise = putStr $ show i
-    goNext cur 0 = pure ()
-    goNext cur i = go cur i
+    cur = slCurrent l
+    cur' = slAdd l cur amount
+    t = slContents l
+    t' = tInsertAfter cur' inserted t
 
-new :: Int -> Int -> IO SpinList
-new max skipSize = do
-  cur <- newIORef 0
-  len <- newIORef 1
-  items <- M.new max
-  M.write items 0 0
-  skips <- M.new max
-  M.write skips 0 0
-  pure
-    SpinList
-    { slCurrentRef = cur
-    , slLengthRef = len
-    , slContents = items
-    , slSkipSize = skipSize
-    , slSkips = skips
-    }
+spins :: Int -> Int -> SpinList
+spins amount max = foldl' (spin amount) new [1 .. max]
 
-slNext :: SpinList -> Int -> IO Int
-slNext l = M.read (slContents l)
+slAdd :: SpinList -> Int -> Int -> Int
+slAdd sl i j = (i + j) `mod` slLength sl
 
-slNextNSlow :: SpinList -> Int -> Int -> IO Int
-slNextNSlow sl 0 x = pure x
-slNextNSlow sl n x
-  | n < 0 = error "slNextNSlow: n < 0"
-  | otherwise = slNextNSlow sl (n - 1) x >>= slNext sl
+slInc :: SpinList -> Int -> Int
+slInc sl = slAdd sl 1
 
-slNextN :: SpinList -> Int -> Int -> IO Int
-slNextN sl n x
-  | n < slSkipSize sl = slNextNSlow sl n x
-  | n < 0 = error "slNextN: n < 0"
-  | otherwise = do
-    x' <- M.read (slSkips sl) x
-    slNextN sl (n - slSkipSize sl) x'
+slAt :: Int -> SpinList -> Int
+slAt i sl = tAt i (slContents sl)
 
-slSet :: SpinList -> Int -> Int -> IO ()
-slSet l = M.write (slContents l)
+slAfterCurrent :: SpinList -> Int
+slAfterCurrent l = slAt (slInc l (slCurrent l)) l
 
-slSetSkip :: SpinList -> Int -> Int -> IO ()
-slSetSkip l = M.write (slSkips l)
-
-slSetSkips :: SpinList -> Int -> Int -> Int -> IO ()
-slSetSkips l _ _ 0 = pure ()
-slSetSkips l source target cnt = do
-  targetCheck <- slNextNSlow l (slSkipSize l) source
-  -- when (target /= targetCheck) $ do
-  --   slPrint l
-  --   print $ "Setting skip from " ++ show source ++ " to " ++ show target
-  --   print $ "...but should be " ++ show targetCheck
-  --   error "wrong skip target"
-  slSetSkip l source target
-  source' <- slNext l source
-  target' <- slNext l target
-  slSetSkips l source' target' (cnt - 1)
-
-slResetSkips :: SpinList -> IO ()
-slResetSkips l = do
-  let source = 0
-  target <- slNextNSlow l (slSkipSize l) source
-  len <- slLength l
-  slSetSkips l source target len
-
-spin :: SpinList -> Int -> Int -> IO ()
-spin l amount inserted = do
-  let skipSize = slSkipSize l
-  current <- slCurrent l
-  brokenSkipsStart <- slNextN l (amount - skipSize + 1) current
-  newCurrent <- slNextN l (skipSize - 1) brokenSkipsStart
-  oldNext <- slNext l newCurrent
-  slSet l newCurrent inserted
-  slSet l inserted oldNext
-  writeIORef (slCurrentRef l) inserted
-  if inserted <= slSkipSize l
-    then slResetSkips l
-    else slSetSkips l brokenSkipsStart inserted (skipSize + 1)
-  when (inserted `mod` 5000 == 0) $ print inserted
-
-spins :: Int -> Int -> IO SpinList
-spins amount max = do
-  l <- new (max + 1) (optimalSkip amount)
-  print $ "Optimal skip = " ++ show (slSkipSize l)
-  traverse (spin l amount) [1 .. max]
-  pure l
-
-optimalSkip :: Int -> Int
-optimalSkip a = ceiling $ (fromIntegral a / 2) ** (1 / 3)
-
-slAfterCurrent :: SpinList -> IO Int
-slAfterCurrent l = slCurrent l >>= slNext l
-
-slAfter0 :: SpinList -> IO Int
-slAfter0 l = slNext l 0
+slAfter0 :: SpinList -> Int
+slAfter0 l = slAt iafter0 l
+  where
+    root = slContents l
+    (Just i0) = tIndexOf 0 root
+    iafter0 = slInc l i0
 
 main = do
   [amount, iterations] <- map read <$> getArgs
-  l <- spins amount iterations
+  let l = spins amount iterations
   putStrLn "After current:"
-  slAfterCurrent l >>= print
+  print $ slAfterCurrent l
   putStrLn "After 0:"
-  slAfter0 l >>= print
+  print $ slAfter0 l
