@@ -1,6 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc
-import Control.Monad.ST
+import Control.Monad
 
 import Data.Char
 
@@ -20,17 +20,15 @@ import Data.Monoid
 import Data.Set (Set)
 import qualified Data.Set as Set
 
-import qualified Data.Vector.Mutable as M
-import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as M
 
 import System.Environment (getArgs)
-import System.IO.Unsafe
 
 import Utils
 
 data SpinList = SpinList
   { slCurrentRef :: !(IORef Int)
-  , slContents :: !(M.MVector RealWorld Int)
+  , slContents :: !(M.IOVector Int)
   }
 
 slCurrent :: SpinList -> IO Int
@@ -56,10 +54,10 @@ slPrint l = do
     goNext cur 0 = pure ()
     goNext cur i = go cur i
 
-new :: IO SpinList
-new = do
+new :: Int -> IO SpinList
+new max = do
   cur <- newIORef 0
-  items <- M.new 50000000
+  items <- M.new max
   M.write items 0 0
   pure $ SpinList cur items
 
@@ -75,14 +73,14 @@ spin l amount inserted = do
   current <- slCurrent l
   newCurrent <- slNextN l amount current
   oldNext <- slNext l newCurrent
-  let items = slContents l
-  M.write items newCurrent inserted
-  M.write items inserted oldNext
+  M.write (slContents l) newCurrent inserted
+  M.write (slContents l) inserted oldNext
   writeIORef (slCurrentRef l) inserted
+  when (inserted `mod` 5000 == 0) $ print inserted
 
 spins :: Int -> Int -> IO SpinList
 spins amount max = do
-  l <- new
+  l <- new (max + 1)
   traverse (spin l amount) [1 .. max]
   pure l
 
@@ -95,6 +93,7 @@ slAfter0 l = slNext l 0
 main = do
   [amount, iterations] <- map read <$> getArgs
   l <- spins amount iterations
-  -- slPrint l
+  putStrLn "After current:"
   slAfterCurrent l >>= print
+  putStrLn "After 0:"
   slAfter0 l >>= print
