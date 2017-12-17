@@ -28,6 +28,7 @@ dependencies:
 - parsec
 - split
 - utf8-string
+- vector
 
 library:
   source-dirs: .

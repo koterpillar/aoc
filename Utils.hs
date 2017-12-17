@@ -56,4 +56,4 @@ sremove :: Int -> [a] -> (a, [a])
 sremove idx lst = (lst !! idx, take idx lst ++ drop (idx + 1) lst)
 
 sinsert :: Int -> a -> [a] -> [a]
-sinsert idx val lst = take idx lst ++ [val] ++ drop idx lst
+sinsert idx val lst = let (hd, tl) = splitAt idx lst in hd ++ (val:tl)
