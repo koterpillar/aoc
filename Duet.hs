@@ -4,6 +4,8 @@ module Duet where
 
 import Control.Lens
 
+import Data.Either
+
 import Data.List.Split
 import qualified Data.Map as M
 import Data.Maybe
@@ -45,21 +47,53 @@ type Address = Int
 
 data Computer = Computer
   { _cRegisters :: Registers
-  , _cSound :: Maybe Value
   , _cProgram :: Program
   , _cIP :: Address
   } deriving (Eq, Ord, Show)
 
 makeLenses ''Computer
 
+-- a computer awaiting a value that will be put into given register
+data Paused =
+  Paused Register
+         Computer
+  deriving (Eq, Ord, Show)
+
+data Duet = Duet
+  { _dComp0 :: Either Paused Computer
+  , _dComp1 :: Either Paused Computer
+  , _dSentBy0 :: [Value]
+  , _dSentBy1 :: [Value]
+  , _dTotalSent1 :: Int
+  } deriving (Eq, Ord, Show)
+
+makeLenses ''Duet
+
+resume :: Value -> Paused -> Computer
+resume v (Paused r c) = cAdvance $ (cRegister r .~ v) c
+
+bootDuet :: Program -> Duet
+bootDuet p =
+  Duet
+  { _dComp0 = Right $ boot 0 p
+  , _dComp1 = Right $ boot 1 p
+  , _dSentBy0 = []
+  , _dSentBy1 = []
+  , _dTotalSent1 = 0
+  }
+
 registers :: [Register]
 registers = ['a' .. 'z']
 
-boot :: Program -> Computer
-boot instructions = Computer (M.fromList $ zip registers (repeat 0)) Nothing instructions 0
+boot :: Value -> Program -> Computer
+boot programID instructions =
+  Computer
+    (M.insert 'p' programID $ M.fromList $ zip registers (repeat 0))
+    instructions
+    0
 
 stopped :: Computer -> Bool
-stopped (Computer _ _ program ip) = ip < 0 || ip >= length program
+stopped c = let ip = c ^. cIP in ip < 0 || ip >= length (c ^. cProgram)
 
 unsafeMaybeLens :: Iso' (Maybe a) a
 unsafeMaybeLens = iso fromJust Just
@@ -79,27 +113,55 @@ eval comp expr =
     (SValue val) -> val
     (SRegister reg) -> comp ^. cRegister reg
 
-run :: Computer -> Computer
-run = head . dropWhile (not . stopped) . iterate step
+type PushPull = Either Paused (Maybe Value, Computer)
 
-step :: Computer -> Computer
+step :: Computer -> PushPull
 step c = go (c ^. cInstruction) c
   where
-    go (Snd x) = cSound .~ Just (eval c x)
-    go (Set (SRegister x) y) = cAdvance . (cRegister x .~ eval c y)
-    go (Add (SRegister x) y) = cAdvance . (cRegister x +~ eval c y)
-    go (Mul (SRegister x) y) = cAdvance . (cRegister x *~ eval c y)
-    go (Mod (SRegister x) y) = cAdvance . (cRegister x %~ (`mod` eval c y))
-    go (Rcv (SRegister x)) = cAdvance . rcv
-      where
-        rcv =
-          case c ^. cRegister x of
-            0 -> id
-            _ -> cRegister x .~ fromJust (c ^. cSound)
+    go (Snd x) = emit (eval c x) . cAdvance
+    go (Set (SRegister x) y) = norm . cAdvance . (cRegister x .~ eval c y)
+    go (Add (SRegister x) y) = norm . cAdvance . (cRegister x +~ eval c y)
+    go (Mul (SRegister x) y) = norm . cAdvance . (cRegister x *~ eval c y)
+    go (Mod (SRegister x) y) =
+      norm . cAdvance . (cRegister x %~ (`mod` eval c y))
+    go (Rcv (SRegister x)) = Left . Paused x
     go (Jgz x y) =
       if eval c x > 0
-        then cIP +~ eval c y
-        else cAdvance
+        then norm . (cIP +~ eval c y)
+        else norm . cAdvance
+    emit :: Value -> Computer -> PushPull
+    emit v c = Right (Just v, c)
+    norm :: Computer -> PushPull
+    norm c = Right (Nothing, c)
+
+duetStopped :: Duet -> Bool
+duetStopped d = all stopped $ rights [d ^. dComp0, d ^. dComp1]
+
+stepDuet :: Duet -> Duet
+stepDuet d =
+  case d ^. dComp1 of
+    Left p1 ->
+      case d ^. dSentBy0 of
+        [] ->
+          case d ^. dComp0 of
+            Left p0 -> error "deadlock in step!"
+            Right c0 ->
+              case step c0 of
+                Right (Just v, c0') ->
+                  d & dSentBy0 %~ (`snoc` v) & dComp0 .~ Right c0'
+                Right (Nothing, c0') -> d & dComp0 .~ Right c0'
+                Left c0' -> d & dComp0 .~ Left c0'
+        (v:vs) -> d & dComp1 .~ Right (resume v p1) & dSentBy0 .~ vs
+    Right c1 ->
+      case step c1 of
+        Right (Just v, c1') ->
+          d & dTotalSent1 +~ 1 & dSentBy1 %~ (`snoc` v) & dComp1 .~ Right c1'
+        Right (Nothing, c1') -> d & dComp1 .~ Right c1'
+        Left c1' -> d & dComp1 .~ Left c1'
+
+runDuet :: Duet -> Duet
+runDuet d | duetStopped d = d
+          | otherwise = runDuet (stepDuet d)
 
 parse :: [String] -> Program
 parse = map (parseInstr . splitOn " ")
