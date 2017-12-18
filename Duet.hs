@@ -1,5 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
+
 module Duet where
 
 import Control.Lens
@@ -11,7 +12,6 @@ import qualified Data.Map as M
 import Data.Maybe
 
 import Utils
-
 
 type Register = Char
 
@@ -93,7 +93,9 @@ boot programID instructions =
     0
 
 stopped :: Computer -> Bool
-stopped c = let ip = c ^. cIP in ip < 0 || ip >= length (c ^. cProgram)
+stopped c =
+  let ip = c ^. cIP
+  in ip < 0 || ip >= length (c ^. cProgram)
 
 unsafeMaybeLens :: Iso' (Maybe a) a
 unsafeMaybeLens = iso fromJust Just
@@ -135,7 +137,13 @@ step c = go (c ^. cInstruction) c
     norm c = Right (Nothing, c)
 
 duetStopped :: Duet -> Bool
-duetStopped d = all stopped $ rights [d ^. dComp0, d ^. dComp1]
+duetStopped d =
+  stoppedPair (d ^. dComp0) (d ^. dSentBy1) &&
+  stoppedPair (d ^. dComp1) (d ^. dSentBy0)
+  where
+    stoppedPair (Right c) _ = stopped c
+    stoppedPair (Left _) [] = True
+    stoppedPair (Left _) _ = False
 
 stepDuet :: Duet -> Duet
 stepDuet d =
@@ -144,7 +152,10 @@ stepDuet d =
       case d ^. dSentBy0 of
         [] ->
           case d ^. dComp0 of
-            Left p0 -> error "deadlock in step!"
+            Left p0 ->
+              case d ^. dSentBy1 of
+                [] -> error "deadlock in step!"
+                (v:vs) -> d & dComp0 .~ Right (resume v p0) & dSentBy1 .~ vs
             Right c0 ->
               case step c0 of
                 Right (Just v, c0') ->
@@ -160,8 +171,9 @@ stepDuet d =
         Left c1' -> d & dComp1 .~ Left c1'
 
 runDuet :: Duet -> Duet
-runDuet d | duetStopped d = d
-          | otherwise = runDuet (stepDuet d)
+runDuet d
+  | duetStopped d = d
+  | otherwise = runDuet (stepDuet d)
 
 parse :: [String] -> Program
 parse = map (parseInstr . splitOn " ")
