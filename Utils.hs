@@ -24,6 +24,9 @@ turnLeft :: Direction4 -> Direction4
 turnLeft S = E
 turnLeft d = succ d
 
+reverse4 :: Direction4 -> Direction4
+reverse4 = turnLeft . turnLeft
+
 data Position2 = Position2
   { pX :: Int
   , pY :: Int
