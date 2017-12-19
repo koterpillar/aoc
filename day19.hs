@@ -24,13 +24,17 @@ startPos g =
 path :: Grid -> String
 path g = go g (startPos g) S
 
+pathLetters :: Grid -> String
+pathLetters = filter (`elem` ['A'..'Z']) . path
+
+pathLen :: Grid -> Int
+pathLen = length . path
+
 go :: Grid -> Position2 -> Direction4 -> String
 go g pos dir =
   case Map.lookup pos g of
     Nothing -> []
-    Just '-' -> keepGoing pos dir
-    Just '|' -> keepGoing pos dir
-    Just '+' -> turnFrom pos dir
+    Just '+' -> '+' : turnFrom pos dir
     Just ltr -> ltr : keepGoing pos dir
   where
     keepGoing pos dir = go g (walk dir pos) dir
