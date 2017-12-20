@@ -1,5 +1,8 @@
 module Utils where
 
+import Text.Parsec
+import Text.Parsec.String
+
 import Debug.Trace
 
 readLines :: IO [String]
@@ -9,6 +12,12 @@ readLines =
      case s of
        "" -> pure []
        _ -> fmap (s :) readLines
+
+justParse :: Parser a -> String -> a
+justParse parser str = let (Right a) = parse parser "" str in a
+
+readParse :: Parser a -> IO [a]
+readParse parser = map (justParse parser) <$> readLines
 
 data Direction4
   = E

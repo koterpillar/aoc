@@ -27,6 +27,7 @@ dependencies:
 - MissingH
 - mtl
 - parsec
+- parsec3-numbers
 - split
 - utf8-string
 - vector
