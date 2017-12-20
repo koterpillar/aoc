@@ -75,3 +75,7 @@ sinsert idx val lst = let (hd, tl) = splitAt idx lst in hd ++ (val:tl)
 progress :: Int -> Int -> a -> a
 progress milestone amount val | amount `mod` milestone == 0 = traceShow amount val
                               | otherwise = val
+
+maybeMinimum :: Ord a => [a] -> Maybe a
+maybeMinimum [] = Nothing
+maybeMinimum xs = Just $ minimum xs
