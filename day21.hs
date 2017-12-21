@@ -23,14 +23,21 @@ import Text.Parsec.String
 
 import Utils
 
-chunked :: Int -> Iso' [a] [[a]]
-chunked n = iso (chunksOf n) concat
+chunksOf23 :: [a] -> [[a]]
+chunksOf23 lst | length lst `mod` 2 == 0 = chunksOf 2 lst
+               | otherwise = chunksOf 3 lst
+
+chunked2' :: (forall b. [b] -> [[b]]) -> Iso' [[a]] [[[[a]]]]
+chunked2' chunking =
+  iso
+    (map (transpose . map chunking) . chunking)
+    (concatMap (map concat . transpose))
 
 chunked2 :: Int -> Iso' [[a]] [[[[a]]]]
-chunked2 n =
-  iso
-    (map (transpose . map (chunksOf n)) . chunksOf n)
-    (concatMap (map concat . transpose))
+chunked2 n = chunked2' $ chunksOf n
+
+chunked2_23 :: Iso' [[a]] [[[[a]]]]
+chunked2_23 = chunked2' chunksOf23
 
 newtype Pattern = Pattern
   { pItems :: [[Bool]]
@@ -54,21 +61,27 @@ pSize :: Pattern -> Int
 pSize (Pattern p) = length p
 
 newtype Grid = Grid
-  { gGrid :: [[Pattern]]
+  { gGrid :: [[Bool]]
   }
 
-gIso :: Iso' Grid [[Pattern]]
+gIso :: Iso' Grid [[Bool]]
 gIso = iso gGrid Grid
 
-gBlockSize :: Grid -> Int
-gBlockSize = pSize . head . head . gGrid
-
 instance Show Grid where
-  show g =
-    let gs = gBlockSize g
-    in g ^. gIso . mapping (mapping pIso) . from (chunked2 gs) .
-       mapping (mapping iIso) .
-       to unlines
+  show g = g ^. gIso . mapping (mapping iIso) . to unlines
+
+gSize :: Grid -> Int
+gSize (Grid g) = length g
+
+gPatternSize :: Grid -> Int
+gPatternSize g =
+  let gs = gSize g
+  in if gs `mod` 2 == 0
+       then 2
+       else 3
+
+gPatterns :: Iso' Grid [[Pattern]]
+gPatterns = gIso . chunked2_23 . mapping (mapping (from pIso))
 
 data Rule = Rule
   { rFrom :: Pattern
@@ -108,17 +121,10 @@ pApply rules p =
   Map.lookup (pCanonical p) rules
 
 gApply :: Rules -> Grid -> Grid
-gApply rules = Grid . fixup4 . map (map (pApply rules)) . gGrid
-
-fixup4 :: [[Pattern]] -> [[Pattern]]
-fixup4 ps
-  | pSize (head $ head ps) == 3 = ps
-  | otherwise =
-    ps ^. mapping (mapping pIso) . from (chunked2 4) . chunked2 2 .
-    mapping (mapping (from pIso))
+gApply rules g = g ^. gPatterns . to (map $ map $ pApply rules) . from gPatterns
 
 initial :: Grid
-initial = Grid [[Pattern $ map (map (== '#')) [".#.", "..#", "###"]]]
+initial = Grid $ map (map (== '#')) [".#.", "..#", "###"]
 
 toRules = Map.fromList . map (pCanonical . rFrom &&& rTo)
 
@@ -130,10 +136,7 @@ exampleRules =
     ["../.# => ##./#../...", ".#./..#/### => #..#/..../..../#..#"]
 
 gTotalDots :: Grid -> Int
-gTotalDots = sum . map pTotalDots . concat . gGrid
-
-pTotalDots :: Pattern -> Int
-pTotalDots =
+gTotalDots =
   sum .
   map
     (sum .
@@ -142,4 +145,4 @@ pTotalDots =
           if x
             then 1
             else 0)) .
-  pItems
+  gGrid
