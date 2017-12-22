@@ -33,6 +33,10 @@ turnLeft :: Direction4 -> Direction4
 turnLeft S = E
 turnLeft d = succ d
 
+turnRight :: Direction4 -> Direction4
+turnRight E = S
+turnRight d = pred d
+
 reverse4 :: Direction4 -> Direction4
 reverse4 = turnLeft . turnLeft
 
@@ -79,3 +83,9 @@ progress milestone amount val | amount `mod` milestone == 0 = traceShow amount v
 maybeMinimum :: Ord a => [a] -> Maybe a
 maybeMinimum [] = Nothing
 maybeMinimum xs = Just $ minimum xs
+
+enumerate2 :: [[a]] -> [[(Position2, a)]]
+enumerate2 = zipWith makeLine [0 ..]
+  where
+    makeLine y = zipWith (makePoint y) [0 ..]
+    makePoint y x v = (Position2 x y, v)
