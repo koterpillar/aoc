@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Utils where
 
 import Text.Parsec
@@ -7,14 +9,15 @@ import Debug.Trace
 
 readLines :: IO [String]
 readLines =
-  getLine >>=
-  \s ->
-     case s of
-       "" -> pure []
-       _ -> fmap (s :) readLines
+  getLine >>= \s ->
+    case s of
+      "" -> pure []
+      _ -> fmap (s :) readLines
 
 justParse :: Parser a -> String -> a
-justParse parser str = let (Right a) = parse parser "" str in a
+justParse parser str =
+  let (Right a) = parse parser "" str
+  in a
 
 readParse :: Parser a -> IO [a]
 readParse parser = map (justParse parser) <$> readLines
@@ -41,8 +44,8 @@ reverse4 :: Direction4 -> Direction4
 reverse4 = turnLeft . turnLeft
 
 data Position2 = Position2
-  { pX :: Int
-  , pY :: Int
+  { pX :: !Int
+  , pY :: !Int
   } deriving (Eq, Ord, Show)
 
 walk :: Direction4 -> Position2 -> Position2
@@ -52,7 +55,14 @@ walk N (Position2 x y) = Position2 x (y - 1)
 walk S (Position2 x y) = Position2 x (y + 1)
 
 manhattanDistance :: Position2 -> Position2 -> Int
-manhattanDistance (Position2 x1 y1) (Position2 x2 y2) = abs (x2 - x1) + abs (y2 - y1)
+manhattanDistance (Position2 x1 y1) (Position2 x2 y2) =
+  abs (x2 - x1) + abs (y2 - y1)
+
+iterateN :: Int -> (a -> a) -> a -> a
+iterateN 0 _ v = v
+iterateN n fn v =
+  let !u = iterateN (n - 1) fn v
+  in progress 1000 n $ fn u
 
 iterateWhile :: (a -> Bool) -> (a -> a) -> a -> [a]
 iterateWhile continue fn v
@@ -74,11 +84,14 @@ sremove :: Int -> [a] -> (a, [a])
 sremove idx lst = (lst !! idx, take idx lst ++ drop (idx + 1) lst)
 
 sinsert :: Int -> a -> [a] -> [a]
-sinsert idx val lst = let (hd, tl) = splitAt idx lst in hd ++ (val:tl)
+sinsert idx val lst =
+  let (hd, tl) = splitAt idx lst
+  in hd ++ (val : tl)
 
 progress :: Int -> Int -> a -> a
-progress milestone amount val | amount `mod` milestone == 0 = traceShow amount val
-                              | otherwise = val
+progress milestone amount (!val)
+  | amount `mod` milestone == 0 = traceShow amount val
+  | otherwise = val
 
 maybeMinimum :: Ord a => [a] -> Maybe a
 maybeMinimum [] = Nothing

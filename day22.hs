@@ -1,35 +1,35 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 import Control.Lens
 
-import Data.List.Utils
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
 
-import Data.Either
-
-import Data.Map (Map)
-import qualified Data.Map as Map
-
-import Data.Maybe
-
-import Text.Parsec
-import Text.Parsec.String
+import Debug.Trace
 
 import Utils
 
 data CellState
   = Clean
   | Infected
+  | Weakened
+  | Flagged
   deriving (Ord, Eq)
 
 instance Show CellState where
   show Clean = "."
   show Infected = "#"
+  show Weakened = "W"
+  show Flagged = "F"
 
 toggle :: CellState -> CellState
-toggle Clean = Infected
-toggle Infected = Clean
+toggle Clean = Weakened
+toggle Weakened = Infected
+toggle Infected = Flagged
+toggle Flagged = Clean
 
 type Grid = Map Position2 CellState
 
@@ -57,7 +57,8 @@ data World = World
   { _wGrid :: !Grid
   , _wVirusPos :: !Position2
   , _wVirusDir :: !Direction4
-  , _wTurnsInfected :: Int
+  , _wTurnsInfected :: !Int
+  , _wSteps :: !Int
   } deriving (Ord, Eq)
 
 makeLenses ''World
@@ -87,15 +88,18 @@ wFromGrid g = World {..}
     a `mid` b = (a + b) `div` 2
     (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
     _wTurnsInfected = 0
+    _wSteps = 0
 
 wAt :: Position2 -> Lens' World CellState
 wAt p = wGrid . at p . non Clean
 
 step :: World -> World
-step w =
+step (!w) =
   w & wAt curPos .~ newState & wVirusPos .~ newPos & wVirusDir .~ newDir &
   wTurnsInfected +~
-  infected
+  infected &
+  wSteps +~
+  progress 10000 (w ^. wSteps) 1
   where
     curPos = w ^. wVirusPos
     curState = w ^. wAt curPos
@@ -104,6 +108,8 @@ step w =
       case curState of
         Clean -> turnLeft curDir
         Infected -> turnRight curDir
+        Weakened -> curDir
+        Flagged -> reverse4 curDir
     newPos = walk newDir curPos
     newState = toggle curState
     infected =
