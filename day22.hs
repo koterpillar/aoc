@@ -57,6 +57,7 @@ data World = World
   { _wGrid :: !Grid
   , _wVirusPos :: !Position2
   , _wVirusDir :: !Direction4
+  , _wTurnsInfected :: Int
   } deriving (Ord, Eq)
 
 makeLenses ''World
@@ -85,12 +86,16 @@ wFromGrid g = World {..}
     _wVirusPos = Position2 (xmin `mid` xmax) (ymin `mid` ymax)
     a `mid` b = (a + b) `div` 2
     (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
+    _wTurnsInfected = 0
 
 wAt :: Position2 -> Lens' World CellState
 wAt p = wGrid . at p . non Clean
 
 step :: World -> World
-step w = w & wAt curPos %~ toggle & wVirusPos .~ newPos & wVirusDir .~ newDir
+step w =
+  w & wAt curPos .~ newState & wVirusPos .~ newPos & wVirusDir .~ newDir &
+  wTurnsInfected +~
+  infected
   where
     curPos = w ^. wVirusPos
     curState = w ^. wAt curPos
@@ -100,6 +105,11 @@ step w = w & wAt curPos %~ toggle & wVirusPos .~ newPos & wVirusDir .~ newDir
         Clean -> turnLeft curDir
         Infected -> turnRight curDir
     newPos = walk newDir curPos
+    newState = toggle curState
+    infected =
+      if newState == Infected
+        then 1
+        else 0
 
 example :: World
 example = parseWorld ["..#", "#..", "..."]
