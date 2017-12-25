@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -12,8 +13,8 @@ import Data.Maybe
 
 import Data.Monoid
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import Data.IntSet (IntSet)
+import qualified Data.IntSet as IntSet
 
 import Graph
 import Utils
@@ -31,49 +32,51 @@ data Direction
 
 data TM = TM
   { _tmPosition :: !Position
-  , _tmTape :: !(Map Position Value)
+  , _tmTape :: !IntSet
   , _tmState :: !TMState
-  , _tmSteps :: !Int
   } deriving (Eq, Ord)
 
 makeLenses ''TM
 
 instance Show TM where
   show tm =
-    (tm ^. tmState) : ' ' : show (tm ^. tmSteps) ++ " " ++
-    concatMap showCell [tapeMin - 2 .. tapeMax + 2]
+    (tm ^. tmState) : ' ' : concatMap showCell [tapeMin - 2 .. tapeMax + 2]
     where
       cur = tm ^. tmPosition
-      dirty = Map.keys $ tm ^. tmTape
+      dirty = IntSet.elems $ tm ^. tmTape
       tapeMin = minimum $ cur : dirty
       tapeMax = maximum $ cur : dirty
       showCell pos
         | cur == pos = ['[', showCell' pos, ']']
         | otherwise = [showCell' pos]
       showCell' pos =
-        case tm ^. tmTape . at pos . non 0 of
-          0 -> '0'
-          1 -> '1'
+        case tm ^. tmTape . at pos of
+          Nothing -> '0'
+          Just () -> '1'
 
 tmCurrent :: Lens' TM Value
-tmCurrent = lens getCurrent setCurrent
-  where
-    getCurrent tm = tm ^. tmTape . at (tm ^. tmPosition) . non 0
-    setCurrent tm v = tm & tmTape . at (tm ^. tmPosition) . non 0 .~ v
+tmCurrent = tmAtRelative 0
 
 tmAtRelative :: Int -> Lens' TM Value
 tmAtRelative offset = lens getRelative setRelative
   where
-    getRelative tm = tm ^. tmTape . at (tm ^. tmPosition + offset) . non 0
-    setRelative tm v = tm & tmTape . at (tm ^. tmPosition + offset) . non 0 .~ v
+    pos tm = tm ^. tmPosition + offset
+    getRelative tm =
+      case tm ^. tmTape . at (pos tm) of
+        Just () -> 1
+        Nothing -> 0
+    setRelative tm v =
+      tm & tmTape %~
+      (case v of
+         1 -> IntSet.insert
+         0 -> IntSet.delete)
+        (pos tm)
 
 type Program = Map (TMState, Value) (Value, Direction, TMState)
 
 step :: Program -> TM -> TM
-step prg old =
-  old & tmCurrent .~ newValue & tmPosition %~ move dir & tmState .~ newState &
-  tmSteps +~
-  1
+step prg (!old) =
+  old & tmCurrent .~ newValue & tmPosition %~ move dir & tmState .~ newState
   where
     (newValue, dir, newState) =
       fromJust $ Map.lookup (old ^. tmState, old ^. tmCurrent) prg
@@ -81,10 +84,10 @@ step prg old =
     move TMRigh x = x + 1
 
 tmNew :: TM
-tmNew = TM {_tmPosition = 0, _tmTape = Map.empty, _tmState = 'A', _tmSteps = 0}
+tmNew = TM {_tmPosition = 0, _tmTape = IntSet.empty, _tmState = 'A'}
 
 tmChecksum :: TM -> Int
-tmChecksum tm = sum $ Map.elems $ tm ^. tmTape
+tmChecksum tm = length $ IntSet.elems $ tm ^. tmTape
 
 example :: Program
 example =
