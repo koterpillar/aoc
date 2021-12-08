@@ -1,37 +1,23 @@
-name:                adventofcode2017
+name:                aoc
 version:             0.1.0.0
-github:              koterpillar/adventofcode2017
+github:              koterpillar/aoc
 license:             BSD3
 author:              Alexey Kotlyarov
 maintainer:          a@koterpillar.com
-copyright:           2017 Alexey Kotlyarov
+copyright:           2017-2021 Alexey Kotlyarov
 
 extra-source-files:
 - README.md
-- ChangeLog.md
 
-# Metadata used when publishing your package
-synopsis:            Short description of your package
-# category:            Web
+synopsis:            Advent of Code solutions
 
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/koterpillar/adventofcode2017#readme>
+description:         Please see the README on Github at <https://github.com/koterpillar/aoc#readme>
 
 dependencies:
 - base >= 4.7 && < 5
 - containers
-- cryptonite
-- extra
-- lens
 - MissingH
-- mtl
 - parsec
-- parsec3-numbers
-- split
-- utf8-string
-- vector
 
 library:
   source-dirs: .
