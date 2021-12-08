@@ -18,6 +18,7 @@ dependencies:
 - containers
 - MissingH
 - parsec
+- text
 
 library:
   source-dirs: .
