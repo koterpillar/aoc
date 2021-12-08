@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ "$#" != 1 ]
+then
+  echo "Usage: $0 <level>" >&2
+  exit 1
+fi
+
+LEVEL="$1"
+
+CACHE=.input-$LEVEL
+if [ -f $CACHE ]
+then
+  cat $CACHE
+  exit 0
+fi
+
+COOKIE_FILE=.session-cookie
+if [ ! -f "$COOKIE_FILE" ]
+then
+  echo "Add your cookie to '$COOKIE_FILE'." >&2
+  exit 1
+fi
+COOKIE=$(cat $COOKIE_FILE)
+
+curl -sSL -o $CACHE -H "Cookie: session=$COOKIE" https://adventofcode.com/2021/day/$LEVEL/input
+cat $CACHE
