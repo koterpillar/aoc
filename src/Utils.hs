@@ -115,3 +115,6 @@ enumerate2 = zipWith makeLine [0 ..]
   where
     makeLine y = zipWith (makePoint y) [0 ..]
     makePoint y x v = (Position2 x y, v)
+
+tshow :: Show a => a -> Text
+tshow = Text.pack . show

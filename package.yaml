@@ -16,9 +16,11 @@ description:         Please see the README on Github at <https://github.com/kote
 dependencies:
 - base >= 4.7 && < 5
 - containers
+- http-conduit
 - MissingH
 - parsec
 - text
+- time
 
 library:
-  source-dirs: .
+  source-dirs: src
