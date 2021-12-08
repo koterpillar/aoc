@@ -2,15 +2,22 @@
 
 set -euo pipefail
 
-if [ "$#" != 1 ]
-then
-  echo "Usage: $0 <level>" >&2
-  exit 1
-fi
+case "$#" in
+  1)
+    LEVEL="$1"
+    YEAR="$(date +%Y)"
+    ;;
+  2)
+    YEAR="$1"
+    LEVEL="$2"
+    ;;
+  *)
+    echo "Usage: $0 [<year>] <level>" >&2
+    exit 1
+    ;;
+esac
 
-LEVEL="$1"
-
-CACHE=.input-$LEVEL
+CACHE=.input-$YEAR-$LEVEL
 if [ -f $CACHE ]
 then
   cat $CACHE
@@ -25,5 +32,5 @@ then
 fi
 COOKIE=$(cat $COOKIE_FILE)
 
-curl -sSL -o $CACHE -H "Cookie: session=$COOKIE" https://adventofcode.com/2021/day/$LEVEL/input
+curl -sSL -o $CACHE -H "Cookie: session=$COOKIE" https://adventofcode.com/$YEAR/day/$LEVEL/input
 cat $CACHE
