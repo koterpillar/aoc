@@ -44,6 +44,7 @@ library
       MissingH
     , base >=4.7 && <5
     , containers
+    , html-entities
     , http-conduit
     , parsec
     , split
@@ -68,6 +69,7 @@ executable day01
     , aoc
     , base >=4.7 && <5
     , containers
+    , html-entities
     , http-conduit
     , parsec
     , split
@@ -92,6 +94,7 @@ executable day02
     , aoc
     , base >=4.7 && <5
     , containers
+    , html-entities
     , http-conduit
     , parsec
     , split
@@ -116,6 +119,7 @@ executable day03
     , aoc
     , base >=4.7 && <5
     , containers
+    , html-entities
     , http-conduit
     , parsec
     , split
@@ -140,6 +144,32 @@ executable day04
     , aoc
     , base >=4.7 && <5
     , containers
+    , html-entities
+    , http-conduit
+    , parsec
+    , split
+    , text
+    , time
+  default-language: Haskell2010
+
+executable day05
+  main-is: day05.hs
+  other-modules:
+      Paths_aoc
+  hs-source-dirs:
+      ./
+  default-extensions:
+      BangPatterns
+      LambdaCase
+      OverloadedStrings
+      RecordWildCards
+      TypeApplications
+  build-depends:
+      MissingH
+    , aoc
+    , base >=4.7 && <5
+    , containers
+    , html-entities
     , http-conduit
     , parsec
     , split

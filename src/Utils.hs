@@ -16,8 +16,9 @@ parseLines parser = map (justParse parser) . Text.lines
 
 justParse :: Parser a -> Text -> a
 justParse parser str =
-  let (Right a) = parse parser "" str
-   in a
+  case parse parser "" str of
+    Right a -> a
+    Left e  -> error $ show e
 
 integerP :: Parser Int
 integerP = read <$> many1 digit

@@ -11,6 +11,15 @@ manhattanDistance :: Position2 -> Position2 -> Int
 manhattanDistance (Position2 x1 y1) (Position2 x2 y2) =
   abs (x2 - x1) + abs (y2 - y1)
 
+bounds :: [Position2] -> (Position2, Position2)
+bounds [] = error "No bounds for empty list"
+bounds ps = (Position2 xmin ymin, Position2 xmax ymax)
+  where
+    xmin = minimum $ map pX ps
+    ymin = minimum $ map pY ps
+    xmax = maximum $ map pX ps
+    ymax = maximum $ map pY ps
+
 data Direction4
   = E
   | N

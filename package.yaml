@@ -16,6 +16,7 @@ description:         Please see the README on Github at <https://github.com/kote
 dependencies:
 - base >= 4.7 && < 5
 - containers
+- html-entities
 - http-conduit
 - MissingH
 - parsec
@@ -55,5 +56,11 @@ executables:
   day04:
     source-dirs: .
     main: day04.hs
+    dependencies:
+      - aoc
+
+  day05:
+    source-dirs: .
+    main: day05.hs
     dependencies:
       - aoc

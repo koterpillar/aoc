@@ -13,11 +13,15 @@ import           Data.Text                   (Text)
 import qualified Data.Text                   as Text
 import qualified Data.Text.Encoding          as Text
 import qualified Data.Text.IO                as Text
+import qualified Data.Text.Lazy              as LazyText
+import qualified Data.Text.Lazy.Builder      as LazyText
 
 import           Data.Time                   (UTCTime (..), getCurrentTime,
                                               toGregorian)
 
 import           GHC.IO.Exception            (IOException)
+
+import           HTMLEntities.Decoder        (htmlEncodedText)
 
 import           Network.HTTP.Client.Conduit (Request (..))
 import           Network.HTTP.Simple
@@ -71,6 +75,9 @@ dropBefore marker contents =
         Text.unpack marker <> " in contents: " <> Text.unpack contents
       | otherwise -> result
 
+htmlDecode :: Text -> Text
+htmlDecode = LazyText.toStrict . LazyText.toLazyText . htmlEncodedText
+
 getExampleY :: Integer -> Int -> IO Text
 getExampleY year day =
   withCacheFile (".example-" <> tshow year <> "-" <> tshow day) $ do
@@ -79,7 +86,7 @@ getExampleY year day =
       "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
     let exampleBegin = "<pre><code>"
     let exampleEnd = "\n</code></pre>"
-    pure $ dropBefore exampleEnd $ dropAfter exampleBegin page
+    pure $ htmlDecode $ dropBefore exampleEnd $ dropAfter exampleBegin page
 
 currentYear :: IO Integer
 currentYear = do
