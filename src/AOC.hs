@@ -118,10 +118,7 @@ processEI :: (Eq b, Show b) => Int -> (Text -> a) -> (a -> b) -> b -> IO ()
 processEI day parse solve exampleExpected = do
   example <- parse <$> getExample day
   let exampleResult = solve example
-  when (exampleResult /= exampleExpected) $
-    error $
-    "Example result is " <>
-    show exampleResult <> ", but expected " <> show exampleExpected
+  assertEqual "Example result" exampleExpected exampleResult
   input <- parse <$> getInput day
   let result = solve input
   print result

@@ -70,3 +70,10 @@ enumerate2 = zipWith makeLine [0 ..]
 
 tshow :: Show a => a -> Text
 tshow = Text.pack . show
+
+assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
+assertEqual message expected actual
+  | expected == actual = pure ()
+  | otherwise =
+    error $
+    message <> " is " <> show actual <> ", but expected " <> show expected
