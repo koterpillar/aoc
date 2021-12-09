@@ -11,30 +11,15 @@ import qualified Data.Text.IO     as Text
 import           Text.Parsec
 import           Text.Parsec.Text
 
-import           System.IO        (isEOF)
-
 import           Debug.Trace
 
 import           Direction4
 import           Position2
 
-readLines :: IO [Text]
-readLines =
-  isEOF >>= \case
-    True -> pure []
-    False ->
-      Text.getLine >>= \s ->
-        case s of
-          "" -> pure []
-          _  -> fmap (s :) readLines
-
 justParse :: Parser a -> Text -> a
 justParse parser str =
   let (Right a) = parse parser "" str
    in a
-
-readParse :: Parser a -> IO [a]
-readParse parser = map (justParse parser) <$> readLines
 
 integerP :: Parser Int
 integerP = read <$> many1 digit
