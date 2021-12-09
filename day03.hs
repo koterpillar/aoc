@@ -44,5 +44,27 @@ part1 input =
       epsilon = bitsValue $ map leastCommon bybit
    in gamma * epsilon
 
+byCriteria :: ([Bit] -> Bit) -> [BitString] -> BitString
+byCriteria = byCriteria' 0
+
+byCriteria' :: Int -> ([Bit] -> Bit) -> [BitString] -> BitString
+byCriteria' _ _ [] = error "Selected zero candidates."
+byCriteria' _ _ [candidate] = candidate
+byCriteria' bitIndex chooseBit candidates
+  | bitIndex >= length (head candidates) =
+    error "More than one candidate remaining, no bits left."
+  | otherwise = byCriteria' (bitIndex + 1) chooseBit remainingCandidates
+  where
+    selectBit bs = bs !! bitIndex
+    bitsSelected = map selectBit candidates
+    resultBit = chooseBit bitsSelected
+    remainingCandidates = filter (\bs -> selectBit bs == resultBit) candidates
+
+part2 input = oxygen * co2
+  where
+    oxygen = bitsValue $ byCriteria mostCommon input
+    co2 = bitsValue $ byCriteria leastCommon input
+
 main = do
   processEI 3 (parseLines bitsP) part1 198
+  processEI 3 (parseLines bitsP) part2 230
