@@ -16,6 +16,9 @@ import           Debug.Trace
 import           Direction4
 import           Position2
 
+parseLines :: Parser a -> Text -> [a]
+parseLines parser = map (justParse parser) . Text.lines
+
 justParse :: Parser a -> Text -> a
 justParse parser str =
   let (Right a) = parse parser "" str

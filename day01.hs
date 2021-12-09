@@ -20,9 +20,5 @@ slidingSum n = map sum . (=<<) (take' n) . tails
 part2 = countTrue . zipWithTail (<) . slidingSum 3
 
 main = do
-  example <- readParse integerP (Example 1)
-  print $ part1 example
-  print $ part2 example
-  input <- readParse integerP (Input 1)
-  print $ part1 input
-  print $ part2 input
+  processEI 1 (parseLines integerP) part1 7
+  processEI 1 (parseLines integerP) part2 5

@@ -3,16 +3,15 @@
 {-# LANGUAGE TypeApplications  #-}
 
 module AOC
-  ( exampleY
-  , example
-  , inputY
-  , input
-  , InputSource(..)
-  , readLines
-  , readParse
+  ( getExampleY
+  , getExample
+  , getInputY
+  , getInput
+  , processEI
   ) where
 
 import           Control.Exception           (catch)
+import           Control.Monad               (when)
 
 import           Data.Text                   (Text)
 import qualified Data.Text                   as Text
@@ -76,8 +75,8 @@ dropBefore marker contents =
         Text.unpack marker <> " in contents: " <> Text.unpack contents
       | otherwise -> result
 
-exampleY :: Integer -> Int -> IO Text
-exampleY year day =
+getExampleY :: Integer -> Int -> IO Text
+getExampleY year day =
   withCacheFile (".example-" <> tshow year <> "-" <> tshow day) $ do
     page <-
       simpleRequest $
@@ -91,21 +90,21 @@ currentYear = do
   (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
   pure y
 
-example :: Int -> IO Text
-example day = do
+getExample :: Int -> IO Text
+getExample day = do
   year <- currentYear
-  exampleY year day
+  getExampleY year day
 
-inputY :: Integer -> Int -> IO Text
-inputY year day =
+getInputY :: Integer -> Int -> IO Text
+getInputY year day =
   withCacheFile (".input-" <> tshow year <> "-" <> tshow day) $
   simpleRequest $
   "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day <> "/input"
 
-input :: Int -> IO Text
-input day = do
+getInput :: Int -> IO Text
+getInput day = do
   year <- currentYear
-  inputY year day
+  getInputY year day
 
 withCacheFile :: Text -> IO Text -> IO Text
 withCacheFile fileName action =
@@ -115,23 +114,14 @@ withCacheFile fileName action =
         Text.writeFile fileName' result
         pure result
 
-data InputSource
-  = StandardInput
-  | Example Int
-  | Input Int
-  deriving (Show)
-
-readLines :: InputSource -> IO [Text]
-readLines StandardInput =
-  isEOF >>= \case
-    True -> pure []
-    False ->
-      Text.getLine >>= \s ->
-        case s of
-          "" -> pure []
-          _  -> fmap (s :) (readLines StandardInput)
-readLines (Example day) = Text.lines <$> example day
-readLines (Input day) = Text.lines <$> input day
-
-readParse :: Parser a -> InputSource -> IO [a]
-readParse parser source = map (justParse parser) <$> readLines source
+processEI :: (Eq b, Show b) => Int -> (Text -> a) -> (a -> b) -> b -> IO ()
+processEI day parse solve exampleExpected = do
+  example <- parse <$> getExample day
+  let exampleResult = solve example
+  when (exampleResult /= exampleExpected) $
+    error $
+    "Example result is " <>
+    show exampleResult <> ", but expected " <> show exampleExpected
+  input <- parse <$> getInput day
+  let result = solve input
+  print result
