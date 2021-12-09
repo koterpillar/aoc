@@ -64,3 +64,9 @@ executables:
     main: day05.hs
     dependencies:
       - aoc
+
+  day06:
+    source-dirs: .
+    main: day06.hs
+    dependencies:
+      - aoc
