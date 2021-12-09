@@ -26,10 +26,9 @@ source-repository head
 library
   exposed-modules:
       AOC
-      Direction4
       Graph
+      Grid
       Path
-      Position2
       Utils
   other-modules:
       Paths_aoc

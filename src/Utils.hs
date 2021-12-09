@@ -13,8 +13,7 @@ import           Text.Parsec.Text
 
 import           Debug.Trace
 
-import           Direction4
-import           Position2
+import           Grid
 
 parseLines :: Parser a -> Text -> [a]
 parseLines parser = map (justParse parser) . Text.lines
@@ -26,12 +25,6 @@ justParse parser str =
 
 integerP :: Parser Int
 integerP = read <$> many1 digit
-
-walk :: Direction4 -> Position2 -> Position2
-walk E (Position2 x y) = Position2 (x + 1) y
-walk W (Position2 x y) = Position2 (x - 1) y
-walk N (Position2 x y) = Position2 x (y - 1)
-walk S (Position2 x y) = Position2 x (y + 1)
 
 iterateN :: Int -> (a -> a) -> a -> a
 iterateN 0 _ v = v
