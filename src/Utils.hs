@@ -1,7 +1,3 @@
-{-# LANGUAGE BangPatterns      #-}
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module Utils where
 
 import           Data.Text        (Text)

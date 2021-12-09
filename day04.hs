@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 import           Control.Monad    (join)
 
 import           Data.List
