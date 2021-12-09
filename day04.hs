@@ -5,6 +5,8 @@ import           Control.Monad    (join)
 import           Data.List
 import           Data.List.Split  (splitOn)
 
+import           Data.Maybe
+
 import           Data.Set         (Set)
 import qualified Data.Set         as Set
 
@@ -64,28 +66,36 @@ playP =
     spc = char ' '
     nl = char '\n'
 
-pWinningScore :: Play -> Maybe Int
+pWinningScore :: Play -> [Int]
 pWinningScore Play {..} = do
-  board <- find (bWin pPlayedNumbers) pBoards
-  lastNumber <- pLastNumber
+  board <- filter (bWin pPlayedNumbers) pBoards
+  lastNumber <- maybeToList pLastNumber
   pure $ bScore pPlayedNumbers board * lastNumber
 
-pStep :: Play -> Play
+pStep :: Play -> Maybe Play
 pStep play@Play {..} =
   case pNumbers of
-    [] -> error "No more numbers to draw"
+    [] -> Nothing
     nextNumber:remainingNumbers ->
+      Just $
       play
         { pPlayedNumbers = Set.insert nextNumber pPlayedNumbers
         , pLastNumber = Just nextNumber
         , pNumbers = remainingNumbers
+        , pBoards = filter (not . bWin pPlayedNumbers) pBoards
         }
 
+pAllWins :: Play -> [Int]
+pAllWins play = pWinningScore play ++ rest (pStep play)
+  where
+    rest (Just p) = pAllWins p
+    rest Nothing  = []
+
 part1 :: Play -> Int
-part1 play =
-  case pWinningScore play of
-    Just score -> score
-    Nothing    -> part1 $ pStep play
+part1 = head . pAllWins
+
+part2 :: Play -> Int
+part2 = last . pAllWins
 
 main = do
   let board = Board [[1, 2], [3, 1]]
@@ -98,3 +108,4 @@ main = do
     length . pNumbers <$> examplePlay
   assertEqual "Parsed board count" (Right 3) $ length . pBoards <$> examplePlay
   processEI 4 (justParse playP) part1 4512
+  processEI 4 (justParse playP) part2 1924
