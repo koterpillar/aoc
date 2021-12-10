@@ -11,11 +11,8 @@ import           Utils
 
 type Pond = Map Int Int
 
-mkPond :: [Int] -> Pond
-mkPond = foldr (\timer -> Map.insertWith (+) timer 1) Map.empty
-
 pondP :: Parser Pond
-pondP = mkPond <$> sepBy1 integerP (char ',')
+pondP = mapByIndex <$> sepBy1 integerP (char ',')
 
 pondStep :: Pond -> Pond
 pondStep = Map.fromListWith (+) . join . map step' . Map.toList

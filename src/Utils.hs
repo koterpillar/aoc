@@ -1,5 +1,8 @@
 module Utils where
 
+import           Data.Map         (Map)
+import qualified Data.Map         as Map
+
 import           Data.Text        (Text)
 import qualified Data.Text        as Text
 import qualified Data.Text.IO     as Text
@@ -64,6 +67,9 @@ enumerate2 = zipWith makeLine [0 ..]
   where
     makeLine y = zipWith (makePoint y) [0 ..]
     makePoint y x v = (Position2 x y, v)
+
+mapByIndex :: [Int] -> Map Int Int
+mapByIndex = foldr (\timer -> Map.insertWith (+) timer 1) Map.empty
 
 tshow :: Show a => a -> Text
 tshow = Text.pack . show

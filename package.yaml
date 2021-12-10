@@ -70,3 +70,9 @@ executables:
     main: day06.hs
     dependencies:
       - aoc
+
+  day07:
+    source-dirs: .
+    main: day07.hs
+    dependencies:
+      - aoc

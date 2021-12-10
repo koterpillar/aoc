@@ -85,7 +85,7 @@ getExampleY year day =
       simpleRequest $
       "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
     let exampleBegin = "<pre><code>"
-    let exampleEnd = "\n</code></pre>"
+    let exampleEnd = "</code></pre>"
     pure $ htmlDecode $ dropBefore exampleEnd $ dropAfter exampleBegin page
 
 currentYear :: IO Integer
