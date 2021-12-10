@@ -3,8 +3,6 @@ import           Data.List
 import           Text.Parsec
 import           Utils
 
-countTrue = length . filter id
-
 zipWithTail fn values = zipWith fn values (tail values)
 
 part1 = countTrue . zipWithTail (<)

@@ -71,6 +71,12 @@ enumerate2 = zipWith makeLine [0 ..]
 mapByIndex :: [Int] -> Map Int Int
 mapByIndex = foldr (\timer -> Map.insertWith (+) timer 1) Map.empty
 
+countIf :: (a -> Bool) -> [a] -> Int
+countIf p = length . filter p
+
+countTrue :: [Bool] -> Int
+countTrue = countIf id
+
 tshow :: Show a => a -> Text
 tshow = Text.pack . show
 

@@ -226,3 +226,28 @@ executable day07
     , text
     , time
   default-language: Haskell2010
+
+executable day08
+  main-is: day08.hs
+  other-modules:
+      Paths_aoc
+  hs-source-dirs:
+      ./
+  default-extensions:
+      BangPatterns
+      LambdaCase
+      OverloadedStrings
+      RecordWildCards
+      TypeApplications
+  build-depends:
+      MissingH
+    , aoc
+    , base >=4.7 && <5
+    , containers
+    , html-entities
+    , http-conduit
+    , parsec
+    , split
+    , text
+    , time
+  default-language: Haskell2010

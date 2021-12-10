@@ -19,6 +19,8 @@ import qualified Data.Text.Lazy.Builder      as LazyText
 import           Data.Time                   (UTCTime (..), getCurrentTime,
                                               toGregorian)
 
+import           Debug.Trace
+
 import           GHC.IO.Exception            (IOException)
 
 import           HTMLEntities.Decoder        (htmlEncodedText)
@@ -55,15 +57,9 @@ simpleRequest url = do
   response <- getResponseBody <$> httpBS request'
   pure $ Text.decodeUtf8 response
 
-dropAfter :: Text -> Text -> Text
-dropAfter marker contents =
-  case Text.breakOn marker contents of
-    (_, result)
-      | Text.null result ->
-        error $
-        "Could not find marker: " <>
-        Text.unpack marker <> " in contents: " <> Text.unpack contents
-      | otherwise -> Text.drop (Text.length marker) result
+dropAfterAll :: Text -> Text -> [Text]
+dropAfterAll marker =
+  map (Text.drop (Text.length marker) . snd) . Text.breakOnAll marker
 
 dropBefore :: Text -> Text -> Text
 dropBefore marker contents =
@@ -78,15 +74,28 @@ dropBefore marker contents =
 htmlDecode :: Text -> Text
 htmlDecode = LazyText.toStrict . LazyText.toLazyText . htmlEncodedText
 
+removeTags :: Text -> Text
+removeTags = Text.replace "<em>" "" . Text.replace "</em>" ""
+
+codeBlocks :: Text -> [Text]
+codeBlocks =
+  map (removeTags . htmlDecode . dropBefore exampleEnd) .
+  dropAfterAll exampleBegin
+  where
+    exampleBegin = "<pre><code>"
+    exampleEnd = "</code></pre>"
+
 getExampleY :: Integer -> Int -> IO Text
 getExampleY year day =
   withCacheFile (".example-" <> tshow year <> "-" <> tshow day) $ do
     page <-
       simpleRequest $
       "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
-    let exampleBegin = "<pre><code>"
-    let exampleEnd = "</code></pre>"
-    pure $ htmlDecode $ dropBefore exampleEnd $ dropAfter exampleBegin page
+    pure $ selectExample year day $ codeBlocks page
+
+selectExample :: Integer -> Int -> [Text] -> Text
+selectExample 2021 8 = last
+selectExample _ _    = head
 
 currentYear :: IO Integer
 currentYear = do
