@@ -25,31 +25,28 @@ groupPositions = go 0 . Map.toList . mapByIndex
 crabsP :: Parser Crabs
 crabsP = groupPositions <$> sepBy1 integerP (char ',')
 
-fuelToZero :: Crabs -> Int
-fuelToZero = go 0
-  where
-    go :: Int -> Crabs -> Int
-    go pos []     = 0
-    go pos (c:cs) = pos * c + go (pos + 1) cs
-
 part1 :: Crabs -> Int
-part1 crabs = go (fuelToZero crabs) 0 totalcrabs crabs
-  where
-    totalcrabs = sum crabs
-    go :: Int -> Int -> Int -> Crabs -> Int
-    go tohere _ 0 [] = tohere
-    go _ _ cttr [] =
-      error $ "unexpected " <> show cttr <> " crabs to the right of the end."
-    go tohere cttl cttr (c:cs) =
-      if tohere' > tohere
-        then tohere
-        else go tohere' cttl' cttr' cs
-      where
-        tohere' = tohere + cttl' - cttr'
-        cttl' = cttl + c
-        cttr' = cttr - c
+part1 = minimum . fuelOptions id
 
+fuelOptions :: (Int -> Int) -> Crabs -> [Int]
+fuelOptions consumption = go []
+  where
+    go :: Crabs -> Crabs -> [Int]
+    go _ []          = []
+    go cttl (c:cttr) = fuel2 1 cttl + fuel2 1 cttr : go (c : cttl) cttr
+    fuel2 _ []            = 0
+    fuel2 distance (c:cs) = c * consumption distance + fuel2 (distance + 1) cs
+
+fuelConsumption2 :: Int -> Int
+fuelConsumption2 distance = distance * (distance + 1) `div` 2
+
+part2 :: Crabs -> Int
+part2 = minimum . fuelOptions fuelConsumption2
+
+main :: IO ()
 main = do
   assertEqual "groupPositions" [2, 0, 1] $ groupPositions [0, 2, 0]
-  assertEqual "Fuel to zero" 13 $ fuelToZero [0, 0, 2, 3]
+  assertEqual "Fuel consumption 2 for 1" 1 $ fuelConsumption2 1
+  assertEqual "Fuel consumption 2 for 4" (1 + 2 + 3 + 4) $ fuelConsumption2 4
   processEI 7 (justParse crabsP) part1 37
+  processEI 7 (justParse crabsP) part2 168
