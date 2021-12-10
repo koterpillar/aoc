@@ -94,8 +94,9 @@ getExampleY year day =
     pure $ selectExample year day $ codeBlocks page
 
 selectExample :: Integer -> Int -> [Text] -> Text
-selectExample 2021 8 = last
-selectExample _ _    = head
+selectExample 2021 8  = last
+selectExample 2021 10 = last
+selectExample _ _     = head
 
 currentYear :: IO Integer
 currentYear = do
