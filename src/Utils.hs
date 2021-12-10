@@ -39,6 +39,14 @@ iterateWhile continue fn v
      in v : iterateWhile continue fn v'
   | otherwise = []
 
+iterateSettle :: Eq a => (a -> a) -> a -> a
+iterateSettle fn v =
+  if v == v'
+    then v
+    else iterateSettle fn v'
+  where
+    v' = fn v
+
 pad :: Int -> Text -> Text
 pad sz = Text.justifyRight sz ' '
 
@@ -61,12 +69,6 @@ progress milestone amount (!val)
 maybeMinimum :: Ord a => [a] -> Maybe a
 maybeMinimum [] = Nothing
 maybeMinimum xs = Just $ minimum xs
-
-enumerate2 :: [[a]] -> [[(Position2, a)]]
-enumerate2 = zipWith makeLine [0 ..]
-  where
-    makeLine y = zipWith (makePoint y) [0 ..]
-    makePoint y x v = (Position2 x y, v)
 
 mapByIndex :: [Int] -> Map Int Int
 mapByIndex = foldr (\timer -> Map.insertWith (+) timer 1) Map.empty

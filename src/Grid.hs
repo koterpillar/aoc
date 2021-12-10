@@ -1,5 +1,8 @@
 module Grid where
 
+import           Data.Map (Map)
+import qualified Data.Map as Map
+
 data Position2 =
   Position2
     { pX :: !Int
@@ -25,10 +28,10 @@ data Direction4
   | N
   | W
   | S
-  deriving (Enum, Eq, Ord, Show)
+  deriving (Enum, Eq, Ord, Show, Bounded)
 
 allDir4 :: [Direction4]
-allDir4 = [E, N, W, S]
+allDir4 = [minBound .. maxBound]
 
 turnLeft :: Direction4 -> Direction4
 turnLeft S = E
@@ -49,3 +52,9 @@ walkN n E (Position2 x y) = Position2 (x + n) y
 walkN n W (Position2 x y) = Position2 (x - n) y
 walkN n N (Position2 x y) = Position2 x (y - n)
 walkN n S (Position2 x y) = Position2 x (y + n)
+
+enumerate2 :: [[a]] -> Map Position2 a
+enumerate2 = Map.fromList . concat . zipWith makeLine [0 ..]
+  where
+    makeLine y = zipWith (makePoint y) [0 ..]
+    makePoint y x v = (Position2 x y, v)

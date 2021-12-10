@@ -82,3 +82,9 @@ executables:
     main: day08.hs
     dependencies:
       - aoc
+
+  day09:
+    source-dirs: .
+    main: day09.hs
+    dependencies:
+      - aoc
