@@ -63,5 +63,13 @@ part1 = go 0 100
       let grid' = step grid
        in go (r + countFlashes grid') (n - 1) grid'
 
+part2 :: Grid -> Int
+part2 = go 0
+  where
+    go n grid
+      | countFlashes grid == Map.size grid = n
+      | otherwise = go (n + 1) (step grid)
+
 main = do
   processEI 11 (mkGrid . parseLines digitsP) part1 1656
+  processEI 11 (mkGrid . parseLines digitsP) part2 195
