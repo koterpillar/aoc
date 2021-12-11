@@ -44,14 +44,41 @@ turnRight d = pred d
 reverse4 :: Direction4 -> Direction4
 reverse4 = turnLeft . turnLeft
 
-walk :: Direction4 -> Position2 -> Position2
+data Direction8
+  = E_
+  | NE
+  | N_
+  | NW
+  | W_
+  | SW
+  | S_
+  | SE
+  deriving (Eq, Ord, Show, Bounded, Enum)
+
+allDir8 :: [Direction8]
+allDir8 = [minBound .. maxBound]
+
+walk :: Walkable2 d => d -> Position2 -> Position2
 walk = walkN 1
 
-walkN :: Int -> Direction4 -> Position2 -> Position2
-walkN n E (Position2 x y) = Position2 (x + n) y
-walkN n W (Position2 x y) = Position2 (x - n) y
-walkN n N (Position2 x y) = Position2 x (y - n)
-walkN n S (Position2 x y) = Position2 x (y + n)
+class Walkable2 d where
+  walkN :: Int -> d -> Position2 -> Position2
+
+instance Walkable2 Direction4 where
+  walkN n E (Position2 x y) = Position2 (x + n) y
+  walkN n W (Position2 x y) = Position2 (x - n) y
+  walkN n N (Position2 x y) = Position2 x (y - n)
+  walkN n S (Position2 x y) = Position2 x (y + n)
+
+instance Walkable2 Direction8 where
+  walkN n E_ = walkN n E
+  walkN n NE = walkN n N . walkN n E
+  walkN n N_ = walkN n N
+  walkN n NW = walkN n N . walkN n W
+  walkN n W_ = walkN n W
+  walkN n SW = walkN n S . walkN n W
+  walkN n S_ = walkN n S
+  walkN n SE = walkN n S . walkN n E
 
 enumerate2 :: [[a]] -> Map Position2 a
 enumerate2 = Map.fromList . concat . zipWith makeLine [0 ..]

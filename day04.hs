@@ -51,18 +51,17 @@ data Play =
 
 playP :: Parser Play
 playP =
-  mkPlay <$> sepBy integerP (char ',') <* nl <* nl <*> sepBy numberLineP nl <*
+  mkPlay <$> sepBy integerP (char ',') <* newline <* newline <*>
+  sepBy numberLineP newline <*
   eof
   where
-    numberLineP = skipMany spc *> sepBy integerP (many1 spc)
+    numberLineP = skipMany space *> sepBy integerP (many1 space)
     mkPlay numbers lines = Play (sepBoards lines) numbers Nothing Set.empty
     sepBoards =
       map assertCorrectSize . filter (/= nullBoard) . map Board . splitOn [[]]
     assertCorrectSize (Board b)
       | length b == bSize && all ((== bSize) . length) b = Board b
       | otherwise = error $ "Incorrect board size: " ++ show b
-    spc = char ' '
-    nl = char '\n'
 
 pWinningScore :: Play -> [Int]
 pWinningScore Play {..} = do

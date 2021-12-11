@@ -1,8 +1,6 @@
 import           Text.Parsec
 import           Text.Parsec.Text
 
-import           Data.Char        (ord)
-
 import           Data.Function
 
 import           Data.List
@@ -20,9 +18,6 @@ import           Debug.Trace
 import           AOC
 import           Grid
 import           Utils
-
-digitsP :: Parser [Int]
-digitsP = many1 $ (\c -> ord c - ord '0') <$> anyChar
 
 type Floor = Map Position2 Int
 

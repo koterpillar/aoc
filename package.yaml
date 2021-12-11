@@ -19,6 +19,7 @@ dependencies:
 - html-entities
 - http-conduit
 - MissingH
+- mtl
 - parsec
 - split
 - text
@@ -29,6 +30,7 @@ default-extensions:
   - LambdaCase
   - OverloadedStrings
   - RecordWildCards
+  - TupleSections
   - TypeApplications
 
 library:
@@ -92,5 +94,11 @@ executables:
   day10:
     source-dirs: .
     main: day10.hs
+    dependencies:
+      - aoc
+
+  day11:
+    source-dirs: .
+    main: day11.hs
     dependencies:
       - aoc

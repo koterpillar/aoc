@@ -1,7 +1,17 @@
-module Utils where
+module Utils
+  ( module Utils
+  , fromJust
+  , traceShow
+  , traceShowId
+  , traceShowM
+  ) where
+
+import           Data.Char        (ord)
 
 import           Data.Map         (Map)
 import qualified Data.Map         as Map
+
+import           Data.Maybe
 
 import           Data.Text        (Text)
 import qualified Data.Text        as Text
@@ -22,6 +32,12 @@ justParse parser str =
   case parse parser "" str of
     Right a -> a
     Left e  -> error $ show e
+
+digitP :: Parser Int
+digitP = (\c -> ord c - ord '0') <$> digit
+
+digitsP :: Parser [Int]
+digitsP = many1 digitP
 
 integerP :: Parser Int
 integerP = read <$> many1 digit
