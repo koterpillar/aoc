@@ -63,8 +63,7 @@ basins grid = iterateSettle (map growBasin) initialBasins
 
 part2 :: Map Position2 Int -> Int
 part2 =
-  product .
-  map Set.size . take 3 . reverse . sortBy (compare `on` Set.size) . basins
+  product . map Set.size . take 3 . sortBy (flip compare `on` Set.size) . basins
 
 main :: IO ()
 main = do
