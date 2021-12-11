@@ -1,13 +1,9 @@
-import           Control.Monad    (join)
-
 import           Data.Foldable
 
 import           Data.Functor
 
 import           Data.Map         (Map)
 import qualified Data.Map         as Map
-
-import           Data.Maybe
 
 import           Data.Set         (Set)
 import qualified Data.Set         as Set
@@ -17,8 +13,6 @@ import           Text.Parsec.Text
 
 import           AOC
 import           Utils
-
-import           Debug.Trace
 
 data Wire
   = A

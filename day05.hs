@@ -1,5 +1,3 @@
-import           Control.Monad    (join)
-
 import           Text.Parsec      hiding (between, count)
 import           Text.Parsec.Text
 

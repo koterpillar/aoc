@@ -1,9 +1,4 @@
-import           Control.Monad    (join)
-
-import           Data.List
 import           Data.List.Split  (splitOn)
-
-import           Data.Maybe
 
 import           Data.Set         (Set)
 import qualified Data.Set         as Set
@@ -11,15 +6,13 @@ import qualified Data.Set         as Set
 import           Text.Parsec
 import           Text.Parsec.Text
 
-import           Debug.Trace
-
 import           AOC
 import           Utils
 
 bSize :: Int
 bSize = 5
 
-data Board =
+newtype Board =
   Board
     { bValues :: [[Int]]
     }

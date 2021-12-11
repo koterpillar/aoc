@@ -1,12 +1,18 @@
 module Utils
   ( module Utils
-  , fromJust
+  , module Data.Maybe
+  , module Data.List
+  , join
   , traceShow
   , traceShowId
   , traceShowM
   ) where
 
+import           Control.Monad    (join)
+
 import           Data.Char        (ord)
+
+import           Data.List
 
 import           Data.Map         (Map)
 import qualified Data.Map         as Map

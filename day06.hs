@@ -1,5 +1,3 @@
-import           Control.Monad    (join)
-
 import           Data.Map         (Map)
 import qualified Data.Map         as Map
 

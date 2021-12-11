@@ -1,5 +1,3 @@
-import           Control.Monad    (join)
-
 import           Data.Map         (Map)
 import qualified Data.Map         as Map
 
@@ -8,8 +6,6 @@ import           Text.Parsec.Text
 
 import           AOC
 import           Utils
-
-import           Debug.Trace
 
 type Crabs = [Int]
 

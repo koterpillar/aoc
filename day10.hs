@@ -1,9 +1,5 @@
-import           Data.List   (sort)
-
-import           Data.Text   (Text)
-import qualified Data.Text   as Text
-
-import           Debug.Trace
+import           Data.Text (Text)
+import qualified Data.Text as Text
 
 import           AOC
 import           Utils

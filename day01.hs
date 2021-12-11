@@ -1,5 +1,4 @@
 import           AOC
-import           Data.List
 import           Text.Parsec
 import           Utils
 
