@@ -1,3 +1,5 @@
+module Y2021.Day01 where
+
 import           AOC
 import           Text.Parsec
 import           Utils
@@ -16,6 +18,4 @@ slidingSum n = map sum . (=<<) (take' n) . tails
 
 part2 = countTrue . zipWithTail (<) . slidingSum 3
 
-main = do
-  processEI 1 (parseLines integerP) part1 7
-  processEI 1 (parseLines integerP) part2 5
+tasks = Tasks 2021 1 (parseLines integerP) [Task part1 7, Task part2 5]

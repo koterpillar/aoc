@@ -1,3 +1,5 @@
+module Y2021.Day07 where
+
 import           Data.Map         (Map)
 import qualified Data.Map         as Map
 
@@ -39,10 +41,14 @@ fuelConsumption2 distance = distance * (distance + 1) `div` 2
 part2 :: Crabs -> Int
 part2 = minimum . fuelOptions fuelConsumption2
 
-main :: IO ()
-main = do
-  assertEqual "groupPositions" [2, 0, 1] $ groupPositions [0, 2, 0]
-  assertEqual "Fuel consumption 2 for 1" 1 $ fuelConsumption2 1
-  assertEqual "Fuel consumption 2 for 4" (1 + 2 + 3 + 4) $ fuelConsumption2 4
-  processEI 7 (justParse crabsP) part1 37
-  processEI 7 (justParse crabsP) part2 168
+tasks =
+  Tasks
+    2021
+    7
+    (justParse crabsP)
+    [ Assert "groupPositions" [2, 0, 1] $ groupPositions [0, 2, 0]
+    , Assert "Fuel consumption 2 for 1" 1 $ fuelConsumption2 1
+    , Assert "Fuel consumption 2 for 4" (1 + 2 + 3 + 4) $ fuelConsumption2 4
+    , Task part1 37
+    , Task part2 168
+    ]

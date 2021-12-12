@@ -1,9 +1,13 @@
+{-# LANGUAGE GADTs #-}
+
 module AOC
   ( getExampleY
   , getExample
   , getInputY
   , getInput
-  , processEI
+  , Tasks(..)
+  , Task(..)
+  , processTasks
   ) where
 
 import           Control.Exception           (catch)
@@ -94,9 +98,22 @@ getExampleY year day =
     pure $ selectExample year day $ codeBlocks page
 
 selectExample :: Integer -> Int -> [Text] -> Text
-selectExample 2021 8  = last
-selectExample 2021 10 = last
-selectExample _ _     = head
+selectExample _ _ [example] = example
+selectExample 2021 4 examples = head examples
+selectExample 2021 5 examples = head examples
+selectExample 2021 6 examples = head examples
+selectExample 2021 8 examples = examples !! 2
+selectExample 2021 9 examples = head examples
+selectExample 2021 10 examples = last examples
+selectExample 2021 11 examples = head examples
+selectExample year day examples =
+  error $
+  "Cannot select from " <>
+  show (length examples) <>
+  " examples for year " <>
+  show year <>
+  " day " <>
+  show day <> ":\n\n" <> Text.unpack (Text.intercalate "\n---\n" examples)
 
 currentYear :: IO Integer
 currentYear = do
@@ -127,11 +144,28 @@ withCacheFile fileName action =
         Text.writeFile fileName' result
         pure result
 
-processEI :: (Eq b, Show b) => Int -> (Text -> a) -> (a -> b) -> b -> IO ()
-processEI day parse solve exampleExpected = do
-  example <- parse <$> getExample day
+data Tasks where
+  Tasks :: Integer -> Int -> (Text -> a) -> [Task a] -> Tasks
+
+data Task a where
+  Task :: (Eq b, Show b) => (a -> b) -> b -> Task a
+  Assert :: (Eq b, Show b) => String -> b -> b -> Task a
+  AssertExample :: (Eq b, Show b) => String -> b -> (a -> b) -> Task a
+
+processTasks :: Tasks -> IO ()
+processTasks (Tasks year day parse tasks) =
+  traverse_ (processTask year day parse) tasks
+
+processTask :: Integer -> Int -> (Text -> a) -> Task a -> IO ()
+processTask year day parse (Task solve expected) = do
+  example <- parse <$> getExampleY year day
   let exampleResult = solve example
-  assertEqual "Example result" exampleExpected exampleResult
-  input <- parse <$> getInput day
+  assertEqual "Example result" expected exampleResult
+  input <- parse <$> getInputY year day
   let result = solve input
   print result
+processTask _ _ _ (Assert message expected actual) =
+  assertEqual message expected actual
+processTask year day parse (AssertExample message expected fn) = do
+  example <- parse <$> getExampleY year day
+  assertEqual "Example result" expected $ fn example

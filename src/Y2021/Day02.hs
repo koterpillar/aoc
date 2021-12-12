@@ -1,3 +1,5 @@
+module Y2021.Day02 where
+
 import           Text.Parsec
 import           Text.Parsec.Text
 
@@ -9,8 +11,7 @@ type Movement = (Direction4, Int)
 
 directionP :: Parser Direction4
 directionP =
-  string "forward " *> pure E <|> string "down " *> pure S <|>
-  string "up " *> pure N
+  string "forward " $> E <|> string "down " $> S <|> string "up " $> N
 
 movementP :: Parser Movement
 movementP = (,) <$> directionP <*> integerP
@@ -34,11 +35,10 @@ move2 (Submarine aim (Position2 x y)) (E, n) =
   Submarine aim (Position2 (x + n) (y + aim * n))
 move2 (Submarine aim pos) (N, n) = Submarine (aim - n) pos
 move2 (Submarine aim pos) (S, n) = Submarine (aim + n) pos
+move2 _ (W, _) = error "W is unspecified"
 
 part2 input =
   let (Submarine _ (Position2 x y)) = moves2 input
    in x * y
 
-main = do
-  processEI 2 (parseLines movementP) part1 150
-  processEI 2 (parseLines movementP) part2 900
+tasks = Tasks 2021 2 (parseLines movementP) [Task part1 150, Task part2 900]

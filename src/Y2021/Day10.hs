@@ -1,3 +1,5 @@
+module Y2021.Day10 where
+
 import           Data.Text (Text)
 import qualified Data.Text as Text
 
@@ -61,9 +63,13 @@ part2 lns =
   median
     [incompleteScore missing | Left (Incomplete missing) <- map parseBR lns]
 
-main :: IO ()
-main = do
-  assertEqual "incomplete" (Left $ Incomplete ")]}") (parseBR "{[(")
-  assertEqual "median" 5 (median [5, 100, 0, 200, 1, 300, 3])
-  processEI 10 (map Text.unpack . Text.lines) part1 26397
-  processEI 10 (map Text.unpack . Text.lines) part2 288957
+tasks =
+  Tasks
+    2021
+    10
+    (map Text.unpack . Text.lines)
+    [ Assert "incomplete" (Left $ Incomplete ")]}") (parseBR "{[(")
+    , Assert "median" 5 (median [5, 100, 0, 200, 1, 300, 3])
+    , Task part1 26397
+    , Task part2 288957
+    ]

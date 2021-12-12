@@ -1,6 +1,6 @@
-import           Data.Foldable
+module Y2021.Day08 where
 
-import           Data.Functor
+import           Data.Foldable
 
 import           Data.Map         (Map)
 import qualified Data.Map         as Map
@@ -129,7 +129,4 @@ part1 = sum . map countSimple
 part2 :: [Reading] -> Int
 part2 = sum . map readDisplay
 
-main :: IO ()
-main = do
-  processEI 8 (justParse readingsP) part1 26
-  processEI 8 (justParse readingsP) part2 61229
+tasks = Tasks 2021 8 (justParse readingsP) [Task part1 26, Task part2 61229]

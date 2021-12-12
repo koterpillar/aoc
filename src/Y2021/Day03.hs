@@ -1,3 +1,5 @@
+module Y2021.Day03 where
+
 import           Text.Parsec
 import           Text.Parsec.Text
 
@@ -21,7 +23,7 @@ bitsValue = foldl bitMult 0
     bitMult n I = n * 2 + 1
 
 bitsP :: Parser BitString
-bitsP = many1 (char '0' *> pure O <|> char '1' *> pure I)
+bitsP = many1 (char '0' $> O <|> char '1' $> I)
 
 mostCommon :: [Bit] -> Bit
 mostCommon = choose . foldr count (0, 0)
@@ -63,6 +65,4 @@ part2 input = oxygen * co2
     oxygen = bitsValue $ byCriteria mostCommon input
     co2 = bitsValue $ byCriteria leastCommon input
 
-main = do
-  processEI 3 (parseLines bitsP) part1 198
-  processEI 3 (parseLines bitsP) part2 230
+tasks = Tasks 2021 3 (parseLines bitsP) [Task part1 198, Task part2 230]

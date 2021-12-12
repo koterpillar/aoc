@@ -1,4 +1,9 @@
+module Y2021.Day04 where
+
 import           Data.List.Split  (splitOn)
+
+import           Data.Text         (Text)
+import qualified Data.Text         as Text
 
 import           Data.Set         (Set)
 import qualified Data.Set         as Set
@@ -42,14 +47,14 @@ data Play =
     }
   deriving (Eq, Show)
 
-playP :: Parser Play
-playP =
-  mkPlay <$> sepBy integerP (char ',') <* newline <* newline <*>
-  sepBy numberLineP newline <*
-  eof
+parsePlayP :: Text -> Play
+parsePlayP = go . Text.lines
   where
-    numberLineP = skipMany space *> sepBy integerP (many1 space)
-    mkPlay numbers lines = Play (sepBoards lines) numbers Nothing Set.empty
+    go (nl: _: boards) = mkPlay (parseNumbersLine nl) (sepBoards $ map parseBoardLine boards)
+    go _ = error "unexpected lines"
+    mkPlay numbers boards = Play boards numbers Nothing Set.empty
+    parseNumbersLine = map tread . Text.splitOn ","
+    parseBoardLine = map tread . filter (not . Text.null) . Text.splitOn " "
     sepBoards =
       map assertCorrectSize . filter (/= nullBoard) . map Board . splitOn [[]]
     assertCorrectSize (Board b)
@@ -87,15 +92,18 @@ part1 = head . pAllWins
 part2 :: Play -> Int
 part2 = last . pAllWins
 
-main = do
-  let board = Board [[1, 2], [3, 1]]
-  let drawn = Set.fromList [1, 2]
-  assertEqual "Expected win" True $ bWin drawn board
-  assertEqual "Board score" 3 $ bScore drawn board
-  example <- getExample 4
-  let examplePlay = parse playP "" example
-  assertEqual "Parsed numbers count" (Right 27) $
-    length . pNumbers <$> examplePlay
-  assertEqual "Parsed board count" (Right 3) $ length . pBoards <$> examplePlay
-  processEI 4 (justParse playP) part1 4512
-  processEI 4 (justParse playP) part2 1924
+tasks =
+  Tasks
+    2021
+    4
+    parsePlayP
+    [ Assert "Expected win" True $ bWin drawn board
+    , Assert "Board score" 3 $ bScore drawn board
+    , AssertExample "Parsed numbers count" 27 $ length . pNumbers
+    , AssertExample "Parsed board count" 3 $ length . pBoards
+    , Task part1 4512
+    , Task part2 1924
+    ]
+  where
+    board = Board [[1, 2], [3, 1]]
+    drawn = Set.fromList [1, 2]

@@ -1,3 +1,5 @@
+module Y2021.Day09 where
+
 import           Text.Parsec
 import           Text.Parsec.Text
 
@@ -28,7 +30,7 @@ nearby grid pt =
 lowPoints :: Floor -> [FPoint]
 lowPoints grid = filter (uncurry lowest) $ Map.toList grid
   where
-    lowest pt depth = all (> depth) $ map snd $ nearby grid pt
+    lowest pt depth = all ((> depth) . snd) (nearby grid pt)
 
 part1 :: Map Position2 Int -> Int
 part1 = sum . map (risk . snd) . lowPoints
@@ -54,7 +56,9 @@ part2 :: Map Position2 Int -> Int
 part2 =
   product . map Set.size . take 3 . sortBy (flip compare `on` Set.size) . basins
 
-main :: IO ()
-main = do
-  processEI 9 (enumerate2 . parseLines digitsP) part1 15
-  processEI 9 (enumerate2 . parseLines digitsP) part2 1134
+tasks =
+  Tasks
+    2021
+    9
+    (enumerate2 . parseLines digitsP)
+    [Task part1 15, Task part2 1134]

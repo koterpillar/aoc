@@ -1,3 +1,5 @@
+module Y2021.Day06 where
+
 import           Data.Map         (Map)
 import qualified Data.Map         as Map
 
@@ -29,6 +31,4 @@ part1 = countAfter 80
 
 part2 = countAfter 256
 
-main = do
-  processEI 6 (justParse pondP) part1 5934
-  processEI 6 (justParse pondP) part2 26984457539
+tasks = Tasks 2021 6 (justParse pondP) [Task part1 5934, Task part2 26984457539]

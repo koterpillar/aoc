@@ -37,68 +37,8 @@ library:
   source-dirs: src
 
 executables:
-  day01:
-    source-dirs: .
-    main: day01.hs
-    dependencies:
-      - aoc
-
-  day02:
-    source-dirs: .
-    main: day02.hs
-    dependencies:
-      - aoc
-
-  day03:
-    source-dirs: .
-    main: day03.hs
-    dependencies:
-      - aoc
-
-  day04:
-    source-dirs: .
-    main: day04.hs
-    dependencies:
-      - aoc
-
-  day05:
-    source-dirs: .
-    main: day05.hs
-    dependencies:
-      - aoc
-
-  day06:
-    source-dirs: .
-    main: day06.hs
-    dependencies:
-      - aoc
-
-  day07:
-    source-dirs: .
-    main: day07.hs
-    dependencies:
-      - aoc
-
-  day08:
-    source-dirs: .
-    main: day08.hs
-    dependencies:
-      - aoc
-
-  day09:
-    source-dirs: .
-    main: day09.hs
-    dependencies:
-      - aoc
-
-  day10:
-    source-dirs: .
-    main: day10.hs
-    dependencies:
-      - aoc
-
-  day11:
-    source-dirs: .
-    main: day11.hs
+  main:
+    source-dirs: main
+    main: Main.hs
     dependencies:
       - aoc

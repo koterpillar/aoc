@@ -1,3 +1,5 @@
+module Y2021.Day11 where
+
 import           Control.Monad.State
 
 import           Data.Map            (Map)
@@ -24,8 +26,7 @@ countFlashes = Map.size . Map.filter snd
 goP :: (Position2 -> State Grid ()) -> State Grid ()
 goP fn = do
   ps <- gets Map.keys
-  traverse fn ps
-  pure ()
+  traverse_ fn ps
 
 modifyP :: ((Int, Bool) -> State Grid (Int, Bool)) -> Position2 -> State Grid ()
 modifyP fn p = do
@@ -41,9 +42,7 @@ incrP p = do
     let v' = v + 1
     let f' = v' > 9
     modify $ Map.insert p (v', f')
-    when (f' /= f) $ do
-      traverse incrP $ map (flip walk p) allDir8
-      pure ()
+    when (f' /= f) $ traverse_ incrP $ map (flip walk p) allDir8
 
 go :: State Grid ()
 go = do
@@ -70,6 +69,5 @@ part2 = go 0
       | countFlashes grid == Map.size grid = n
       | otherwise = go (n + 1) (step grid)
 
-main = do
-  processEI 11 (mkGrid . parseLines digitsP) part1 1656
-  processEI 11 (mkGrid . parseLines digitsP) part2 195
+tasks =
+  Tasks 2021 11 (mkGrid . parseLines digitsP) [Task part1 1656, Task part2 195]

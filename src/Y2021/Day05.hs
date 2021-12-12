@@ -1,3 +1,5 @@
+module Y2021.Day05 where
+
 import           Text.Parsec      hiding (between, count)
 import           Text.Parsec.Text
 
@@ -52,9 +54,17 @@ sameAngle a1 a2 a3 b1 b2 b3 = da1 * db2 == db1 * da2
 part2 :: [VentLine] -> Int
 part2 = countOnLines vlOn2
 
-main :: IO ()
-main = do
-  assertEqual "On point" True $
-    vlOn (Position2 2 4) (Position2 2 5, Position2 2 3)
-  processEI 5 (parseLines ventLineP) part1 5
-  processEI 5 (parseLines ventLineP) part2 12
+tasks =
+  Tasks
+    2021
+    5
+    (parseLines ventLineP)
+    [ Assert
+        "On point"
+        True
+        $vlOn
+        (Position2 2 4)
+        (Position2 2 5, Position2 2 3)
+    , Task part1 5
+    , Task part2 12
+    ]

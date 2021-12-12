@@ -2,15 +2,21 @@ module Utils
   ( module Utils
   , module Data.Maybe
   , module Data.List
+  , ($>)
   , join
   , traceShow
   , traceShowId
   , traceShowM
+  , traverse_
   ) where
 
 import           Control.Monad    (join)
 
 import           Data.Char        (ord)
+
+import           Data.Foldable    (traverse_)
+
+import Data.Functor (($>))
 
 import           Data.List
 
@@ -103,6 +109,9 @@ countTrue = countIf id
 
 tshow :: Show a => a -> Text
 tshow = Text.pack . show
+
+tread :: Read a => Text -> a
+tread = read . Text.unpack
 
 assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
 assertEqual message expected actual
