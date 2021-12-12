@@ -1,4 +1,4 @@
 import           AOC
-import           Y2021.Day11
+import           Y2021.Day12
 
 main = processTasks tasks
