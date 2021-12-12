@@ -45,24 +45,35 @@ parseCaves = foldr go Map.empty . Text.lines
         [c1, c2] -> addLink (readCave c1) (readCave c2)
         other    -> error $ "parseCaves: unexpected split: " ++ show other
 
-type CaveTree = Tree Cave [Cave]
+type CTNode = ([Cave], Bool)
 
-ctMoves :: Caves -> [Cave] -> [Cave]
-ctMoves _ []        = error "ctMoves: empty path"
-ctMoves caves (c:_) = Set.toList $ fromMaybe Set.empty $ Map.lookup c caves
+type CTEdge = Cave
 
-ctApply :: Cave -> [Cave] -> Maybe [Cave]
+type CaveTree = Tree CTEdge CTNode
+
+ctMoves :: Caves -> CTNode -> [CTEdge]
+ctMoves _ ([], _)      = error "ctMoves: empty path"
+ctMoves caves (c:_, _) = Set.toList $ fromMaybe Set.empty $ Map.lookup c caves
+
+ctApply :: Cave -> CTNode -> Maybe CTNode
 ctApply Start _ = Nothing
-ctApply _ (End:_) = Nothing
-ctApply c@(Small _) cs
+ctApply _ (End:_, _) = Nothing
+ctApply c@(Small _) (cs, magic)
+  | c `elem` cs && magic = Just (c : cs, False)
   | c `elem` cs = Nothing
-  | otherwise = Just $ c : cs
-ctApply c cs = Just $ c : cs
+  | otherwise = Just (c : cs, magic)
+ctApply c (cs, magic) = Just (c : cs, magic)
 
 countEnds :: CaveTree -> Int
-countEnds (Tree (End:_) _) = 1
-countEnds (Tree _ cs)      = sum $ map (countEnds . snd) cs
+countEnds (Tree (End:_, _) _) = 1
+countEnds (Tree _ cs)         = sum $ map (countEnds . snd) cs
 
-part1 caves = countEnds $ moveTree (ctMoves caves) ctApply [Start]
+solve :: Bool -> Caves -> Int
+solve magic caves =
+  countEnds $ moveTree (ctMoves caves) ctApply ([Start], magic)
 
-tasks = Tasks 2021 12 parseCaves [Task part1 10]
+part1 = solve False
+
+part2 = solve True
+
+tasks = Tasks 2021 12 parseCaves [Task part1 10, Task part2 36]
