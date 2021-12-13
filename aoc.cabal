@@ -58,6 +58,7 @@ library
       MissingH
     , base >=4.7 && <5
     , containers
+    , directory
     , html-entities
     , http-conduit
     , mtl
@@ -85,6 +86,7 @@ executable main
     , aoc
     , base >=4.7 && <5
     , containers
+    , directory
     , html-entities
     , http-conduit
     , mtl

@@ -1,17 +1,12 @@
 {-# LANGUAGE GADTs #-}
 
 module AOC
-  ( getExampleY
-  , getExample
-  , getInputY
+  ( getExample
   , getInput
   , Tasks(..)
   , Task(..)
   , processTasks
   ) where
-
-import           Control.Exception           (catch)
-import           Control.Monad               (when)
 
 import           Data.Text                   (Text)
 import qualified Data.Text                   as Text
@@ -23,8 +18,6 @@ import qualified Data.Text.Lazy.Builder      as LazyText
 import           Data.Time                   (UTCTime (..), getCurrentTime,
                                               toGregorian)
 
-import           Debug.Trace
-
 import           GHC.IO.Exception            (IOException)
 
 import           HTMLEntities.Decoder        (htmlEncodedText)
@@ -32,6 +25,7 @@ import           HTMLEntities.Decoder        (htmlEncodedText)
 import           Network.HTTP.Client.Conduit (Request (..))
 import           Network.HTTP.Simple
 
+import           System.Directory            (doesFileExist)
 import           System.IO                   (isEOF)
 
 import           Text.Parsec.Text            (Parser)
@@ -41,13 +35,8 @@ import           Utils
 trim :: Text -> Text
 trim = Text.dropWhile (== '\n') . Text.dropWhileEnd (== '\n')
 
-catchIOException :: IO a -> IO a -> IO a
-catchIOException action fallback = catch @IOException action $ const fallback
-
 readSession :: IO (Maybe Text)
-readSession =
-  catchIOException (Just . trim <$> Text.readFile ".session-cookie") $
-  pure Nothing
+readSession = fmap trim <$> readIfExists ".session-cookie"
 
 simpleRequest :: Text -> IO Text
 simpleRequest url = do
@@ -89,13 +78,13 @@ codeBlocks =
     exampleBegin = "<pre><code>"
     exampleEnd = "</code></pre>"
 
-getExampleY :: Integer -> Int -> IO Text
-getExampleY year day =
+getExample :: Integer -> Int -> IO Text
+getExample year day =
   withCacheFile (".example-" <> tshow year <> "-" <> tshow day) $ do
     page <-
       simpleRequest $
       "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
-    pure $ selectExample year day $ codeBlocks page
+    pure $! selectExample year day $ codeBlocks page
 
 selectExample :: Integer -> Int -> [Text] -> Text
 selectExample _ _ [example] = example
@@ -122,29 +111,29 @@ currentYear = do
   (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
   pure y
 
-getExample :: Int -> IO Text
-getExample day = do
-  year <- currentYear
-  getExampleY year day
-
-getInputY :: Integer -> Int -> IO Text
-getInputY year day =
+getInput :: Integer -> Int -> IO Text
+getInput year day =
   withCacheFile (".input-" <> tshow year <> "-" <> tshow day) $
   simpleRequest $
   "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day <> "/input"
 
-getInput :: Int -> IO Text
-getInput day = do
-  year <- currentYear
-  getInputY year day
+readIfExists :: Text -> IO (Maybe Text)
+readIfExists fileName = do
+  let fileName' = Text.unpack fileName
+  exists <- doesFileExist fileName'
+  if exists
+    then Just <$> Text.readFile fileName'
+    else pure Nothing
 
 withCacheFile :: Text -> IO Text -> IO Text
-withCacheFile fileName action =
-  let fileName' = Text.unpack fileName
-   in catchIOException (Text.readFile fileName') $ do
-        result <- action
-        Text.writeFile fileName' result
-        pure result
+withCacheFile fileName action = do
+  existing <- readIfExists fileName
+  case existing of
+    Just contents -> pure contents
+    Nothing -> do
+      contents <- action
+      Text.writeFile (Text.unpack fileName) contents
+      pure contents
 
 data Tasks where
   Tasks :: Integer -> Int -> (Text -> a) -> [Task a] -> Tasks
@@ -160,14 +149,14 @@ processTasks (Tasks year day parse tasks) =
 
 processTask :: Integer -> Int -> (Text -> a) -> Task a -> IO ()
 processTask year day parse (Task solve expected) = do
-  example <- parse <$> getExampleY year day
+  example <- parse <$> getExample year day
   let exampleResult = solve example
   assertEqual "Example result" expected exampleResult
-  input <- parse <$> getInputY year day
+  input <- parse <$> getInput year day
   let result = solve input
   print result
 processTask _ _ _ (Assert message expected actual) =
   assertEqual message expected actual
 processTask year day parse (AssertExample message expected fn) = do
-  example <- parse <$> getExampleY year day
+  example <- parse <$> getExample year day
   assertEqual "Example result" expected $ fn example

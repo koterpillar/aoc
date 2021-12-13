@@ -10,7 +10,7 @@ module Utils
   , traverse_
   ) where
 
-import           Control.Monad    (join)
+import           Control.Monad    (join, when)
 
 import           Data.Char        (ord)
 
