@@ -4,6 +4,7 @@ module Utils
   , module Data.List
   , ($>)
   , join
+  , splitOn
   , traceShow
   , traceShowId
   , traceShowM
@@ -19,6 +20,7 @@ import           Data.Foldable    (traverse_)
 import           Data.Functor     (($>))
 
 import           Data.List
+import           Data.List.Split  (splitOn)
 
 import           Data.Map         (Map)
 import qualified Data.Map         as Map

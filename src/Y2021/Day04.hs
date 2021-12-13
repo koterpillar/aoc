@@ -1,9 +1,7 @@
 module Y2021.Day04 where
 
-import           Data.List.Split  (splitOn)
-
-import           Data.Text         (Text)
-import qualified Data.Text         as Text
+import           Data.Text        (Text)
+import qualified Data.Text        as Text
 
 import           Data.Set         (Set)
 import qualified Data.Set         as Set
@@ -50,7 +48,8 @@ data Play =
 parsePlayP :: Text -> Play
 parsePlayP = go . Text.lines
   where
-    go (nl: _: boards) = mkPlay (parseNumbersLine nl) (sepBoards $ map parseBoardLine boards)
+    go (nl:_:boards) =
+      mkPlay (parseNumbersLine nl) (sepBoards $ map parseBoardLine boards)
     go _ = error "unexpected lines"
     mkPlay numbers boards = Play boards numbers Nothing Set.empty
     parseNumbersLine = map tread . Text.splitOn ","
