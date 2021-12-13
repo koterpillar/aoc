@@ -16,7 +16,7 @@ import           Data.Char        (ord)
 
 import           Data.Foldable    (traverse_)
 
-import Data.Functor (($>))
+import           Data.Functor     (($>))
 
 import           Data.List
 
@@ -33,8 +33,6 @@ import           Text.Parsec
 import           Text.Parsec.Text
 
 import           Debug.Trace
-
-import           Grid
 
 parseLines :: Parser a -> Text -> [a]
 parseLines parser = map (justParse parser) . Text.lines
@@ -112,6 +110,9 @@ tshow = Text.pack . show
 
 tread :: Read a => Text -> a
 tread = read . Text.unpack
+
+ttrace :: Text -> a -> a
+ttrace = trace . Text.unpack
 
 assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
 assertEqual message expected actual

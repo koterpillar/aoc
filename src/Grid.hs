@@ -1,7 +1,12 @@
 module Grid where
 
-import           Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.Map  (Map)
+import qualified Data.Map  as Map
+
+import           Data.Text (Text)
+import qualified Data.Text as Text
+
+import           Utils
 
 data Position2 =
   Position2
@@ -22,6 +27,9 @@ bounds ps = (Position2 xmin ymin, Position2 xmax ymax)
     ymin = minimum $ map pY ps
     xmax = maximum $ map pX ps
     ymax = maximum $ map pY ps
+
+displayGrid :: (a -> Text) -> [[a]] -> Text
+displayGrid fn = Text.unlines . map (mconcat . map fn)
 
 data Direction4
   = E
@@ -85,3 +93,9 @@ enumerate2 = Map.fromList . concat . zipWith makeLine [0 ..]
   where
     makeLine y = zipWith (makePoint y) [0 ..]
     makePoint y x v = (Position2 x y, v)
+
+mapToGrid :: Map Position2 a -> [[Maybe a]]
+mapToGrid m =
+  [[Map.lookup (Position2 x y) m | x <- [xmin .. xmax]] | y <- [ymin .. ymax]]
+  where
+    (Position2 xmin ymin, Position2 xmax ymax) = bounds $ Map.keys m
