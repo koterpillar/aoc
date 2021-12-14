@@ -15,7 +15,7 @@ pondP :: Parser Pond
 pondP = mapByIndex <$> sepBy1 integerP (char ',')
 
 pondStep :: Pond -> Pond
-pondStep = Map.fromListWith (+) . join . map step' . Map.toList
+pondStep = mapFromListSum . join . map step' . Map.toList
   where
     step' (timer, count) = [(nt, count) | nt <- step timer]
     step 0 = [6, 8]

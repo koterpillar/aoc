@@ -37,16 +37,16 @@ parse = go . Text.lines
 
 type PolymerMap = Map Pair Int
 
-mapFromListWith :: Ord k => (a -> a -> a) -> [(k, a)] -> Map k a
-mapFromListWith op = foldl (flip $ uncurry $ Map.insertWith op) Map.empty
-
 toPairs :: Polymer -> PolymerMap
 toPairs polymer =
-  mapFromListWith (+) $
-  flip zip (repeat 1) $ zip (nullElement : polymer) (polymer ++ [nullElement])
+  mapFromListSum $
+  zipWith
+    (\e1 e2 -> ((e1, e2), 1))
+    (nullElement : polymer)
+    (polymer ++ [nullElement])
 
 step :: Insertions -> PolymerMap -> PolymerMap
-step instructions = Map.fromListWith (+) . concatMap go . Map.toList
+step instructions = mapFromListSum . concatMap go . Map.toList
   where
     go (pair, count) = [(pair', count) | pair' <- go' pair]
     go' pair@(e1, e2) =
@@ -57,7 +57,7 @@ step instructions = Map.fromListWith (+) . concatMap go . Map.toList
 countMap :: PolymerMap -> Map Char Int
 countMap =
   Map.map (`div` 2) .
-  mapFromListWith (+) .
+  mapFromListSum .
   filter (\(e, _) -> e /= nullElement) .
   concatMap (\((e1, e2), c) -> [(e1, c), (e2, c)]) . Map.toList
 
@@ -67,6 +67,7 @@ solve steps (polymer, insertions) =
     diff = (\counts -> last counts - head counts) . sort . Map.elems . countMap
 
 part1 = solve 10
+
 part2 = solve 40
 
 tasks =

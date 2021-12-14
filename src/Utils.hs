@@ -99,7 +99,10 @@ maybeMinimum [] = Nothing
 maybeMinimum xs = Just $ minimum xs
 
 mapByIndex :: [Int] -> Map Int Int
-mapByIndex = foldr (\timer -> Map.insertWith (+) timer 1) Map.empty
+mapByIndex = mapFromListSum . map (, 1)
+
+mapFromListSum :: (Ord k, Num a) => [(k, a)] -> Map k a
+mapFromListSum = Map.fromListWith (+)
 
 countIf :: (a -> Bool) -> [a] -> Int
 countIf p = length . filter p
