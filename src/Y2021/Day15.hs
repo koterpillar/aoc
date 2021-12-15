@@ -10,13 +10,8 @@ import           Utils
 
 type Grid = Map Position2 Int
 
-parse :: Text -> Grid
-parse input =
-  Map.fromList
-    [ (Position2 x y, ord c - ord '0')
-    | (y, line) <- zip [0 ..] $ Text.lines input
-    , (x, c) <- zip [0 ..] $ Text.unpack line
-    ]
+parse :: Parser Text Grid
+parse = enumerate2 <$> linesP &** digitsP
 
 showG :: Grid -> Text
 showG = displayGrid (Text.singleton . dc) . mapToGrid
@@ -59,4 +54,4 @@ enlarge times grid = Map.fromList $ concatMap copyP $ Map.toList grid
 
 part2 = part1 . enlarge 5
 
-tasks = Tasks 2021 15 (pureP parse) [Task part1 40, Task part2 315]
+tasks = Tasks 2021 15 parse [Task part1 40, Task part2 315]
