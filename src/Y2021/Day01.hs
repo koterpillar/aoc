@@ -1,7 +1,7 @@
 module Y2021.Day01 where
 
 import           AOC
-import           Text.Parsec
+import           Miniparse
 import           Utils
 
 zipWithTail fn values = zipWith fn values (tail values)
@@ -18,4 +18,4 @@ slidingSum n = map sum . (=<<) (take' n) . tails
 
 part2 = countTrue . zipWithTail (<) . slidingSum 3
 
-tasks = Tasks 2021 1 (parseLines integerP) [Task part1 7, Task part2 5]
+tasks = Tasks 2021 1 (linesP &** integerP) [Task part1 7, Task part2 5]

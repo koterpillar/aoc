@@ -1,12 +1,10 @@
 module Y2021.Day04 where
 
-import qualified Data.Set         as Set
-import qualified Data.Text        as Text
-
-import           Text.Parsec
-import           Text.Parsec.Text
+import qualified Data.Set  as Set
+import qualified Data.Text as Text
 
 import           AOC
+import           Miniparse
 import           Utils
 
 bSize :: Int
@@ -42,20 +40,22 @@ data Play =
     }
   deriving (Eq, Show)
 
-parsePlayP :: Text -> Play
-parsePlayP = go . Text.lines
+parsePlayP :: Parser Text Play
+parsePlayP =
+  linesP &* splitP [""] &* Parser splitHead &*
+  (parseNumbersLine &= traverseP parseBoard) &*
+  pureP (uncurry mkPlay)
   where
-    go (nl:_:boards) =
-      mkPlay (parseNumbersLine nl) (sepBoards $ map parseBoardLine boards)
-    go _ = error "unexpected lines"
+    splitHead (x:xs) = Right (x, xs)
+    splitHead []     = Left "unexpected empty lines"
+    parseNumbersLine = singleP &* integersP ","
     mkPlay numbers boards = Play boards numbers Nothing Set.empty
-    parseNumbersLine = map tread . Text.splitOn ","
-    parseBoardLine = map tread . filter (not . Text.null) . Text.splitOn " "
-    sepBoards =
-      map assertCorrectSize . filter (/= nullBoard) . map Board . splitOn [[]]
-    assertCorrectSize (Board b)
-      | length b == bSize && all ((== bSize) . length) b = Board b
-      | otherwise = error $ "Incorrect board size: " ++ show b
+    parseBoardLine =
+      tsplitP " " &* pureP (filter $ not . Text.null) &** integerP
+    parseBoard = traverseP parseBoardLine &* Parser mkBoard
+    mkBoard lns
+      | length lns == bSize && all ((== bSize) . length) lns = Right $ Board lns
+      | otherwise = error $ "Incorrect board size: " ++ show lns
 
 pWinningScore :: Play -> [Int]
 pWinningScore Play {..} = do

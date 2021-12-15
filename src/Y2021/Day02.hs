@@ -1,20 +1,17 @@
 module Y2021.Day02 where
 
-import           Text.Parsec
-import           Text.Parsec.Text
-
 import           AOC
 import           Grid
+import           Miniparse
 import           Utils
 
 type Movement = (Direction4, Int)
 
-directionP :: Parser Direction4
-directionP =
-  string "forward " $> E <|> string "down " $> S <|> string "up " $> N
+directionP :: Parser Text Direction4
+directionP = choiceP [("forward", E), ("down", S), ("up", N)]
 
-movementP :: Parser Movement
-movementP = (,) <$> directionP <*> integerP
+movementP :: Parser Text Movement
+movementP = wordsP &* (directionP &+ integerP)
 
 moves1 :: [Movement] -> Position2
 moves1 = foldl (\pos (dir, n) -> walkN n dir pos) (Position2 0 0)
@@ -41,4 +38,4 @@ part2 input =
   let (Submarine _ (Position2 x y)) = moves2 input
    in x * y
 
-tasks = Tasks 2021 2 (parseLines movementP) [Task part1 150, Task part2 900]
+tasks = Tasks 2021 2 (linesP &** movementP) [Task part1 150, Task part2 900]

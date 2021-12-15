@@ -27,8 +27,7 @@ import           Network.HTTP.Simple
 import           System.Directory            (doesFileExist)
 import           System.IO                   (isEOF)
 
-import           Text.Parsec.Text            (Parser)
-
+import           Miniparse
 import           Utils
 
 trim :: Text -> Text
@@ -137,7 +136,7 @@ withCacheFile fileName action = do
       pure contents
 
 data Tasks where
-  Tasks :: Integer -> Int -> (Text -> a) -> [Task a] -> Tasks
+  Tasks :: Integer -> Int -> Parser Text a -> [Task a] -> Tasks
 
 data Task a where
   Task :: (Eq b, Show b) => (a -> b) -> b -> Task a
@@ -145,19 +144,19 @@ data Task a where
   AssertExample :: (Eq b, Show b) => String -> b -> (a -> b) -> Task a
 
 processTasks :: Tasks -> IO ()
-processTasks (Tasks year day parse tasks) =
-  traverse_ (processTask year day parse) tasks
+processTasks (Tasks year day parser tasks) =
+  traverse_ (processTask year day parser) tasks
 
-processTask :: Integer -> Int -> (Text -> a) -> Task a -> IO ()
-processTask year day parse (Task solve expected) = do
-  example <- parse <$> getExample year day
+processTask :: Integer -> Int -> Parser Text a -> Task a -> IO ()
+processTask year day parser (Task solve expected) = do
+  example <- justParse parser <$> getExample year day
   let exampleResult = solve example
   assertEqual "Example result" expected exampleResult
-  input <- parse <$> getInput year day
+  input <- justParse parser <$> getInput year day
   let result = solve input
   print result
 processTask _ _ _ (Assert message expected actual) =
   assertEqual message expected actual
-processTask year day parse (AssertExample message expected fn) = do
-  example <- parse <$> getExample year day
+processTask year day parser (AssertExample message expected fn) = do
+  example <- justParse parser <$> getExample year day
   assertEqual "Example result" expected $ fn example

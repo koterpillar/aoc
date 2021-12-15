@@ -6,10 +6,13 @@ module Utils
   , Set
   , Text
   , ($>)
+  , (<=<)
+  , (>=>)
   , chr
   , isLower
   , isUpper
   , join
+  , liftA2
   , on
   , ord
   , splitOn
@@ -19,52 +22,32 @@ module Utils
   , traverse_
   ) where
 
-import           Control.Monad    (join, when)
+import           Control.Applicative (liftA2)
+import           Control.Monad       (join, when, (<=<), (>=>))
 
-import           Data.Char        (chr, isLower, isUpper, ord)
+import           Data.Char           (chr, isLower, isUpper, ord)
 
-import           Data.Foldable    (traverse_)
+import           Data.Foldable       (traverse_)
 
-import           Data.Functor     (($>))
+import           Data.Functor        (($>))
 
-import           Data.Function    (on)
+import           Data.Function       (on)
 
 import           Data.List
-import           Data.List.Split  (splitOn)
+import           Data.List.Split     (splitOn)
 
-import           Data.Map         (Map)
-import qualified Data.Map         as Map
+import           Data.Map            (Map)
+import qualified Data.Map            as Map
 
 import           Data.Maybe
 
-import           Data.Set         (Set)
+import           Data.Set            (Set)
 
-import           Data.Text        (Text)
-import qualified Data.Text        as Text
-import qualified Data.Text.IO     as Text
-
-import           Text.Parsec
-import           Text.Parsec.Text
+import           Data.Text           (Text)
+import qualified Data.Text           as Text
+import qualified Data.Text.IO        as Text
 
 import           Debug.Trace
-
-parseLines :: Parser a -> Text -> [a]
-parseLines parser = map (justParse parser) . Text.lines
-
-justParse :: Parser a -> Text -> a
-justParse parser str =
-  case parse parser "" str of
-    Right a -> a
-    Left e  -> error $ show e
-
-digitP :: Parser Int
-digitP = (\c -> ord c - ord '0') <$> digit
-
-digitsP :: Parser [Int]
-digitsP = many1 digitP
-
-integerP :: Parser Int
-integerP = read <$> many1 digit
 
 iterateN :: Int -> (a -> a) -> a -> a
 iterateN 0 _ v = v

@@ -1,17 +1,15 @@
 module Y2021.Day06 where
 
-import qualified Data.Map         as Map
-
-import           Text.Parsec
-import           Text.Parsec.Text
+import qualified Data.Map  as Map
 
 import           AOC
+import           Miniparse
 import           Utils
 
 type Pond = Map Int Int
 
-pondP :: Parser Pond
-pondP = mapByIndex <$> sepBy1 integerP (char ',')
+pondP :: Parser Text Pond
+pondP = mapByIndex <$> integersP ","
 
 pondStep :: Pond -> Pond
 pondStep = mapFromListSum . join . map step' . Map.toList
@@ -30,4 +28,4 @@ part1 = countAfter 80
 
 part2 = countAfter 256
 
-tasks = Tasks 2021 6 (justParse pondP) [Task part1 5934, Task part2 26984457539]
+tasks = Tasks 2021 6 pondP [Task part1 5934, Task part2 26984457539]

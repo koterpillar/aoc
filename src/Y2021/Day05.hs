@@ -1,18 +1,16 @@
 module Y2021.Day05 where
 
-import           Text.Parsec      hiding (between, count)
-import           Text.Parsec.Text
-
 import           AOC
 import           Grid
+import           Miniparse
 import           Utils
 
 type VentLine = (Position2, Position2)
 
-ventLineP :: Parser VentLine
-ventLineP = (,) <$> position2P <* string " -> " <*> position2P
+ventLineP :: Parser Text VentLine
+ventLineP = tsplitP " -> " &* pairP &* (position2P &= position2P)
   where
-    position2P = Position2 <$> integerP <* string "," <*> integerP
+    position2P = tsplitP "," &* pairPWith Position2 integerP integerP
 
 vlBounds :: [VentLine] -> (Position2, Position2)
 vlBounds = bounds . join . map (\(p1, p2) -> [p1, p2])
@@ -58,7 +56,7 @@ tasks =
   Tasks
     2021
     5
-    (parseLines ventLineP)
+    (linesP &** ventLineP)
     [ Assert
         "On point"
         True

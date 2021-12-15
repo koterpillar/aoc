@@ -28,6 +28,7 @@ library
       AOC
       Graph
       Grid
+      Miniparse
       Path
       Utils
       Y2021.Day01

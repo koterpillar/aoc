@@ -1,9 +1,7 @@
 module Y2021.Day03 where
 
-import           Text.Parsec
-import           Text.Parsec.Text
-
 import           AOC
+import           Miniparse
 import           Utils
 
 data Bit
@@ -22,8 +20,8 @@ bitsValue = foldl bitMult 0
     bitMult n O = n * 2
     bitMult n I = n * 2 + 1
 
-bitsP :: Parser BitString
-bitsP = many1 (char '0' $> O <|> char '1' $> I)
+bitsP :: Parser Text BitString
+bitsP = charactersP &** choiceP [("0", O), ("1", I)]
 
 mostCommon :: [Bit] -> Bit
 mostCommon = choose . foldr count (0, 0)
@@ -65,4 +63,4 @@ part2 input = oxygen * co2
     oxygen = bitsValue $ byCriteria mostCommon input
     co2 = bitsValue $ byCriteria leastCommon input
 
-tasks = Tasks 2021 3 (parseLines bitsP) [Task part1 198, Task part2 230]
+tasks = Tasks 2021 3 (linesP &** bitsP) [Task part1 198, Task part2 230]
