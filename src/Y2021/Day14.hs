@@ -17,20 +17,15 @@ type Pair = (Element, Element)
 
 type Insertions = Map Pair Element
 
-parse :: Text -> (Polymer, Insertions)
-parse = go . Text.lines
+parse :: Parser Text (Polymer, Insertions)
+parse =
+  linesP &* unconsP &*
+  (pureP Text.unpack &=
+   (Map.fromList <$> pureP tail &* traverseP parseInsertion))
   where
-    go (polymer:_:insertions) =
-      (Text.unpack polymer, parseInsertions insertions)
-    go invalid = error $ "Invalid input: " <> show invalid
-    parseInsertions = Map.fromList . map parseInsertion
-    parseInsertion ln =
-      case Text.splitOn " -> " ln of
-        [from, to] ->
-          case (Text.unpack from, Text.unpack to) of
-            ([c1, c2], [c3]) -> ((c1, c2), c3)
-            other            -> error $ "Invalid insertion: " <> show other
-        other -> error $ "Invalid insertion: " <> show other
+    parseInsertion =
+      tsplitP " -> " &* pairP &*
+      (charactersP &* pairP &* (charP &= charP) &= charP)
 
 type PolymerMap = Map Pair Int
 
@@ -71,7 +66,7 @@ tasks =
   Tasks
     2021
     14
-    (pureP parse)
+    parse
     [ AssertExample "step" (toPairs "NCNBCHB") (\(p, i) -> step i $ toPairs p)
     , AssertExample
         "step"

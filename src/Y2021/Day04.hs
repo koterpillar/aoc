@@ -41,12 +41,9 @@ data Play =
 
 parsePlayP :: Parser Text Play
 parsePlayP =
-  linesP &* splitP [""] &* Parser splitHead &*
-  (parseNumbersLine &= traverseP parseBoard) &*
+  linesP &* splitP [""] &* unconsP &* (parseNumbersLine &= traverseP parseBoard) &*
   pureP (uncurry mkPlay)
   where
-    splitHead (x:xs) = Right (x, xs)
-    splitHead []     = Left "unexpected empty lines"
     parseNumbersLine = singleP &* integersP ","
     mkPlay numbers boards = Play boards numbers Nothing Set.empty
     parseBoardLine =

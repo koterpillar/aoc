@@ -23,7 +23,6 @@ dependencies:
 - http-conduit
 - MissingH
 - mtl
-- parsec
 - split
 - text
 - time

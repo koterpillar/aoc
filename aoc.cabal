@@ -67,7 +67,6 @@ library
     , html-entities
     , http-conduit
     , mtl
-    , parsec
     , split
     , text
     , time
@@ -98,7 +97,6 @@ executable main
     , html-entities
     , http-conduit
     , mtl
-    , parsec
     , split
     , text
     , time

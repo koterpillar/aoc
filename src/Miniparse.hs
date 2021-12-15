@@ -1,5 +1,6 @@
 module Miniparse where
 
+import qualified Data.Map  as Map
 import qualified Data.Text as Text
 
 import           Text.Read (readEither)
@@ -23,8 +24,17 @@ justParse parser src =
     Left err   -> error err
     Right dest -> dest
 
-choiceP :: Eq src => [(src, dest)] -> Parser src dest
-choiceP _ = undefined
+choiceP :: (Ord src, Show src) => [(src, dest)] -> Parser src dest
+choiceP choices =
+  let cmap = Map.fromList choices
+   in Parser $ \src ->
+        case Map.lookup src cmap of
+          Just dest -> Right dest
+          Nothing ->
+            Left $
+            "Unexpected: " ++
+            show src ++
+            ", expected one of: " ++ intercalate "," (map (show . fst) choices)
 
 linesP :: Parser Text [Text]
 linesP = pureP Text.lines
@@ -34,6 +44,12 @@ wordsP = pureP Text.words
 
 splitP :: Eq a => [a] -> Parser [a] [[a]]
 splitP sep = pureP $ splitOn sep
+
+unconsP :: Parser [a] (a, [a])
+unconsP =
+  Parser $ \case
+    (x:xs) -> Right (x, xs)
+    [] -> Left "unexpected empty lines"
 
 tsplitP :: Text -> Parser Text [Text]
 tsplitP sep = pureP $ Text.splitOn sep
@@ -46,6 +62,9 @@ integerP = readP
 
 integersP :: Text -> Parser Text [Int]
 integersP sep = tsplitP sep &** integerP
+
+charP :: Parser Text Char
+charP = pureP Text.unpack &* singleP
 
 charactersP :: Parser Text [Text]
 charactersP = pureP $ map Text.singleton . Text.unpack
