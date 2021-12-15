@@ -1,6 +1,5 @@
 module Y2021.Day07 where
 
-import           Data.Map         (Map)
 import qualified Data.Map         as Map
 
 import           Text.Parsec

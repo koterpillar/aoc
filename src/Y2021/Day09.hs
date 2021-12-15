@@ -1,15 +1,7 @@
 module Y2021.Day09 where
 
-import           Text.Parsec
-import           Text.Parsec.Text
-
-import           Data.Function
-
-import           Data.Map         (Map)
-import qualified Data.Map         as Map
-
-import           Data.Set         (Set)
-import qualified Data.Set         as Set
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 import           AOC
 import           Grid

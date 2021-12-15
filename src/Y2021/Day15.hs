@@ -1,15 +1,7 @@
 module Y2021.Day15 where
 
-import           Data.Graph.AStar
-
-import           Data.HashSet     (HashSet)
-import qualified Data.HashSet     as HashSet
-
-import           Data.Map         (Map)
-import qualified Data.Map         as Map
-
-import           Data.Text        (Text)
-import qualified Data.Text        as Text
+import qualified Data.Map  as Map
+import qualified Data.Text as Text
 
 import           AOC
 import           Grid
@@ -48,7 +40,7 @@ part1 grid =
         Map.lookup p2 grid
     heuristicDistance = manhattanDistance endPosition
     moves p =
-      HashSet.fromList $ filter (`Map.member` grid) $ map (`walk` p) allDir4
+      hashSetFromList $ filter (`Map.member` grid) $ map (`walk` p) allDir4
 
 enlarge :: Int -> Grid -> Grid
 enlarge times grid = Map.fromList $ concatMap copyP $ Map.toList grid

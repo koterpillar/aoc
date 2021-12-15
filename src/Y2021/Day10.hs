@@ -1,6 +1,5 @@
 module Y2021.Day10 where
 
-import           Data.Text (Text)
 import qualified Data.Text as Text
 
 import           AOC

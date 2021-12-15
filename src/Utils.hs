@@ -2,9 +2,15 @@ module Utils
   ( module Utils
   , module Data.Maybe
   , module Data.List
+  , Map
+  , Set
+  , Text
   , ($>)
   , chr
+  , isLower
+  , isUpper
   , join
+  , on
   , ord
   , splitOn
   , traceShow
@@ -15,11 +21,13 @@ module Utils
 
 import           Control.Monad    (join, when)
 
-import           Data.Char        (chr, ord)
+import           Data.Char        (chr, isLower, isUpper, ord)
 
 import           Data.Foldable    (traverse_)
 
 import           Data.Functor     (($>))
+
+import           Data.Function    (on)
 
 import           Data.List
 import           Data.List.Split  (splitOn)
@@ -28,6 +36,8 @@ import           Data.Map         (Map)
 import qualified Data.Map         as Map
 
 import           Data.Maybe
+
+import           Data.Set         (Set)
 
 import           Data.Text        (Text)
 import qualified Data.Text        as Text

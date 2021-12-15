@@ -1,37 +1,28 @@
 module Graph where
 
-import Data.List.Utils
+import qualified Data.Map.Strict as SMap
+import qualified Data.Set        as Set
 
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
+import           Utils
 
-import Data.Maybe
-
-import Data.Monoid
-
-import Data.Set (Set)
-import qualified Data.Set as Set
-
-import Utils
-
-type Graph v = Map v (Set v)
+type Graph v = SMap.Map v (Set v)
 
 vicinity :: Ord v => Set v -> Graph v -> Set v
 vicinity vs graph =
-  vs <> mconcat (mapMaybe (`Map.lookup` graph) $ Set.toList vs)
+  vs <> mconcat (mapMaybe (`SMap.lookup` graph) $ Set.toList vs)
 
 fixPoint :: Eq a => (a -> a) -> a -> a
 fixPoint f x =
   let x' = f x
-  in if x == x'
-       then x
-       else fixPoint f x'
+   in if x == x'
+        then x
+        else fixPoint f x'
 
 reachableFrom :: Ord v => v -> Graph v -> Set v
 reachableFrom v graph = fixPoint (`vicinity` graph) (Set.singleton v)
 
 vertices :: Graph v -> Set v
-vertices = Map.keysSet
+vertices = SMap.keysSet
 
 unreachableFrom :: Ord v => v -> Graph v -> Set v
 unreachableFrom v graph = vertices graph `Set.difference` reachableFrom v graph
@@ -44,4 +35,4 @@ connectedComponents graph = go (vertices graph)
       | otherwise =
         let candidate = head $ Set.toList candidates
             component = reachableFrom candidate graph
-        in component : go (candidates `Set.difference` component)
+         in component : go (candidates `Set.difference` component)

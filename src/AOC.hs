@@ -8,7 +8,6 @@ module AOC
   , processTasks
   ) where
 
-import           Data.Text                   (Text)
 import qualified Data.Text                   as Text
 import qualified Data.Text.Encoding          as Text
 import qualified Data.Text.IO                as Text

@@ -1,14 +1,7 @@
 module Y2021.Day12 where
 
-import           Data.Char
-
-import           Data.Map  (Map)
 import qualified Data.Map  as Map
-
-import           Data.Set  (Set)
 import qualified Data.Set  as Set
-
-import           Data.Text (Text)
 import qualified Data.Text as Text
 
 import           AOC

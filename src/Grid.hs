@@ -2,10 +2,7 @@ module Grid where
 
 import           Data.Hashable (Hashable (..))
 
-import           Data.Map      (Map)
 import qualified Data.Map      as Map
-
-import           Data.Text     (Text)
 import qualified Data.Text     as Text
 
 import           Utils

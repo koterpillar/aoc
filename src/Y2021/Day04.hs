@@ -1,10 +1,7 @@
 module Y2021.Day04 where
 
-import           Data.Text        (Text)
-import qualified Data.Text        as Text
-
-import           Data.Set         (Set)
 import qualified Data.Set         as Set
+import qualified Data.Text        as Text
 
 import           Text.Parsec
 import           Text.Parsec.Text

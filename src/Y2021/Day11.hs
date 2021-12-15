@@ -2,10 +2,7 @@ module Y2021.Day11 where
 
 import           Control.Monad.State
 
-import           Data.Map            (Map)
 import qualified Data.Map            as Map
-
-import           Data.Set            (Set)
 import qualified Data.Set            as Set
 
 import           AOC
@@ -51,7 +48,7 @@ go = do
   goP $
     modifyP $
     pure . \case
-      (_, True)  -> (0, True)
+      (_, True) -> (0, True)
       (v, False) -> (v, False)
 
 part1 :: Grid -> Int

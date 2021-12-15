@@ -1,10 +1,25 @@
 {-# LANGUAGE DeriveFoldable #-}
 
-module Path where
+module Path
+  ( module Path
+  , module Data.Graph.AStar
+  , HashSet
+  , Hashable(..)
+  ) where
 
-import qualified Data.Map as Map
+import           Data.Graph.AStar
+
+import           Data.Hashable    (Hashable)
+
+import           Data.HashSet     (HashSet)
+import qualified Data.HashSet     as HashSet
+
+import qualified Data.Map         as Map
 
 import           Utils
+
+hashSetFromList :: (Eq a, Hashable a) => [a] -> HashSet a
+hashSetFromList = HashSet.fromList
 
 data Tree edge node =
   Tree
