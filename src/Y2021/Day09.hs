@@ -52,5 +52,5 @@ tasks =
   Tasks
     2021
     9
-    (enumerate2 . parseLines digitsP)
+    (enumerate2 <$> linesP &** digitsP)
     [Task part1 15, Task part2 1134]

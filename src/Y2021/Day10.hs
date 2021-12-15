@@ -66,7 +66,7 @@ tasks =
   Tasks
     2021
     10
-    (map Text.unpack . Text.lines)
+    (linesP &** pureP Text.unpack)
     [ Assert "incomplete" (Left $ Incomplete ")]}") (parseBR "{[(")
     , Assert "median" 5 (median [5, 100, 0, 200, 1, 300, 3])
     , Task part1 26397

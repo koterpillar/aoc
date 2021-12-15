@@ -2,11 +2,9 @@ module Y2021.Day08 where
 
 import           Data.Foldable
 
-import qualified Data.Map         as Map
-import qualified Data.Set         as Set
-
-import           Text.Parsec
-import           Text.Parsec.Text
+import qualified Data.Map      as Map
+import qualified Data.Set      as Set
+import qualified Data.Text     as Text
 
 import           AOC
 import           Utils
@@ -87,27 +85,22 @@ readDisplay (Reading allnumbers digits) =
     guess = guessNumbers allnumbers
     digitsValues = map (fromJust . guess) digits
 
-readingP :: Parser Reading
-readingP =
-  Reading <$> (Set.fromList <$> displaysP) <* char '|' <* optional (char '\n') <*
-  skipMany spc <*>
-  displaysP <*
-  char '\n'
-  where
-    displayP :: Parser Display
-    displayP = Set.fromList <$> many1 wireP
-    wireP :: Parser Wire
-    wireP =
-      char 'a' $> A <|> char 'b' $> B <|> char 'c' $> C <|> char 'd' $> D <|>
-      char 'e' $> E <|>
-      char 'f' $> F <|>
-      char 'g' $> G
-    displaysP :: Parser [Display]
-    displaysP = many1 $ displayP <* optional spc
-    spc = char ' '
+wireP :: Parser Text Wire
+wireP =
+  choiceP [("a", A), ("b", B), ("c", C), ("d", D), ("e", E), ("f", F), ("g", G)]
 
-readingsP :: Parser [Reading]
-readingsP = many1 readingP
+displayP :: Parser Text Display
+displayP = Set.fromList <$> charactersP &** wireP
+
+displaysP :: Parser Text [Display]
+displaysP = wordsP &** displayP
+
+readingP :: Parser Text Reading
+readingP =
+  tsplitP "|" &* pairPWith Reading (Set.fromList <$> displaysP) displaysP
+
+readingsP :: Parser Text [Reading]
+readingsP = pureP (Text.replace "|\n" "|") &* linesP &** readingP
 
 part1 :: [Reading] -> Int
 part1 = sum . map countSimple
@@ -126,4 +119,4 @@ part1 = sum . map countSimple
 part2 :: [Reading] -> Int
 part2 = sum . map readDisplay
 
-tasks = Tasks 2021 8 (justParse readingsP) [Task part1 26, Task part2 61229]
+tasks = Tasks 2021 8 readingsP [Task part1 26, Task part2 61229]

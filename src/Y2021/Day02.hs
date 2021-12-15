@@ -2,7 +2,6 @@ module Y2021.Day02 where
 
 import           AOC
 import           Grid
-import           Miniparse
 import           Utils
 
 type Movement = (Direction4, Int)

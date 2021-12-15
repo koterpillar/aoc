@@ -1,9 +1,8 @@
 module Y2021.Day06 where
 
-import qualified Data.Map  as Map
+import qualified Data.Map as Map
 
 import           AOC
-import           Miniparse
 import           Utils
 
 type Pond = Map Int Int

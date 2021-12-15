@@ -6,6 +6,7 @@ module AOC
   , Tasks(..)
   , Task(..)
   , processTasks
+  , module Miniparse
   ) where
 
 import qualified Data.Text                   as Text
@@ -86,6 +87,7 @@ getExample year day =
 
 selectExample :: Integer -> Int -> [Text] -> Text
 selectExample _ _ [example] = example
+selectExample 2021 1 examples = head examples
 selectExample 2021 4 examples = head examples
 selectExample 2021 5 examples = head examples
 selectExample 2021 6 examples = head examples

@@ -15,13 +15,15 @@ data Cave
   | Small String
   deriving (Ord, Eq, Show)
 
-readCave :: Text -> Cave
-readCave "start" = Start
-readCave "end" = End
-readCave c
-  | Text.all isUpper c = Big (Text.unpack c)
-  | Text.all isLower c = Small (Text.unpack c)
-  | otherwise = error ("readCave: " ++ Text.unpack c)
+caveP :: Parser Text Cave
+caveP =
+  Parser $ \case
+    "start" -> Right Start
+    "end" -> Right End
+    c
+      | Text.all isUpper c -> Right $ Big $ Text.unpack c
+      | Text.all isLower c -> Right $ Small $ Text.unpack c
+      | otherwise -> Left ("caveP: " ++ Text.unpack c)
 
 type Caves = Map Cave (Set Cave)
 
@@ -30,13 +32,10 @@ addLink c1 c2 = go c1 c2 . go c2 c1
   where
     go ca cb = Map.insertWith Set.union ca (Set.singleton cb)
 
-parseCaves :: Text -> Caves
-parseCaves = foldr go Map.empty . Text.lines
-  where
-    go ln =
-      case Text.splitOn "-" ln of
-        [c1, c2] -> addLink (readCave c1) (readCave c2)
-        other    -> error $ "parseCaves: unexpected split: " ++ show other
+parseCaves :: Parser Text Caves
+parseCaves =
+  foldr (uncurry addLink) Map.empty <$>
+  linesP &** (tsplitP "-" &* pairP &* (caveP &= caveP))
 
 type CTNode = ([Cave], Bool)
 

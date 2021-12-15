@@ -30,20 +30,15 @@ type Instructions = (Paper, [Fold])
 applyFold :: Fold -> Paper -> Paper
 applyFold = Map.mapKeys . applyFoldPoint
 
-parseInstructions :: Text -> Instructions
-parseInstructions = go . splitOn [""] . Text.lines
+parseInstructions :: Parser Text Instructions
+parseInstructions =
+  linesP &* splitP [""] &* pairP &* (parseDots &= traverseP parseFold)
   where
-    go [dots, folds] = (parseDots dots, map parseFold folds)
-    go parts         = error $ "parseFolds: bad input: " <> show parts
-    parseDots = Map.fromList . flip zip (repeat ()) . map parseDot
-    parseDot ln =
-      let [x, y] = Text.splitOn "," ln
-       in Position2 (tread x) (tread y)
-    parseFold ln =
-      case Text.splitOn "=" (Text.drop 11 ln) of
-        ["x", x] -> FoldX (tread x)
-        ["y", y] -> FoldY (tread y)
-        _        -> error $ "parseFold: bad input: " <> show ln
+    parseDots = Map.fromList . flip zip (repeat ()) <$> traverseP parseDot
+    parseDot = tsplitP "," &* pairPWith Position2 integerP integerP
+    parseFold =
+      pureP (Text.drop 11) &* tsplitP "=" &*
+      pairPWith ($) (choiceP [("x", FoldX), ("y", FoldY)]) integerP
 
 part1 :: Instructions -> Int
 part1 (p, fs) = Map.size $ applyFold (head fs) p

@@ -39,7 +39,7 @@ incrP p = do
     let v' = v + 1
     let f' = v' > 9
     modify $ Map.insert p (v', f')
-    when (f' /= f) $ traverse_ incrP $ map (flip walk p) allDir8
+    when (f' /= f) $ traverse_ (incrP . flip walk p) allDir8
 
 go :: State Grid ()
 go = do
@@ -67,4 +67,8 @@ part2 = go 0
       | otherwise = go (n + 1) (step grid)
 
 tasks =
-  Tasks 2021 11 (mkGrid . parseLines digitsP) [Task part1 1656, Task part2 195]
+  Tasks
+    2021
+    11
+    (mkGrid <$> linesP &** digitsP)
+    [Task part1 1656, Task part2 195]

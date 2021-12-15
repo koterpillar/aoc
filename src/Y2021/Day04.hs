@@ -4,7 +4,6 @@ import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
-import           Miniparse
 import           Utils
 
 bSize :: Int

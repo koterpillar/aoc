@@ -71,7 +71,7 @@ tasks =
   Tasks
     2021
     14
-    parse
+    (pureP parse)
     [ AssertExample "step" (toPairs "NCNBCHB") (\(p, i) -> step i $ toPairs p)
     , AssertExample
         "step"

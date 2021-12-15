@@ -1,7 +1,6 @@
 module Y2021.Day01 where
 
 import           AOC
-import           Miniparse
 import           Utils
 
 zipWithTail fn values = zipWith fn values (tail values)

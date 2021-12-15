@@ -1,7 +1,6 @@
 module Y2021.Day03 where
 
 import           AOC
-import           Miniparse
 import           Utils
 
 data Bit

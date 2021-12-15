@@ -2,7 +2,6 @@ module Y2021.Day05 where
 
 import           AOC
 import           Grid
-import           Miniparse
 import           Utils
 
 type VentLine = (Position2, Position2)
