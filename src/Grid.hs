@@ -1,10 +1,12 @@
 module Grid where
 
-import           Data.Map  (Map)
-import qualified Data.Map  as Map
+import           Data.Hashable (Hashable (..))
 
-import           Data.Text (Text)
-import qualified Data.Text as Text
+import           Data.Map      (Map)
+import qualified Data.Map      as Map
+
+import           Data.Text     (Text)
+import qualified Data.Text     as Text
 
 import           Utils
 
@@ -14,6 +16,9 @@ data Position2 =
     , pY :: !Int
     }
   deriving (Eq, Ord, Show)
+
+instance Hashable Position2 where
+  hashWithSalt s (Position2 x y) = hashWithSalt s (x, y)
 
 manhattanDistance :: Position2 -> Position2 -> Int
 manhattanDistance (Position2 x1 y1) (Position2 x2 y2) =

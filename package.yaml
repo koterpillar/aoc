@@ -15,8 +15,10 @@ description:         Please see the README on Github at <https://github.com/kote
 
 dependencies:
 - base >= 4.7 && < 5
+- astar
 - containers
 - directory
+- hashable
 - html-entities
 - http-conduit
 - MissingH
@@ -25,6 +27,7 @@ dependencies:
 - split
 - text
 - time
+- unordered-containers
 
 default-extensions:
   - BangPatterns

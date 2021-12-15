@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: astar-0.3.0.0@sha256:8bf6350542e9db9451490e8993560ee843dc48a61d46a206985430f9b62461c8,967
+    pantry-tree:
+      size: 213
+      sha256: c4176cc3fc9ad39f2a9fc7eb4346c87b6e60b70ba23d8e2adbdfc81fe544b808
+  original:
+    hackage: astar-0.3.0.0@sha256:8bf6350542e9db9451490e8993560ee843dc48a61d46a206985430f9b62461c8,967
+- completed:
     hackage: MissingH-1.4.3.0@sha256:efbbe7065e17bc01ed925593a0c5b5793ab857585a8e9d5015d0025e526ab55c,4702
     pantry-tree:
       size: 5271

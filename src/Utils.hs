@@ -3,7 +3,9 @@ module Utils
   , module Data.Maybe
   , module Data.List
   , ($>)
+  , chr
   , join
+  , ord
   , splitOn
   , traceShow
   , traceShowId
@@ -13,7 +15,7 @@ module Utils
 
 import           Control.Monad    (join, when)
 
-import           Data.Char        (ord)
+import           Data.Char        (chr, ord)
 
 import           Data.Foldable    (traverse_)
 
@@ -118,6 +120,12 @@ tread = read . Text.unpack
 
 ttrace :: Text -> a -> a
 ttrace = trace . Text.unpack
+
+ttraceF :: (a -> Text) -> a -> a
+ttraceF f a = ttrace (f a) a
+
+traceShowF :: Show b => (a -> b) -> a -> a
+traceShowF f a = traceShow (f a) a
 
 assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
 assertEqual message expected actual
