@@ -10,7 +10,7 @@ ventLineP :: Parser Text VentLine
 ventLineP = tsplitP " -> " &* pairP &* (position2P &= position2P)
 
 vlBounds :: [VentLine] -> (Position2, Position2)
-vlBounds = bounds . join . map (\(p1, p2) -> [p1, p2])
+vlBounds = pointBounds . concatMap (\(p1, p2) -> [p1, p2])
 
 between :: Ord a => a -> a -> a -> Bool
 between a b c = a <= b && b <= c || a >= b && b >= c

@@ -21,17 +21,22 @@ manhattanDistance :: Position2 -> Position2 -> Int
 manhattanDistance (Position2 x1 y1) (Position2 x2 y2) =
   abs (x2 - x1) + abs (y2 - y1)
 
-bounds :: [Position2] -> (Position2, Position2)
-bounds [] = error "No bounds for empty list"
-bounds ps = (Position2 xmin ymin, Position2 xmax ymax)
+type Grid2 a = Map Position2 a
+
+boundsG :: Grid2 a -> (Position2, Position2)
+boundsG = pointBounds . Map.keys
+
+pointBounds :: [Position2] -> (Position2, Position2)
+pointBounds [] = error "No bounds for empty list"
+pointBounds ps = (Position2 xmin ymin, Position2 xmax ymax)
   where
     xmin = minimum $ map pX ps
     ymin = minimum $ map pY ps
     xmax = maximum $ map pX ps
     ymax = maximum $ map pY ps
 
-displayGrid :: (a -> Text) -> [[a]] -> Text
-displayGrid fn = Text.unlines . map (mconcat . map fn)
+displayG :: (Maybe a -> Text) -> Grid2 a -> Text
+displayG fn = Text.unlines . map (mconcat . map fn) . toMatrixG
 
 data Direction4
   = E
@@ -90,14 +95,14 @@ instance Walkable2 Direction8 where
   walkN n S_ = walkN n S
   walkN n SE = walkN n S . walkN n E
 
-enumerate2 :: [[a]] -> Map Position2 a
-enumerate2 = Map.fromList . concat . zipWith makeLine [0 ..]
+fromMatrixG :: [[a]] -> Grid2 a
+fromMatrixG = Map.fromList . concat . zipWith makeLine [0 ..]
   where
     makeLine y = zipWith (makePoint y) [0 ..]
     makePoint y x v = (Position2 x y, v)
 
-mapToGrid :: Map Position2 a -> [[Maybe a]]
-mapToGrid m =
+toMatrixG :: Map Position2 a -> [[Maybe a]]
+toMatrixG m =
   [[Map.lookup (Position2 x y) m | x <- [xmin .. xmax]] | y <- [ymin .. ymax]]
   where
-    (Position2 xmin ymin, Position2 xmax ymax) = bounds $ Map.keys m
+    (Position2 xmin ymin, Position2 xmax ymax) = boundsG m

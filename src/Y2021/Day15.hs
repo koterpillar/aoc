@@ -11,7 +11,7 @@ import           Utils
 type Grid = Map Position2 Int
 
 showG :: Grid -> Text
-showG = displayGrid (Text.singleton . dc) . mapToGrid
+showG = displayG (Text.singleton . dc)
   where
     dc (Just c) = chr $ ord '0' + c
     dc Nothing  = ' '
@@ -23,7 +23,7 @@ part1 grid =
   pathCost grid $
   fromJust $ aStar moves distance heuristicDistance isGoal startPosition
   where
-    (startPosition, endPosition) = bounds $ Map.keys grid
+    (startPosition, endPosition) = boundsG grid
     isGoal = (== endPosition)
     distance p1 p2
       | p2 == startPosition = error "we can't go back to start position!"
@@ -37,7 +37,7 @@ part1 grid =
 enlarge :: Int -> Grid -> Grid
 enlarge times grid = Map.fromList $ concatMap copyP $ Map.toList grid
   where
-    (_, Position2 xmax ymax) = bounds $ Map.keys grid
+    (_, Position2 xmax ymax) = boundsG grid
     sx = xmax + 1
     sy = ymax + 1
     copyP (Position2 x y, v) =
