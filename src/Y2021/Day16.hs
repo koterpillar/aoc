@@ -19,7 +19,7 @@ bitsToInt = go . reverse
 
 data Packet
   = Literal Int Int
-  | Operator Int [Packet]
+  | Operator Int Int [Packet]
   deriving (Eq, Show)
 
 ssplitAt :: Int -> State [Bit] [Bit]
@@ -31,7 +31,7 @@ spacket = do
   typeID <- bitsToInt <$> ssplitAt 3
   case typeID of
     4 -> Literal version <$> literalBits
-    _ -> Operator version <$> operatorPacket
+    _ -> Operator version typeID <$> operatorPacket
 
 operatorPacket :: State [Bit] [Packet]
 operatorPacket = do
@@ -98,7 +98,28 @@ parse :: Parser Text Packet
 parse = mkPacket . hexToBits <$> charactersP &** hexDigitP
 
 part1 :: Packet -> Int
-part1 = undefined
+part1 (Literal v _)     = v
+part1 (Operator v _ ps) = v + sum (map part1 ps)
+
+part2 :: Packet -> Int
+part2 (Literal _ v) = v
+part2 (Operator _ 0 ps) = sum $ map part2 ps
+part2 (Operator _ 1 ps) = product $ map part2 ps
+part2 (Operator _ 2 ps) = minimum $ map part2 ps
+part2 (Operator _ 3 ps) = maximum $ map part2 ps
+part2 (Operator _ 5 [p1, p2]) =
+  if part2 p1 > part2 p2
+    then 1
+    else 0
+part2 (Operator _ 6 [p1, p2]) =
+  if part2 p1 < part2 p2
+    then 1
+    else 0
+part2 (Operator _ 7 [p1, p2]) =
+  if part2 p1 == part2 p2
+    then 1
+    else 0
+part2 _ = error "unexpected operator"
 
 assertPacket :: String -> Packet -> Text -> Task a
 assertPacket msg packet input = Assert msg (Right packet) (runParse parse input)
@@ -107,15 +128,16 @@ tasks =
   Tasks
     2021
     16
-    parse
+    (pureP ttrim &* parse)
     [ assertPacket "literal packet" (Literal 6 2021) "D2FE28"
     , assertPacket
         "operator packet 1"
-        (Operator 1 [Literal 6 10, Literal 2 20])
+        (Operator 1 6 [Literal 6 10, Literal 2 20])
         "38006F45291200"
     , assertPacket
         "operator packet 2"
-        (Operator 7 [Literal 2 1, Literal 4 2, Literal 1 3])
+        (Operator 7 3 [Literal 2 1, Literal 4 2, Literal 1 3])
         "EE00D40C823060"
     , Task part1 31
+    , Task part2 54 -- FIXME no example
     ]

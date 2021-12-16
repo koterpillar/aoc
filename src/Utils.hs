@@ -106,6 +106,9 @@ countIf p = length . filter p
 countTrue :: [Bool] -> Int
 countTrue = countIf id
 
+ttrim :: Text -> Text
+ttrim = Text.dropWhile (== '\n') . Text.dropWhileEnd (== '\n')
+
 tshow :: Show a => a -> Text
 tshow = Text.pack . show
 

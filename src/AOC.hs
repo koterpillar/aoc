@@ -31,11 +31,8 @@ import           System.IO                   (isEOF)
 import           Miniparse
 import           Utils
 
-trim :: Text -> Text
-trim = Text.dropWhile (== '\n') . Text.dropWhileEnd (== '\n')
-
 readSession :: IO (Maybe Text)
-readSession = fmap trim <$> readIfExists ".session-cookie"
+readSession = fmap ttrim <$> readIfExists ".session-cookie"
 
 simpleRequest :: Text -> IO Text
 simpleRequest url = do
