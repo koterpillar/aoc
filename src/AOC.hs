@@ -99,6 +99,7 @@ selectExample 2021 12 examples = head examples
 selectExample 2021 13 examples = examples !! 1
 selectExample 2021 14 examples = head examples
 selectExample 2021 15 examples = head examples
+selectExample 2021 16 _ = "A0016C880162017C3686B18A3D4780"
 selectExample year day examples =
   error $
   "Cannot select from " <>

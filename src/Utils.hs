@@ -9,6 +9,7 @@ module Utils
   , (<=<)
   , (>=>)
   , chr
+  , isDigit
   , isLower
   , isUpper
   , join
@@ -25,7 +26,7 @@ module Utils
 import           Control.Applicative (liftA2)
 import           Control.Monad       (join, when, (<=<), (>=>))
 
-import           Data.Char           (chr, isLower, isUpper, ord)
+import           Data.Char           (chr, isDigit, isLower, isUpper, ord)
 
 import           Data.Foldable       (traverse_)
 
