@@ -9,31 +9,27 @@ import           AOC
 import           Utils
 
 -- IMPORTS
-
-type TasksKey = (Integer, Int)
-
-taskKey :: Tasks -> TasksKey
-taskKey (Tasks y d _ _) = (y, d)
-
 data Selector
   = All
   | Last
-  | One TasksKey
+  | Year Integer
+  | One Integer Int
   deriving (Show)
 
 selectTasks :: Selector -> [Tasks] -> [Tasks]
-selectTasks All ts     = ts
-selectTasks Last ts    = [last ts]
-selectTasks (One k) ts = [t | t <- ts, taskKey t == k]
+selectTasks All ts       = ts
+selectTasks Last ts      = [last ts]
+selectTasks (Year y) ts  = [t | t@(Tasks ty _ _ _) <- ts, ty == y]
+selectTasks (One y d) ts = [t | t@(Tasks ty td _ _) <- ts, ty == y, td == d]
 
 parseSelector :: [String] -> Selector
 parseSelector []       = Last
 parseSelector ["all"]  = All
-parseSelector [ys, ds] = One (read ys, read ds)
+parseSelector [ys]     = Year (read ys)
+parseSelector [ys, ds] = One (read ys) (read ds)
 parseSelector _        = error "invalid selector"
 
 main = do
   selector <- parseSelector <$> getArgs
   traverse_ processTasks $ selectTasks selector allTasks
-
 -- ALL TASKS
