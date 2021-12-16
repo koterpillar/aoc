@@ -8,7 +8,7 @@ import           Grid
 import           Path
 import           Utils
 
-type Grid = Map Position2 Int
+type Grid = Grid2 Int
 
 showG :: Grid -> Text
 showG = displayG (Text.singleton . dc)

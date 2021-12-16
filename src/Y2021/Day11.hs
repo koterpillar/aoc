@@ -9,9 +9,9 @@ import           AOC
 import           Grid
 import           Utils
 
-type Grid = Map Position2 (Int, Bool)
+type Grid = Grid2 (Int, Bool)
 
-mkGrid :: Map Position2 Int -> Grid
+mkGrid :: Grid2 Int -> Grid
 mkGrid = Map.map (, False)
 
 step :: Grid -> Grid

@@ -4,23 +4,14 @@ import           AOC
 import           Bit
 import           Utils
 
-mostCommon :: [Bit] -> Bit
-mostCommon = choose . foldr count (0, 0)
-  where
-    count O (c0, c1) = (c0 + 1, c1)
-    count I (c0, c1) = (c0, c1 + 1)
-    choose (c0, c1)
-      | c0 > c1 = O
-      | otherwise = I
-
-leastCommon :: [Bit] -> Bit
-leastCommon = bitInvert . mostCommon
+leastCommon :: [Bit] -> Maybe Bit
+leastCommon = fmap bitInvert . mostCommon
 
 part1 :: [BitString] -> Int
 part1 input =
   let bybit = transpose input
-      gamma = bitsValue $ map mostCommon bybit
-      epsilon = bitsValue $ map leastCommon bybit
+      gamma = bitsValue $ map (fromJust . mostCommon) bybit
+      epsilon = bitsValue $ map (fromJust . leastCommon) bybit
    in gamma * epsilon
 
 byCriteria :: ([Bit] -> Bit) -> [BitString] -> BitString
@@ -41,7 +32,7 @@ byCriteria' bitIndex chooseBit candidates
 
 part2 input = oxygen * co2
   where
-    oxygen = bitsValue $ byCriteria mostCommon input
-    co2 = bitsValue $ byCriteria leastCommon input
+    oxygen = bitsValue $ byCriteria (fromJust . mostCommon) input
+    co2 = bitsValue $ byCriteria (fromJust . leastCommon) input
 
 tasks = Tasks 2021 3 (linesP &** bitsP) [Task part1 198, Task part2 230]

@@ -31,11 +31,7 @@ type PolymerMap = Map Pair Int
 
 toPairs :: Polymer -> PolymerMap
 toPairs polymer =
-  mapFromListSum $
-  zipWith
-    (\e1 e2 -> ((e1, e2), 1))
-    (nullElement : polymer)
-    (polymer ++ [nullElement])
+  mapFromListCount $ zipTail (nullElement : polymer ++ [nullElement])
 
 step :: Insertions -> PolymerMap -> PolymerMap
 step instructions = mapFromListSum . concatMap go . Map.toList

@@ -3,8 +3,6 @@ module Y2021.Day01 where
 import           AOC
 import           Utils
 
-zipWithTail fn values = zipWith fn values (tail values)
-
 part1 = countTrue . zipWithTail (<)
 
 take' n xs =

@@ -17,6 +17,7 @@ module Utils
   , on
   , ord
   , splitOn
+  , swap
   , traceShow
   , traceShowId
   , traceShowM
@@ -47,6 +48,8 @@ import           Data.Set            (Set)
 import           Data.Text           (Text)
 import qualified Data.Text           as Text
 import qualified Data.Text.IO        as Text
+
+import           Data.Tuple          (swap)
 
 import           Debug.Trace
 
@@ -94,11 +97,15 @@ maybeMinimum :: Ord a => [a] -> Maybe a
 maybeMinimum [] = Nothing
 maybeMinimum xs = Just $ minimum xs
 
-mapByIndex :: [Int] -> Map Int Int
-mapByIndex = mapFromListSum . map (, 1)
+maybeMaximum :: Ord a => [a] -> Maybe a
+maybeMaximum [] = Nothing
+maybeMaximum xs = Just $ maximum xs
 
 mapFromListSum :: (Ord k, Num a) => [(k, a)] -> Map k a
 mapFromListSum = Map.fromListWith (+)
+
+mapFromListCount :: (Ord k, Num a) => [k] -> Map k a
+mapFromListCount = mapFromListSum . map (, 1)
 
 countIf :: (a -> Bool) -> [a] -> Int
 countIf p = length . filter p
@@ -123,6 +130,15 @@ ttraceF f a = ttrace (f a) a
 
 traceShowF :: Show b => (a -> b) -> a -> a
 traceShowF f a = traceShow (f a) a
+
+zipTail :: [a] -> [(a, a)]
+zipTail a = zip a (tail a)
+
+zipWithTail :: (a -> a -> b) -> [a] -> [b]
+zipWithTail f = map (uncurry f) . zipTail
+
+mostCommon :: Ord a => [a] -> Maybe a
+mostCommon = fmap snd . maybeMaximum . map swap . Map.toList . mapFromListCount
 
 assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
 assertEqual message expected actual

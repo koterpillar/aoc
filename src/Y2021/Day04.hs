@@ -1,34 +1,34 @@
 module Y2021.Day04 where
 
+import qualified Data.Map  as Map
 import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
+import           Grid
 import           Utils
 
 bSize :: Int
 bSize = 5
 
-newtype Board =
-  Board
-    { bValues :: [[Int]]
-    }
-  deriving (Eq, Show)
+type Board = Grid2 Int
 
-nullBoard :: Board
-nullBoard = Board []
-
-bLines :: Board -> [[Int]]
-bLines (Board b) = b ++ transpose b
+bLines :: [[Position2]]
+bLines = horizontal ++ vertical
+  where
+    horizontal =
+      [[Position2 x y | x <- [0 .. bSize - 1]] | y <- [0 .. bSize - 1]]
+    vertical = transpose horizontal
 
 bWin :: Set Int -> Board -> Bool
 bWin drawn board =
   or $ do
-    line <- bLines board
-    pure $ all (`Set.member` drawn) line
+    line <- bLines
+    let values = mapMaybe (`Map.lookup` board) line
+    pure $ all (`Set.member` drawn) values
 
 bScore :: Set Int -> Board -> Int
-bScore drawn = sum . filter (`Set.notMember` drawn) . join . bValues
+bScore drawn = sum . filter (`Set.notMember` drawn) . Map.elems
 
 data Play =
   Play
@@ -50,7 +50,8 @@ parsePlayP =
       tsplitP " " &* pureP (filter $ not . Text.null) &** integerP
     parseBoard = traverseP parseBoardLine &* Parser mkBoard
     mkBoard lns
-      | length lns == bSize && all ((== bSize) . length) lns = Right $ Board lns
+      | length lns == bSize && all ((== bSize) . length) lns =
+        Right $ fromMatrixG lns
       | otherwise = error $ "Incorrect board size: " ++ show lns
 
 pWinningScore :: Play -> [Int]
@@ -97,5 +98,5 @@ tasks =
     , Task part2 1924
     ]
   where
-    board = Board [[1, 2], [3, 1]]
+    board = fromMatrixG [[1, 2], [3, 1]]
     drawn = Set.fromList [1, 2]

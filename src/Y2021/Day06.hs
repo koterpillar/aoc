@@ -8,10 +8,10 @@ import           Utils
 type Pond = Map Int Int
 
 pondP :: Parser Text Pond
-pondP = mapByIndex <$> integersP ","
+pondP = mapFromListCount <$> integersP ","
 
 pondStep :: Pond -> Pond
-pondStep = mapFromListSum . join . map step' . Map.toList
+pondStep = mapFromListSum . concatMap step' . Map.toList
   where
     step' (timer, count) = [(nt, count) | nt <- step timer]
     step 0 = [6, 8]

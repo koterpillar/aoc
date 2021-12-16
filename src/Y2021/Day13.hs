@@ -23,7 +23,7 @@ applyFoldPoint :: Fold -> Position2 -> Position2
 applyFoldPoint (FoldX xc) (Position2 x y) = Position2 (pfold xc x) y
 applyFoldPoint (FoldY yc) (Position2 x y) = Position2 x (pfold yc y)
 
-type Paper = Map Position2 ()
+type Paper = Grid2 ()
 
 type Instructions = (Paper, [Fold])
 
