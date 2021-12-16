@@ -8,8 +8,6 @@ type VentLine = (Position2, Position2)
 
 ventLineP :: Parser Text VentLine
 ventLineP = tsplitP " -> " &* pairP &* (position2P &= position2P)
-  where
-    position2P = tsplitP "," &* pairPWith Position2 integerP integerP
 
 vlBounds :: [VentLine] -> (Position2, Position2)
 vlBounds = bounds . join . map (\(p1, p2) -> [p1, p2])

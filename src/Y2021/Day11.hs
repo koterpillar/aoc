@@ -11,8 +11,8 @@ import           Utils
 
 type Grid = Map Position2 (Int, Bool)
 
-mkGrid :: [[Int]] -> Grid
-mkGrid = Map.map (, False) . enumerate2
+mkGrid :: Map Position2 Int -> Grid
+mkGrid = Map.map (, False)
 
 step :: Grid -> Grid
 step = execState go
@@ -66,9 +66,4 @@ part2 = go 0
       | countFlashes grid == Map.size grid = n
       | otherwise = go (n + 1) (step grid)
 
-tasks =
-  Tasks
-    2021
-    11
-    (mkGrid <$> linesP &** digitsP)
-    [Task part1 1656, Task part2 195]
+tasks = Tasks 2021 11 (mkGrid <$> digitGridP) [Task part1 1656, Task part2 195]

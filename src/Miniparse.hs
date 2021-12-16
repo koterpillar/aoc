@@ -5,6 +5,7 @@ import qualified Data.Text as Text
 
 import           Text.Read (readEither)
 
+import           Grid
 import           Utils
 
 newtype Parser src dest =
@@ -71,6 +72,12 @@ charactersP = pureP $ map Text.singleton . Text.unpack
 
 digitsP :: Parser Text [Int]
 digitsP = charactersP &** integerP
+
+position2P :: Parser Text Position2
+position2P = tsplitP "," &* pairPWith Position2 integerP integerP
+
+digitGridP :: Parser Text (Map Position2 Int)
+digitGridP = enumerate2 <$> linesP &** digitsP
 
 (&*) :: Parser a b -> Parser b c -> Parser a c
 Parser p1 &* Parser p2 = Parser $ p1 >=> p2
