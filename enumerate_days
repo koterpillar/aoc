@@ -1,17 +1,5 @@
 #!/bin/sh
 
-IMPORTS=$(mktemp)
-ls src/Y*/Day*.hs | sed 's!src/!import qualified !g;s!/!.!;s!.hs!!' > "$IMPORTS"
-
-ALL_TASKS=$(mktemp)
-ls src/Y*/Day*.hs | sed '1 s!src/!allTasks = [ !;s!src/!           , !g;s!/!.!;s!.hs!.tasks!;$ s!$! ]!' > "$ALL_TASKS"
-
-SED=$(mktemp)
-cat <<EOF > "$SED"
-/-- IMPORTS/r $IMPORTS
-/-- ALL TASKS/r $ALL_TASKS
-EOF
-
-sed -f "$SED" < "$2" > "$3"
-
-rm -f "$IMPORTS" "$ALL_TASKS" "$SED"
+echo "module AllTasks where" >> "$3"
+ls src/Y*/Day*.hs | sed 's!src/!import qualified !g;s!/!.!;s!.hs!!' >> "$3"
+ls src/Y*/Day*.hs | sed '1 s!src/!allTasks = [ !;s!src/!           , !g;s!/!.!;s!.hs!.tasks!;$ s!$! ]!' >> "$3"

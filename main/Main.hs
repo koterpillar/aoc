@@ -1,14 +1,12 @@
-{-# OPTIONS_GHC -F -pgmF./enumerate_days #-}
-
 import qualified Data.Map           as Map
 import qualified Data.Text          as Text
 
 import           System.Environment (getArgs)
 
+import           AllTasks
 import           AOC
 import           Utils
 
--- IMPORTS
 data Selector
   = All
   | Last
@@ -32,4 +30,3 @@ parseSelector _        = error "invalid selector"
 main = do
   selector <- parseSelector <$> getArgs
   traverse_ processTasks $ selectTasks selector allTasks
--- ALL TASKS
