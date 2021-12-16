@@ -144,7 +144,8 @@ data Task a where
   AssertExample :: (Eq b, Show b) => String -> b -> (a -> b) -> Task a
 
 processTasks :: Tasks -> IO ()
-processTasks (Tasks year day parser tasks) =
+processTasks (Tasks year day parser tasks) = do
+  Text.putStrLn $ "Year " <> tshow year <> ", day " <> tshow day
   traverse_ (processTask year day parser) tasks
 
 processTask :: Integer -> Int -> Parser Text a -> Task a -> IO ()
