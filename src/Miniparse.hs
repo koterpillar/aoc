@@ -5,6 +5,7 @@ import qualified Data.Text as Text
 
 import           Text.Read (readEither)
 
+import           Bit
 import           Grid
 import           Utils
 
@@ -78,6 +79,9 @@ position2P = tsplitP "," &* pairPWith Position2 integerP integerP
 
 digitGridP :: Parser Text (Grid2 Int)
 digitGridP = fromMatrixG <$> linesP &** digitsP
+
+bitsP :: Parser Text BitString
+bitsP = charactersP &** choiceP [("0", O), ("1", I)]
 
 (&*) :: Parser a b -> Parser b c -> Parser a c
 Parser p1 &* Parser p2 = Parser $ p1 >=> p2

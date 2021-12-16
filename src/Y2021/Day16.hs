@@ -3,51 +3,43 @@ module Y2021.Day16 where
 import           Control.Monad.State
 
 import           AOC
+import           Bit
 import           Utils
-
-data Bit
-  = O
-  | I
-  deriving (Eq, Ord, Show)
-
-bitsToInt :: [Bit] -> Int
-bitsToInt = go . reverse
-  where
-    go []     = 0
-    go (O:xs) = go xs * 2
-    go (I:xs) = go xs * 2 + 1
 
 data Packet
   = Literal Int Int
   | Operator Int Int [Packet]
   deriving (Eq, Show)
 
-ssplitAt :: Int -> State [Bit] [Bit]
+ssplitAt :: Int -> State BitString BitString
 ssplitAt = state . splitAt
 
-spacket :: State [Bit] Packet
+snumber :: Int -> State BitString Int
+snumber = fmap bitsValue . ssplitAt
+
+spacket :: State BitString Packet
 spacket = do
-  version <- bitsToInt <$> ssplitAt 3
-  typeID <- bitsToInt <$> ssplitAt 3
+  version <- snumber 3
+  typeID <- snumber 3
   case typeID of
     4 -> Literal version <$> literalBits
     _ -> Operator version typeID <$> operatorPacket
 
-operatorPacket :: State [Bit] [Packet]
+operatorPacket :: State BitString [Packet]
 operatorPacket = do
   lengthType <- ssplitAt 1
   case lengthType of
     [O] -> do
-      packetsLength <- bitsToInt <$> ssplitAt 15
+      packetsLength <- snumber 15
       currentLength <- gets length
       let remainingLength = currentLength - packetsLength
       packetsUntilLength remainingLength
     [I] -> do
-      packetCount <- bitsToInt <$> ssplitAt 11
+      packetCount <- snumber 11
       replicateM packetCount spacket
     _ -> error "unexpected length type"
 
-packetsUntilLength :: Int -> State [Bit] [Packet]
+packetsUntilLength :: Int -> State BitString [Packet]
 packetsUntilLength remainingLength = do
   currentLength <- gets length
   case currentLength of
@@ -59,8 +51,8 @@ packetsUntilLength remainingLength = do
         packets <- packetsUntilLength remainingLength
         return (packet : packets)
 
-literalBits :: State [Bit] Int
-literalBits = bitsToInt <$> go
+literalBits :: State BitString Int
+literalBits = bitsValue <$> go
   where
     go = do
       bits <- ssplitAt 5
@@ -69,7 +61,7 @@ literalBits = bitsToInt <$> go
         O:rest -> pure rest
         I:rest -> (rest ++) <$> go
 
-mkPacket :: [Bit] -> Packet
+mkPacket :: BitString -> Packet
 mkPacket = evalState spacket
 
 hexDigitP :: Parser Text Int
@@ -80,7 +72,7 @@ hexDigitP = charP &* Parser go
       | c <= 'F' && c >= 'A' = Right $ ord c - ord 'A' + 10
       | otherwise = Left $ "Invalid hex digit " <> show c
 
-hexToBits :: [Int] -> [Bit]
+hexToBits :: [Int] -> BitString
 hexToBits = concatMap (htb 4)
   where
     htb n x = htb' n x []
@@ -139,5 +131,5 @@ tasks =
         (Operator 7 3 [Literal 2 1, Literal 4 2, Literal 1 3])
         "EE00D40C823060"
     , Task part1 31
-    , Task part2 54 -- FIXME no example
+    , Task part2 54
     ]

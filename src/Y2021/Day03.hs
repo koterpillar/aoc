@@ -1,26 +1,8 @@
 module Y2021.Day03 where
 
 import           AOC
+import           Bit
 import           Utils
-
-data Bit
-  = O
-  | I
-  deriving (Ord, Eq, Show)
-
-bitInvert O = I
-bitInvert I = O
-
-type BitString = [Bit]
-
-bitsValue :: BitString -> Int
-bitsValue = foldl bitMult 0
-  where
-    bitMult n O = n * 2
-    bitMult n I = n * 2 + 1
-
-bitsP :: Parser Text BitString
-bitsP = charactersP &** choiceP [("0", O), ("1", I)]
 
 mostCommon :: [Bit] -> Bit
 mostCommon = choose . foldr count (0, 0)
