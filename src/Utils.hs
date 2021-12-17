@@ -9,6 +9,7 @@ module Utils
   , (<=<)
   , (>=>)
   , chr
+  , guard
   , isDigit
   , isLower
   , isUpper
@@ -18,6 +19,7 @@ module Utils
   , ord
   , splitOn
   , swap
+  , traceM
   , traceShow
   , traceShowId
   , traceShowM
@@ -25,7 +27,7 @@ module Utils
   ) where
 
 import           Control.Applicative (liftA2)
-import           Control.Monad       (join, when, (<=<), (>=>))
+import           Control.Monad       (guard, join, when, (<=<), (>=>))
 
 import           Data.Char           (chr, isDigit, isLower, isUpper, ord)
 
