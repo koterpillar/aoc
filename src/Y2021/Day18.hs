@@ -6,34 +6,50 @@ import qualified Data.Text           as Text
 import           AOC
 import           Utils
 
-data Snailnumber
+data Snail a
   = PNumber Int
-  | PPair Snailnumber Snailnumber
-  deriving (Ord, Eq, Show)
+  | PPair (Snail a) (Snail a)
+  deriving (Ord, Eq)
 
-magnitude :: Snailnumber -> Int
+instance Show a => Show (Snail a) where
+  show (PNumber n)   = show n
+  show (PPair n1 n2) = "[" <> show n1 <> "," <> show n2 <> "]"
+
+type SnailInt = Snail Int
+
+magnitude :: SnailInt -> Int
 magnitude (PNumber n)   = n
 magnitude (PPair n1 n2) = 3 * magnitude n1 + 2 * magnitude n2
 
-snadd :: Snailnumber -> Snailnumber -> Snailnumber
+snadd :: SnailInt -> SnailInt -> SnailInt
 snadd n1 n2 = snreduce $ PPair n1 n2
 
-snreduce :: Snailnumber -> Snailnumber
-snreduce = _
+snreduce :: SnailInt -> SnailInt
+snreduce = undefined
 
-part1 :: [Snailnumber] -> Int
+part1 :: [SnailInt] -> Int
 part1 = magnitude . foldl1 snadd
 
-tasks = Tasks 2021 18 (linesP &** parse') [Task part1 4140]
+tasks =
+  Tasks
+    2021
+    18
+    (linesP &** pureP parse)
+    [ Assert
+        "reduce"
+        (parse "[[[[0,9],2],3],4]")
+        (snreduce $ parse "[[[[[9,8],1],2],3],4]")
+    , Task part1 4140
+    ]
 
-parse :: State String Snailnumber
-parse = do
+parseS :: State String SnailInt
+parseS = do
   c <- getchar
   case c of
     '[' -> do
-      n1 <- parse
+      n1 <- parseS
       ensure ','
-      n2 <- parse
+      n2 <- parseS
       ensure ']'
       return $ PPair n1 n2
     d
@@ -42,11 +58,10 @@ parse = do
         return $ PNumber $ read $ d : n
       | otherwise -> sterror $ "expected number or [, got " <> show c
 
-parse' :: Parser Text Snailnumber
-parse' =
-  pureP $ \input ->
-    let (number, []) = runState parse (Text.unpack input)
-     in number
+parse :: Text -> SnailInt
+parse input =
+  let (number, []) = runState parseS (Text.unpack input)
+   in number
 
 getchar :: State String Char
 getchar = state $ fromJust . uncons
