@@ -49,6 +49,8 @@ scDownRight (PPair l r) ctx = Just (r, SCRight l ctx)
 
 type SnailInt = Snail Int
 
+type SLocInt = SLoc Int
+
 magnitude :: SnailInt -> Int
 magnitude (PNumber n)   = n
 magnitude (PPair n1 n2) = 3 * magnitude n1 + 2 * magnitude n2
@@ -57,12 +59,43 @@ snadd :: SnailInt -> SnailInt -> SnailInt
 snadd n1 n2 = snreduce $ PPair n1 n2
 
 snexplode :: SnailInt -> Maybe SnailInt
-snexplode = error "snexplode"
+snexplode =
+  fmap (uncurry sFromLoc . uncurry afterExplode) . findExploding 0 . sToLoc
+
+type AfterExplode = (Maybe Int, Maybe Int)
+
+afterExplode :: SLocInt -> AfterExplode -> SLocInt
+afterExplode (t, SCRight l ctx) (Just n, rr) =
+  afterExplode (t, SCRight (addToRightmost n l) ctx) (Nothing, rr)
+afterExplode (t, SCLeft ctx r) (rl, Just n) =
+  afterExplode (t, SCLeft ctx (addToLeftmost n r)) (rl, Nothing)
+afterExplode l@(t, ctx) ae =
+  case scUp t ctx of
+    Nothing -> l
+    Just l' -> afterExplode l' ae
+
+findExploding :: Int -> SLocInt -> Maybe (SLocInt, AfterExplode)
+findExploding _ (PNumber _, _) = Nothing
+findExploding d (PPair (PNumber nl) (PNumber nr), ctx)
+  | d >= 4 = Just ((PNumber 0, ctx), (Just nl, Just nr))
+  | otherwise = Nothing
+findExploding d (t, ctx) =
+  let d' = d + 1
+   in (scDownLeft t ctx >>= findExploding d') <|>
+      (scDownRight t ctx >>= findExploding d')
+
+addToLeftmost :: Int -> SnailInt -> SnailInt
+addToLeftmost n (PNumber n') = PNumber (n + n')
+addToLeftmost n (PPair l r)  = PPair (addToLeftmost n l) r
+
+addToRightmost :: Int -> SnailInt -> SnailInt
+addToRightmost n (PNumber n') = PNumber (n + n')
+addToRightmost n (PPair l r)  = PPair l (addToLeftmost n r)
 
 snsplit :: SnailInt -> Maybe SnailInt
 snsplit = fmap (uncurry sFromLoc) . go . sToLoc
   where
-    go :: SLoc Int -> Maybe (SLoc Int)
+    go :: SLocInt -> Maybe SLocInt
     go (t@PPair {}, c) = (scDownLeft t c >>= go) <|> (scDownRight t c >>= go)
     go (PNumber n, c)
       | n < 10 = Nothing
@@ -72,16 +105,13 @@ snsplit = fmap (uncurry sFromLoc) . go . sToLoc
          in Just (t', c)
 
 snreduce :: SnailInt -> SnailInt
-snreduce t =
-  case snexplode t of
-    Just t' -> snreduce t'
-    Nothing ->
-      case snsplit t of
-        Just t' -> snreduce t'
-        Nothing -> t
+snreduce t = (snreduce <$> snexplode t <|> snreduce <$> snsplit t) & fromMaybe t
+
+snsum :: [SnailInt] -> SnailInt
+snsum = foldl1 snadd
 
 part1 :: [SnailInt] -> Int
-part1 = magnitude . foldl1 snadd
+part1 = magnitude . snsum
 
 tasks =
   Tasks
@@ -95,6 +125,10 @@ tasks =
         "explode"
         (Just $ parse "[[[[0,9],2],3],4]")
         (snexplode $ parse "[[[[[9,8],1],2],3],4]")
+    , AssertExample
+        "sum"
+        (parse "[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]")
+        snsum
     , Task part1 4140
     ]
 

@@ -7,6 +7,7 @@ module Utils
   , Set
   , Text
   , ($>)
+  , (&)
   , (<=<)
   , (<|>)
   , (>=>)
@@ -38,7 +39,7 @@ import           Data.Foldable       (traverse_)
 
 import           Data.Functor        (($>))
 
-import           Data.Function       (on)
+import           Data.Function       (on, (&))
 
 import           Data.List
 import           Data.List.Split     (splitOn)
