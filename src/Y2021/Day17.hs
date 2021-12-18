@@ -1,6 +1,8 @@
 module Y2021.Day17 where
 
-import qualified Data.Text as Text
+import           Data.Either
+import qualified Data.Map    as Map
+import qualified Data.Text   as Text
 
 import           AOC
 import           Grid
@@ -12,16 +14,11 @@ inBounds vmin vmax v
   | v > vmax = GT
   | otherwise = EQ
 
-findAllHits :: Show v => (v -> Ordering) -> [v] -> [v]
-findAllHits f = takeWhile (resultIs EQ) . dropWhile (resultIs LT)
-  where
-    resultIs ordering v = f v == ordering
-
-findFirstHit :: Show v => (v -> Ordering) -> [v] -> Maybe v
-findFirstHit f = listToMaybe . findAllHits f
-
 vxStep :: Int -> Int
-vxStep v = max 0 $ abs $ v - 1
+vxStep 0 = 0
+vxStep v
+  | v < 0 = error "can't have negative x speed"
+  | otherwise = v - 1
 
 type Velocity = Position2
 
@@ -31,70 +28,76 @@ velocityStep (Position2 vx y) = Position2 (vxStep vx) (y - 1)
 applyVelocity :: Velocity -> Position2 -> Position2
 applyVelocity (Position2 dx dy) (Position2 x y) = Position2 (x + dx) (y + dy)
 
-projectilePath :: Velocity -> [Position2]
-projectilePath v = go v (Position2 0 0)
-  where
-    go v p = p : go (velocityStep v) (applyVelocity v p)
-
-highestPoint :: Velocity -> Int
-highestPoint =
-  pY .
-  fst .
-  fromMaybe (error "highestPoint") .
-  listToMaybe . dropWhile (uncurry rising) . zipTail . projectilePath
-  where
-    rising (Position2 _ y1) (Position2 _ y2) = y2 > y1
-
 type TargetArea = (Position2, Position2)
 
-insideArea :: TargetArea -> Position2 -> Position2 -> Ordering
-insideArea (Position2 xmin ymin, Position2 xmax ymax) (Position2 x1 y1) (Position2 x2 y2)
-  | inBounds xmin xmax x1 == EQ && inBounds ymin ymax y1 == EQ = EQ
-  | x1 > xmax = GT
-  | y1 < ymax && y2 <= y1 = GT
-  | otherwise = LT
+projectilePath :: TargetArea -> Velocity -> [Position2]
+projectilePath area@(Position2 _ ymin, _) v = go v (Position2 0 0)
+  where
+    go v p
+      | insideArea area p = [p]
+      | pY p < ymin && pY v < 0 = []
+      | otherwise = p : go (velocityStep v) (applyVelocity v p)
+
+highestPoint :: TargetArea -> Velocity -> Int
+highestPoint area =
+  fromJustE "highestPoint" . maybeMaximum . map pY . projectilePath area
+
+insideArea :: TargetArea -> Position2 -> Bool
+insideArea (Position2 xmin ymin, Position2 xmax ymax) (Position2 x y) =
+  inBounds xmin xmax x == EQ && inBounds ymin ymax y == EQ
 
 vxmin :: TargetArea -> Int
-vxmin (Position2 xmin _, _) =
-  fromMaybe (error $ "vxmin " <> show xmin) $
+vxmin (Position2 xmin _, _) -- FIXME correct?
+ =
+  fromJustE ("vxmin " <> show xmin) $
   listToMaybe $ dropWhile (\v -> xres v < xmin) [0 ..]
   where
     xres v = v * (v + 1)
 
 vxmax :: TargetArea -> Int
-vxmax (_, Position2 xmax _) = xmax
+vxmax (_, Position2 xmax _) = xmax + 1
 
-vymin :: TargetArea -> Int -> Int
-vymin _ _ = -20 -- FIXME
+vymin :: TargetArea -> Int
+vymin (Position2 _ ymin, _) = ymin - 1
 
-vymax :: TargetArea -> Int -> Int
-vymax _ _ = 20 -- FIXME
+vymax :: TargetArea -> Int
+vymax area@(Position2 _ ymin, Position2 _ ymax)
+  | ymax >= 0 && ymin <= 0 = error "vymax: can hit at any speed"
+  | otherwise = negate $ vymin area
 
 doesHit :: TargetArea -> Velocity -> Bool
-doesHit area =
-  isJust .
-  findFirstHit (uncurry $ insideArea area) .
-  guardLength 1000 . zipTail . projectilePath
-
-guardLength :: Show a => Int -> [a] -> [a]
-guardLength _ []     = []
-guardLength 0 xs     = error $ "list too long, rest: " <> show (take 10 xs)
-guardLength n (x:xs) = x : guardLength (n - 1) xs
+doesHit area = insideArea area . last . projectilePath area
 
 hits :: TargetArea -> [Velocity]
 hits area = do
   vx <- [vxmin area .. vxmax area]
-  vy <- [vymin area vx .. vymax area vx]
+  vy <- [vymin area .. vymax area]
   let v = Position2 vx vy
-  traceM $ "testing " <> show v
   guard $ doesHit area v
-  traceM $ "found " <> show v
   pure v
 
 part1 :: TargetArea -> Int
-part1 =
-  fromMaybe (error "No paths hitting anything found") .
-  maybeMaximum . map highestPoint . hits
+part1 area =
+  highestPoint area $
+  ttraceF (displayScene 5 area) $
+  maximumBy (compare `on` highestPoint area) $ hits area
+
+part2 :: TargetArea -> Int
+part2 = length . hits
+
+displayScene :: Int -> TargetArea -> Velocity -> Text
+displayScene scale area@(Position2 xmin ymin, Position2 xmax ymax) v = display
+  where
+    display =
+      displayG (Text.singleton . fromMaybe ' ') $
+      shrinkWithG scale pref $
+      Map.mapKeys (\(Position2 x y) -> Position2 x (-y)) $
+      Map.fromList $ areaPoints ++ pathPoints
+    areaPoints =
+      [(Position2 x y, '#') | x <- [xmin .. xmax], y <- [ymin .. ymax]]
+    pathPoints = [(p, '*') | p <- projectilePath area v]
+    pref '*' '#' = '*'
+    pref _ v     = v
 
 targetAreaP :: Parser Text TargetArea
 targetAreaP =
@@ -112,4 +115,12 @@ tasks =
     2021
     17
     targetAreaP
-    [AssertExample "7,2 hits" True (`doesHit` Position2 7 2), Task part1 45]
+    [ Task part1 45
+    , AssertExample
+        "8,1 hits"
+        True
+        (\a ->
+           let v = Position2 8 1
+            in ttrace (displayScene 1 a v) doesHit a v)
+    , Task part2 112
+    ]
