@@ -162,7 +162,7 @@ processTask _ _ _ (Assert message expected actual) =
   assertEqual message expected actual
 processTask year day parser (AssertExample message expected fn) = do
   example <- justParse parser <$> getExample year day
-  assertEqual "Example result" expected $ fn example
+  assertEqual ("Example " <> message) expected $ fn example
 
 assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
 assertEqual message expected actual

@@ -125,6 +125,20 @@ tasks =
         "explode"
         (Just $ parse "[[[[0,9],2],3],4]")
         (snexplode $ parse "[[[[[9,8],1],2],3],4]")
+    , Assert "magnitude" 1384 $
+      magnitude $ parse "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]"
+    , Assert "sum example 1" (parse "[[[[1,1],[2,2]],[3,3]],[4,4]]") $
+      snsum [PPair (PNumber x) (PNumber x) | x <- [1 .. 4]]
+    , Assert "sum example 2" (parse "[[[[3,0],[5,3]],[4,4]],[5,5]]") $
+      snsum [PPair (PNumber x) (PNumber x) | x <- [1 .. 5]]
+    , Assert "sum example 3" (parse "[[[[5,0],[7,4]],[5,5]],[6,6]]") $
+      snsum [PPair (PNumber x) (PNumber x) | x <- [1 .. 6]]
+    , Assert
+        "add example 1"
+        (parse "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]") $
+      snadd
+        (parse "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]")
+        (parse "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]")
     , AssertExample
         "sum"
         (parse "[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]")
@@ -136,25 +150,29 @@ parseS :: State String SnailInt
 parseS = do
   c <- getchar
   case c of
-    '[' -> do
+    Just '[' -> do
       n1 <- parseS
       ensure ','
       n2 <- parseS
       ensure ']'
       return $ PPair n1 n2
-    d
+    Just d
       | isDigit d -> do
         n <- parseNumber
         return $ PNumber $ read $ d : n
       | otherwise -> sterror $ "expected number or [, got " <> show c
+    Nothing -> sterror "expected number or [, got end of input"
 
 parse :: Text -> SnailInt
 parse input =
   let (number, []) = runState parseS (Text.unpack input)
    in number
 
-getchar :: State String Char
-getchar = state $ fromJust . uncons
+getchar :: State String (Maybe Char)
+getchar =
+  state $ \case
+    [] -> (Nothing, [])
+    (c:cs) -> (Just c, cs)
 
 sterror :: String -> State String a
 sterror message = do
@@ -164,13 +182,14 @@ sterror message = do
 ensure :: Char -> State String ()
 ensure c =
   getchar >>= \c' ->
-    if c == c'
+    if c' == Just c
       then pure ()
       else sterror $ "expected " <> show c <> " but got " <> show c'
 
 parseNumber :: State String [Char]
-parseNumber =
-  gets head >>= \c ->
-    if isDigit c
-      then (c :) <$> parseNumber
-      else pure []
+parseNumber = getchar >>= go
+  where
+    go Nothing = pure []
+    go (Just c)
+      | isDigit c = (c :) <$> parseNumber
+      | otherwise = modify (c :) >> pure []
