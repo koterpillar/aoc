@@ -2,6 +2,7 @@ module Utils
   ( module Utils
   , module Data.Maybe
   , module Data.List
+  , module Utils.Trace
   , Map
   , Set
   , Text
@@ -22,10 +23,6 @@ module Utils
   , second
   , splitOn
   , swap
-  , traceM
-  , traceShow
-  , traceShowId
-  , traceShowM
   , traverse_
   ) where
 
@@ -58,7 +55,7 @@ import qualified Data.Text.IO        as Text
 
 import           Data.Tuple          (swap)
 
-import           Debug.Trace
+import           Utils.Trace
 
 iterateN :: Int -> (a -> a) -> a -> a
 iterateN 0 _ v = v
@@ -129,15 +126,6 @@ tshow = Text.pack . show
 tread :: Read a => Text -> a
 tread = read . Text.unpack
 
-ttrace :: Text -> a -> a
-ttrace = trace . Text.unpack
-
-ttraceF :: (a -> Text) -> a -> a
-ttraceF f a = ttrace (f a) a
-
-traceShowF :: Show b => (a -> b) -> a -> a
-traceShowF f a = traceShow (f a) a
-
 zipTail :: [a] -> [(a, a)]
 zipTail a = zip a (tail a)
 
@@ -149,10 +137,3 @@ mostCommon = fmap snd . maybeMaximum . map swap . Map.toList . mapFromListCount
 
 fromJustE :: String -> Maybe a -> a
 fromJustE = fromMaybe . error
-
-assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
-assertEqual message expected actual
-  | expected == actual = pure ()
-  | otherwise =
-    error $
-    message <> " is " <> show actual <> ", but expected " <> show expected
