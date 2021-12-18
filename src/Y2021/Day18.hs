@@ -90,7 +90,7 @@ addToLeftmost n (PPair l r)  = PPair (addToLeftmost n l) r
 
 addToRightmost :: Int -> SnailInt -> SnailInt
 addToRightmost n (PNumber n') = PNumber (n + n')
-addToRightmost n (PPair l r)  = PPair l (addToLeftmost n r)
+addToRightmost n (PPair l r)  = PPair l (addToRightmost n r)
 
 snsplit :: SnailInt -> Maybe SnailInt
 snsplit = fmap (uncurry sFromLoc) . go . sToLoc
@@ -113,6 +113,8 @@ snsum = foldl1 snadd
 part1 :: [SnailInt] -> Int
 part1 = magnitude . snsum
 
+part2 ns = maximum [magnitude (snadd n1 n2) | n1 <- ns, n2 <- ns]
+
 tasks =
   Tasks
     2021
@@ -125,6 +127,22 @@ tasks =
         "explode"
         (Just $ parse "[[[[0,9],2],3],4]")
         (snexplode $ parse "[[[[[9,8],1],2],3],4]")
+    , Assert
+        "explode 2"
+        (Just $ parse "[7,[6,[5,[7,0]]]]")
+        (snexplode $ parse "[7,[6,[5,[4,[3,2]]]]]")
+    , Assert
+        "explode 3"
+        (Just $ parse "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")
+        (snexplode $ parse "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]")
+    , Assert
+        "explode 4"
+        (Just $
+         parse
+           "[[[[4,0],[5,4]],[[0,[7,6]],[9,5]]],[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]]")
+        (snexplode $
+         parse
+           "[[[[4,0],[5,0]],[[[4,5],[2,6]],[9,5]]],[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]]")
     , Assert "magnitude" 1384 $
       magnitude $ parse "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]"
     , Assert "sum example 1" (parse "[[[[1,1],[2,2]],[3,3]],[4,4]]") $
@@ -133,8 +151,10 @@ tasks =
       snsum [PPair (PNumber x) (PNumber x) | x <- [1 .. 5]]
     , Assert "sum example 3" (parse "[[[[5,0],[7,4]],[5,5]],[6,6]]") $
       snsum [PPair (PNumber x) (PNumber x) | x <- [1 .. 6]]
+    , Assert "add example 1" (parse "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]") $
+      snadd (parse "[[[[4,3],4],4],[7,[[8,4],9]]]") (parse "[1,1]")
     , Assert
-        "add example 1"
+        "add example 2"
         (parse "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]") $
       snadd
         (parse "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]")
@@ -144,6 +164,7 @@ tasks =
         (parse "[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]")
         snsum
     , Task part1 4140
+    , Task part2 3993
     ]
 
 parseS :: State String SnailInt

@@ -1,5 +1,6 @@
 module Utils.Trace
   ( module Utils.Trace
+  , trace
   , traceM
   , traceShow
   , traceShowId
