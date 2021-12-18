@@ -28,7 +28,7 @@ part1 grid =
     distance p1 p2
       | p2 == startPosition = error "we can't go back to start position!"
       | otherwise =
-        fromMaybe (error $ "destination " <> show p2 <> " not found in grid") $
+        fromJustE ("destination " <> show p2 <> " not found in grid") $
         Map.lookup p2 grid
     heuristicDistance = manhattanDistance endPosition
     moves p =

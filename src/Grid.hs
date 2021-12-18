@@ -35,6 +35,11 @@ pointBounds ps = (Position2 xmin ymin, Position2 xmax ymax)
     xmax = maximum $ map pX ps
     ymax = maximum $ map pY ps
 
+shrinkWithG :: Int -> (a -> a -> a) -> Grid2 a -> Grid2 a
+shrinkWithG scale fn = Map.fromListWith fn . map (first scalePoint) . Map.toList
+  where
+    scalePoint (Position2 x y) = Position2 (x `div` scale) (y `div` scale)
+
 displayG :: (Maybe a -> Text) -> Grid2 a -> Text
 displayG fn = Text.unlines . map (mconcat . map fn) . toMatrixG
 

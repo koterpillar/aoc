@@ -8,8 +8,10 @@ module Utils
   , ($>)
   , (<=<)
   , (>=>)
+  , bimap
   , chr
   , guard
+  , first
   , isDigit
   , isLower
   , isUpper
@@ -17,6 +19,7 @@ module Utils
   , liftA2
   , on
   , ord
+  , second
   , splitOn
   , swap
   , traceM
@@ -28,6 +31,8 @@ module Utils
 
 import           Control.Applicative (liftA2)
 import           Control.Monad       (guard, join, when, (<=<), (>=>))
+
+import           Data.Bifunctor      (bimap, first, second)
 
 import           Data.Char           (chr, isDigit, isLower, isUpper, ord)
 
@@ -141,6 +146,9 @@ zipWithTail f = map (uncurry f) . zipTail
 
 mostCommon :: Ord a => [a] -> Maybe a
 mostCommon = fmap snd . maybeMaximum . map swap . Map.toList . mapFromListCount
+
+fromJustE :: String -> Maybe a -> a
+fromJustE = fromMaybe . error
 
 assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
 assertEqual message expected actual
