@@ -10,12 +10,6 @@ import           Utils
 
 type Grid = Grid2 Int
 
-showG :: Grid -> Text
-showG = displayG (Text.singleton . dc)
-  where
-    dc (Just c) = chr $ ord '0' + c
-    dc Nothing  = ' '
-
 pathCost :: Grid -> [Position2] -> Int
 pathCost grid path = sum [risk | Just risk <- map (`Map.lookup` grid) path]
 

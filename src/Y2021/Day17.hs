@@ -89,7 +89,7 @@ displayScene :: Int -> TargetArea -> Velocity -> Text
 displayScene scale area@(Position2 xmin ymin, Position2 xmax ymax) v = display
   where
     display =
-      displayG (Text.singleton . fromMaybe ' ') $
+      displayG $
       shrinkWithG scale pref $
       Map.mapKeys (\(Position2 x y) -> Position2 x (-y)) $
       Map.fromList $ areaPoints ++ pathPoints

@@ -40,8 +40,26 @@ shrinkWithG scale fn = Map.fromListWith fn . map (first scalePoint) . Map.toList
   where
     scalePoint (Position2 x y) = Position2 (x `div` scale) (y `div` scale)
 
-displayG :: (Maybe a -> Text) -> Grid2 a -> Text
-displayG fn = Text.unlines . map (mconcat . map fn) . toMatrixG
+class GridItem a where
+  showInGrid :: a -> Char
+
+instance GridItem Char where
+  showInGrid = id
+
+instance GridItem () where
+  showInGrid = const '#'
+
+instance GridItem Int where
+  showInGrid i
+    | i < 0 = '-'
+    | i > 10 = '+'
+    | otherwise = chr (ord '0' + i)
+
+displayG :: GridItem a => Grid2 a -> Text
+displayG = displayG' showInGrid
+
+displayG' :: (a -> Char) -> Grid2 a -> Text
+displayG' fn = Text.unlines . map (Text.pack . map (maybe '·' fn)) . toMatrixG
 
 data Direction4
   = E

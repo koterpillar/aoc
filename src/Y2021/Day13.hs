@@ -43,14 +43,8 @@ parseInstructions =
 part1 :: Instructions -> Int
 part1 (p, fs) = Map.size $ applyFold (head fs) p
 
-displayPaper :: Paper -> Text
-displayPaper = displayG d
-  where
-    d (Just ()) = "#"
-    d Nothing   = "."
-
 part2 :: Instructions -> ()
-part2 (p, fs) = ttrace (displayPaper $ foldl (flip applyFold) p fs) ()
+part2 (p, fs) = ttrace (displayG $ foldl (flip applyFold) p fs) ()
 
 tasks =
   Tasks
