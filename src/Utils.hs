@@ -8,6 +8,7 @@ module Utils
   , Text
   , ($>)
   , (<=<)
+  , (<|>)
   , (>=>)
   , bimap
   , chr
@@ -26,7 +27,7 @@ module Utils
   , traverse_
   ) where
 
-import           Control.Applicative (liftA2)
+import           Control.Applicative (liftA2, (<|>))
 import           Control.Monad       (guard, join, when, (<=<), (>=>))
 
 import           Data.Bifunctor      (bimap, first, second)
