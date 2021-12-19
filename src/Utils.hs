@@ -27,10 +27,11 @@ module Utils
   , splitOn
   , swap
   , traverse_
+  , when
   ) where
 
 import           Control.Applicative (liftA2, (<|>))
-import           Control.Monad       (guard, join, when, (<=<), (>=>))
+import           Control.Monad
 
 import           Data.Bifunctor      (bimap, first, second)
 
