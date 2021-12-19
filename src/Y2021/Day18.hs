@@ -31,21 +31,21 @@ type SLoc a = (Snail a, SnailCtx a)
 sToLoc :: Snail a -> SLoc a
 sToLoc s = (s, SCRoot)
 
-scUp, scDownLeft, scDownRight :: Snail a -> SnailCtx a -> Maybe (SLoc a)
-scUp _ SCRoot          = Nothing
-scUp l (SCLeft ctx r)  = Just (PPair l r, ctx)
-scUp r (SCRight l ctx) = Just (PPair l r, ctx)
+sFromLoc :: SLoc a -> Snail a
+sFromLoc (s, SCRoot)        = s
+sFromLoc (l, SCLeft ctx r)  = sFromLoc (PPair l r, ctx)
+sFromLoc (r, SCRight l ctx) = sFromLoc (PPair l r, ctx)
 
-sFromLoc :: Snail a -> SnailCtx a -> Snail a
-sFromLoc s SCRoot          = s
-sFromLoc l (SCLeft ctx r)  = sFromLoc (PPair l r) ctx
-sFromLoc r (SCRight l ctx) = sFromLoc (PPair l r) ctx
+scUp, scLeft, scRight :: SLoc a -> Maybe (SLoc a)
+scUp (_, SCRoot)        = Nothing
+scUp (l, SCLeft ctx r)  = Just (PPair l r, ctx)
+scUp (r, SCRight l ctx) = Just (PPair l r, ctx)
 
-scDownLeft (PNumber _) _   = Nothing
-scDownLeft (PPair l r) ctx = Just (l, SCLeft ctx r)
+scLeft (PNumber _, _)   = Nothing
+scLeft (PPair l r, ctx) = Just (l, SCLeft ctx r)
 
-scDownRight (PNumber _) _   = Nothing
-scDownRight (PPair l r) ctx = Just (r, SCRight l ctx)
+scRight (PNumber _, _)   = Nothing
+scRight (PPair l r, ctx) = Just (r, SCRight l ctx)
 
 type SnailInt = Snail Int
 
@@ -59,8 +59,7 @@ snadd :: SnailInt -> SnailInt -> SnailInt
 snadd n1 n2 = snreduce $ PPair n1 n2
 
 snexplode :: SnailInt -> Maybe SnailInt
-snexplode =
-  fmap (uncurry sFromLoc . uncurry afterExplode) . findExploding 0 . sToLoc
+snexplode = fmap (sFromLoc . uncurry afterExplode) . findExploding 0 . sToLoc
 
 type AfterExplode = (Maybe Int, Maybe Int)
 
@@ -69,8 +68,8 @@ afterExplode (t, SCRight l ctx) (Just n, rr) =
   afterExplode (t, SCRight (addToRightmost n l) ctx) (Nothing, rr)
 afterExplode (t, SCLeft ctx r) (rl, Just n) =
   afterExplode (t, SCLeft ctx (addToLeftmost n r)) (rl, Nothing)
-afterExplode l@(t, ctx) ae =
-  case scUp t ctx of
+afterExplode l ae =
+  case scUp l of
     Nothing -> l
     Just l' -> afterExplode l' ae
 
@@ -79,10 +78,9 @@ findExploding _ (PNumber _, _) = Nothing
 findExploding d (PPair (PNumber nl) (PNumber nr), ctx)
   | d >= 4 = Just ((PNumber 0, ctx), (Just nl, Just nr))
   | otherwise = Nothing
-findExploding d (t, ctx) =
+findExploding d l =
   let d' = d + 1
-   in (scDownLeft t ctx >>= findExploding d') <|>
-      (scDownRight t ctx >>= findExploding d')
+   in (scLeft l >>= findExploding d') <|> (scRight l >>= findExploding d')
 
 addToLeftmost :: Int -> SnailInt -> SnailInt
 addToLeftmost n (PNumber n') = PNumber (n + n')
@@ -93,10 +91,10 @@ addToRightmost n (PNumber n') = PNumber (n + n')
 addToRightmost n (PPair l r)  = PPair l (addToRightmost n r)
 
 snsplit :: SnailInt -> Maybe SnailInt
-snsplit = fmap (uncurry sFromLoc) . go . sToLoc
+snsplit = fmap sFromLoc . go . sToLoc
   where
     go :: SLocInt -> Maybe SLocInt
-    go (t@PPair {}, c) = (scDownLeft t c >>= go) <|> (scDownRight t c >>= go)
+    go l@(PPair {}, _) = (scLeft l >>= go) <|> (scRight l >>= go)
     go (PNumber n, c)
       | n < 10 = Nothing
       | otherwise =
