@@ -106,7 +106,11 @@ selectExample year day examples =
   " examples for year " <>
   show year <>
   " day " <>
-  show day <> ":\n\n" <> Text.unpack (Text.intercalate "\n---\n" examples)
+  show day <>
+  ":\n\n" <>
+  Text.unpack
+    (Text.unlines $
+     zipWith (\i e -> "--- item " <> tshow i <> " ---\n" <> e) [0 ..] examples)
 
 currentYear :: IO Integer
 currentYear = do
