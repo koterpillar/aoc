@@ -22,6 +22,7 @@ module Utils
   , liftA2
   , on
   , ord
+  , readEither
   , second
   , splitOn
   , swap
@@ -56,6 +57,8 @@ import qualified Data.Text           as Text
 import qualified Data.Text.IO        as Text
 
 import           Data.Tuple          (swap)
+
+import           Text.Read
 
 import           Utils.Trace
 
@@ -124,9 +127,6 @@ ttrim = Text.dropWhile (== '\n') . Text.dropWhileEnd (== '\n')
 
 tshow :: Show a => a -> Text
 tshow = Text.pack . show
-
-tread :: Read a => Text -> a
-tread = read . Text.unpack
 
 zipTail :: [a] -> [(a, a)]
 zipTail a = zip a (tail a)

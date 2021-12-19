@@ -117,7 +117,7 @@ tasks =
   Tasks
     2021
     18
-    (linesP &** pureP parse)
+    (linesP &** (pureP Text.unpack &* stateP parseS))
     [ Assert "split 9" Nothing (snsplit $ PNumber 9)
     , Assert "split 11" (Just $ parse "[5,6]") (snsplit $ PNumber 11)
     , Assert "split 12" (Just $ parse "[6,6]") (snsplit $ PNumber 12)
@@ -165,50 +165,21 @@ tasks =
     , Task part2 3993
     ]
 
-parseS :: State String SnailInt
+parseS :: StateParser String SnailInt
 parseS = do
-  c <- getchar
+  c <- unconsSP_
   case c of
-    Just '[' -> do
+    '[' -> do
       n1 <- parseS
-      ensure ','
+      ensureUnconsSP_ ','
       n2 <- parseS
-      ensure ']'
+      ensureUnconsSP_ ']'
       return $ PPair n1 n2
-    Just d
+    d
       | isDigit d -> do
-        n <- parseNumber
-        return $ PNumber $ read $ d : n
-      | otherwise -> sterror $ "expected number or [, got " <> show c
-    Nothing -> sterror "expected number or [, got end of input"
+        putBackSP d
+        PNumber <$> naturalSP
+      | otherwise -> failSP $ "expected number or [, got " <> show c
 
-parse :: Text -> SnailInt
-parse input =
-  let (number, []) = runState parseS (Text.unpack input)
-   in number
-
-getchar :: State String (Maybe Char)
-getchar =
-  state $ \case
-    [] -> (Nothing, [])
-    (c:cs) -> (Just c, cs)
-
-sterror :: String -> State String a
-sterror message = do
-  rem <- get
-  error $ message <> " remainder: " <> show rem
-
-ensure :: Char -> State String ()
-ensure c =
-  getchar >>= \c' ->
-    if c' == Just c
-      then pure ()
-      else sterror $ "expected " <> show c <> " but got " <> show c'
-
-parseNumber :: State String [Char]
-parseNumber = getchar >>= go
-  where
-    go Nothing = pure []
-    go (Just c)
-      | isDigit c = (c :) <$> parseNumber
-      | otherwise = modify (c :) >> pure []
+parse :: String -> SnailInt
+parse = justParse (stateP parseS)
