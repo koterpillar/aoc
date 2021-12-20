@@ -156,15 +156,17 @@ taskName Task {}                  = "Task"
 taskName (Assert name _ _)        = name
 taskName (AssertExample name _ _) = name
 
-taskTimeout :: Int
-taskTimeout = 5000000
+taskTimeout :: Int -- seconds
+taskTimeout = 40
 
 processTasks :: Tasks -> IO ()
 processTasks (Tasks year day parser tasks) = do
   Text.putStrLn $ "Year " <> tshow year <> ", day " <> tshow day
   forM_ tasks $ \task -> do
-    result <- timeout taskTimeout $ processTask year day parser task
-    when (isNothing result) $ error $ taskName task <> ": timeout"
+    result <- timeout (taskTimeout * 1000000) $ processTask year day parser task
+    when (isNothing result) $
+      error $
+      taskName task <> ": timeout after <> " <> show taskTimeout <> " seconds"
 
 processTask :: Integer -> Int -> Parser Text a -> Task a -> IO ()
 processTask year day parser (Task solve expected) = do
