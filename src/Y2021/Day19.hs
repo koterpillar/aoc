@@ -6,8 +6,12 @@ import qualified Data.Set as Set
 import           AOC
 import           Utils
 
-pick :: Ord a => Set a -> [(a, Set a)]
-pick xs = [(x, Set.delete x xs) | x <- Set.toList xs]
+pick :: [a] -> [(a, [a])]
+pick []     = []
+pick (x:xs) = (x, xs) : map (second (x :)) (pick xs)
+
+setPick :: Ord a => Set a -> [(a, Set a)]
+setPick xs = [(x, Set.delete x xs) | x <- Set.toList xs]
 
 reduceUnify :: Show a => (a -> a -> Maybe a) -> [a] -> a
 reduceUnify _ [] = error "reduceUnify: empty list"
@@ -34,7 +38,7 @@ instance Show Position3 where
 
 shiftFrom :: Position3 -> Position3 -> Position3 -> Position3
 shiftFrom (Position3 x0 y0 z0) (Position3 x1 y1 z1) (Position3 x2 y2 z2) =
-  Position3 (-x0 + x1 + x2) (-y0 + y1 + y2) (-z0 + z1 + z2)
+  Position3 (x2 - x0 + x1) (y2 - y0 + y1) (z2 - z0 + z1)
 
 scale3 :: Int -> Position3 -> Position3
 scale3 s (Position3 x y z) = Position3 (x * s) (y * s) (z * s)
@@ -44,10 +48,15 @@ type View = Set Position3
 type Orient = Position3 -> Position3
 
 orientations :: [Orient]
-orientations = [scale3 a . r | a <- [1, -1], r <- [id, r1, r2]]
+orientations =
+  [r2 c2 . r1 c1 . r3 c3 | c2 <- [0 .. 3], c1 <- [0 .. 1], c3 <- [0 .. 2]]
   where
-    r1 (Position3 x y z) = Position3 y z x
-    r2 (Position3 x y z) = Position3 z x y
+    r3 0 p                 = p
+    r3 n (Position3 x y z) = r3 (n - 1) $ Position3 y z x
+    r1 0 p                 = p
+    r1 _ (Position3 x y z) = Position3 (negate x) (negate y) z
+    r2 0 p                 = p
+    r2 n (Position3 x y z) = r2 (n - 1) $ Position3 x z (negate y)
 
 orientationsV :: View -> [(Orient, View)]
 orientationsV v = [(o, Set.map o v) | o <- orientations]
@@ -78,7 +87,9 @@ tasks =
     2021
     19
     parse
-    [ let canon =
+    [ Assert "orientations" 24 $
+      length $ sort $ map ($ Position3 1 2 3) orientations
+    , let canon =
             Set.fromList
               [ Position3 0 0 0
               , Position3 1 0 0
@@ -93,9 +104,7 @@ tasks =
               , Position3 3 10 0
               , Position3 30 20 20
               ]
-       in Assert
-            "unify translation"
-            (Just $ Set.insert (Position3 10 20 30) canon) $
+       in Assert "unify 1" (Just $ Set.insert (Position3 10 20 30) canon) $
           unify' 4 canon candidate
     , AssertExample
         "unify 0 and 1"
