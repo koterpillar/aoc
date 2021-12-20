@@ -64,18 +64,30 @@ orientationsV v = [(o, Set.map o v) | o <- orientations]
 unify :: View -> View -> Maybe View
 unify = unify' 12
 
+setTails :: Ord a => Set a -> [(a, Set a)]
+setTails = map (second Set.fromList) . pickFromTails . Set.toList
+  where
+    pickFromTails as = [(a, as) | a:as <- tails as]
+
 unify' :: Int -> View -> View -> Maybe View
 unify' anchorsNeeded canon candidate =
   listToMaybe $ do
-    (_, candidate') <- orientationsV candidate
-    (candOrigin, candRest) <- pick candidate'
-    (canonOrigin, canonRest) <- pick canon
+    traceM $
+      "unifying " <>
+      show (Set.size canon) <> " with " <> show (Set.size candidate)
+    o <- orientations
+    (candOrigin, candRest) <- setPick $ Set.map o candidate
+    (canonOrigin, canonRest) <- setPick canon
     let translation = shiftFrom candOrigin canonOrigin
-    let candRest' = Set.map translation candRest
-    let matched = Set.size (Set.intersection canonRest candRest') + 1
-    when (matched > 1) $ traceShowM matched
-    guard $ matched >= anchorsNeeded
-    pure $ Set.union canon candRest'
+    let candRestT = Set.map translation candRest
+    let matched = Set.intersection canonRest candRestT
+    let anchorsGot = Set.size matched + 1
+    guard $ anchorsGot >= anchorsNeeded
+    let result = Set.union canon candRestT
+    traceM $
+      "success, matched = " <>
+      show anchorsGot <> ", result = " <> show (Set.size result)
+    pure result
 
 type Scene = Map Int View
 
