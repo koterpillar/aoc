@@ -166,7 +166,7 @@ processTasks (Tasks year day parser tasks) = do
     result <- timeout (taskTimeout * 1000000) $ processTask year day parser task
     when (isNothing result) $
       error $
-      taskName task <> ": timeout after <> " <> show taskTimeout <> " seconds"
+      taskName task <> ": timeout after " <> show taskTimeout <> " seconds"
 
 processTask :: Integer -> Int -> Parser Text a -> Task a -> IO ()
 processTask year day parser (Task solve expected) = do
