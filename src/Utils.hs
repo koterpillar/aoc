@@ -15,6 +15,7 @@ module Utils
   , chr
   , guard
   , first
+  , forM_
   , isDigit
   , isLower
   , isUpper
@@ -27,6 +28,7 @@ module Utils
   , splitOn
   , swap
   , traverse_
+  , unless
   , when
   ) where
 

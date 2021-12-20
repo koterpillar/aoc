@@ -27,6 +27,7 @@ import           Network.HTTP.Simple
 
 import           System.Directory            (doesFileExist)
 import           System.IO                   (isEOF)
+import           System.Timeout
 
 import           Miniparse
 import           Utils
@@ -150,10 +151,20 @@ data Task a where
   Assert :: (Eq b, Show b) => String -> b -> b -> Task a
   AssertExample :: (Eq b, Show b) => String -> b -> (a -> b) -> Task a
 
+taskName :: Task a -> String
+taskName Task {}                  = "Task"
+taskName (Assert name _ _)        = name
+taskName (AssertExample name _ _) = name
+
+taskTimeout :: Int
+taskTimeout = 5000000
+
 processTasks :: Tasks -> IO ()
 processTasks (Tasks year day parser tasks) = do
   Text.putStrLn $ "Year " <> tshow year <> ", day " <> tshow day
-  traverse_ (processTask year day parser) tasks
+  forM_ tasks $ \task -> do
+    result <- timeout taskTimeout $ processTask year day parser task
+    when (isNothing result) $ error $ taskName task <> ": timeout"
 
 processTask :: Integer -> Int -> Parser Text a -> Task a -> IO ()
 processTask year day parser (Task solve expected) = do
@@ -171,7 +182,7 @@ processTask year day parser (AssertExample message expected fn) = do
 
 assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
 assertEqual message expected actual
-  | expected == actual = pure ()
+  | expected == actual = putStrLn $ message <> " OK"
   | otherwise =
     error $
     message <> " is " <> show actual <> ", but expected " <> show expected
