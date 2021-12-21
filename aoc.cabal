@@ -73,6 +73,7 @@ library
     , hashable
     , html-entities
     , http-conduit
+    , linear
     , mtl
     , split
     , text
@@ -103,6 +104,7 @@ executable main
     , hashable
     , html-entities
     , http-conduit
+    , linear
     , mtl
     , split
     , text

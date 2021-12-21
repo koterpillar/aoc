@@ -21,6 +21,7 @@ dependencies:
 - hashable
 - html-entities
 - http-conduit
+- linear
 - MissingH
 - mtl
 - split
