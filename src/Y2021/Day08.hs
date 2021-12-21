@@ -85,9 +85,9 @@ readDisplay (Reading allnumbers digits) =
     guess = guessNumbers allnumbers
     digitsValues = map (fromJust . guess) digits
 
-wireP :: Parser Text Wire
+wireP :: Parser Char Wire
 wireP =
-  choiceP [("a", A), ("b", B), ("c", C), ("d", D), ("e", E), ("f", F), ("g", G)]
+  choiceP [('a', A), ('b', B), ('c', C), ('d', D), ('e', E), ('f', F), ('g', G)]
 
 displayP :: Parser Text Display
 displayP = Set.fromList <$> charactersP &** wireP

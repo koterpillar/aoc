@@ -47,6 +47,9 @@ wordsP = pureP Text.words
 splitP :: Eq a => [a] -> Parser [a] [[a]]
 splitP sep = pureP $ splitOn sep
 
+lineGroupsP :: Parser Text [[Text]]
+lineGroupsP = linesP &* splitP [""]
+
 unconsP :: Parser [a] (a, [a])
 unconsP =
   Parser $ \case
@@ -68,11 +71,11 @@ integersP sep = tsplitP sep &** integerP
 charP :: Parser Text Char
 charP = pureP Text.unpack &* singleP
 
-charactersP :: Parser Text [Text]
-charactersP = pureP $ map Text.singleton . Text.unpack
+charactersP :: Parser Text [Char]
+charactersP = pureP Text.unpack
 
 digitsP :: Parser Text [Int]
-digitsP = charactersP &** integerP
+digitsP = charactersP &** (pureP Text.singleton &* integerP)
 
 position2P :: Parser Text Position2
 position2P = tsplitP "," &* pairPWith Position2 integerP integerP
@@ -81,7 +84,7 @@ digitGridP :: Parser Text (Grid2 Int)
 digitGridP = fromMatrixG <$> linesP &** digitsP
 
 bitsP :: Parser Text BitString
-bitsP = charactersP &** choiceP [("0", O), ("1", I)]
+bitsP = charactersP &** choiceP [('0', O), ('1', I)]
 
 (&*) :: Parser a b -> Parser b c -> Parser a c
 Parser p1 &* Parser p2 = Parser $ p1 >=> p2

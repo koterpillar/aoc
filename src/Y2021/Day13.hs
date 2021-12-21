@@ -32,7 +32,7 @@ applyFold = Map.mapKeys . applyFoldPoint
 
 parseInstructions :: Parser Text Instructions
 parseInstructions =
-  linesP &* splitP [""] &* pairP &* (parseDots &= traverseP parseFold)
+  lineGroupsP &* pairP &* (parseDots &= traverseP parseFold)
   where
     parseDots = Map.fromList . flip zip (repeat ()) <$> traverseP parseDot
     parseDot = tsplitP "," &* pairPWith Position2 integerP integerP

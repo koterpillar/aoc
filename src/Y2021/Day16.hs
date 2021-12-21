@@ -64,8 +64,8 @@ literalBits = bitsValue <$> go
 mkPacket :: BitString -> Packet
 mkPacket = evalState spacket
 
-hexDigitP :: Parser Text Int
-hexDigitP = charP &* Parser go
+hexDigitP :: Parser Char Int
+hexDigitP = Parser go
   where
     go c
       | isDigit c = Right $ ord c - ord '0'
