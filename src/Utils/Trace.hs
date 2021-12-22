@@ -12,6 +12,9 @@ import qualified Data.Text   as Text
 
 import           Debug.Trace
 
+traceF :: (a -> String) -> a -> a
+traceF f a = trace (f a) a
+
 traceShowF :: Show b => (a -> b) -> a -> a
 traceShowF f a = traceShow (f a) a
 
