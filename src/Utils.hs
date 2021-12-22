@@ -1,5 +1,6 @@
 module Utils
   ( module Utils
+  , module Data.Either
   , module Data.Maybe
   , module Data.List
   , module Utils.Trace
@@ -38,6 +39,8 @@ import           Control.Monad
 import           Data.Bifunctor      (bimap, first, second)
 
 import           Data.Char           (chr, isDigit, isLower, isUpper, ord)
+
+import           Data.Either
 
 import           Data.Foldable       (traverse_)
 
