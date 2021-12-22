@@ -5,9 +5,16 @@ data Bit
   | I
   deriving (Ord, Eq, Show)
 
+bitToBool :: Bit -> Bool
+bitToBool O = False
+bitToBool I = True
+
+boolToBit :: Bool -> Bit
+boolToBit False = O
+boolToBit True  = I
+
 bitInvert :: Bit -> Bit
-bitInvert O = I
-bitInvert I = O
+bitInvert = boolToBit . not . bitToBool
 
 type BitString = [Bit]
 

@@ -46,14 +46,8 @@ parse =
 
 gridBit :: Position2 -> Grid -> Bit
 gridBit p g
-  | insideBounds (gridBounds g) p =
-    case Map.lookup p (inside g) of
-      Nothing -> O
-      Just () -> I
-  | otherwise =
-    if outside g
-      then I
-      else O
+  | insideBounds (gridBounds g) p = boolToBit $ Map.member p (inside g)
+  | otherwise = boolToBit $ outside g
 
 gridBounds :: Grid -> (Position2, Position2)
 gridBounds = boundsG . inside
