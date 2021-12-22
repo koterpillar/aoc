@@ -26,6 +26,10 @@ type Grid2 a = Map Position2 a
 boundsG :: Grid2 a -> (Position2, Position2)
 boundsG = pointBounds . Map.keys
 
+insideBounds :: (Position2, Position2) -> Position2 -> Bool
+insideBounds (Position2 xmin ymin, Position2 xmax ymax) (Position2 x y) =
+  x >= xmin && x <= xmax && y >= ymin && y <= ymax
+
 pointBounds :: [Position2] -> (Position2, Position2)
 pointBounds [] = error "No bounds for empty list"
 pointBounds ps = (Position2 xmin ymin, Position2 xmax ymax)

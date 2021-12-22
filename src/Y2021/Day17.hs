@@ -34,17 +34,13 @@ projectilePath :: TargetArea -> Velocity -> [Position2]
 projectilePath area@(Position2 _ ymin, _) v = go v (Position2 0 0)
   where
     go v p
-      | insideArea area p = [p]
+      | insideBounds area p = [p]
       | pY p < ymin && pY v < 0 = []
       | otherwise = p : go (velocityStep v) (applyVelocity v p)
 
 highestPoint :: TargetArea -> Velocity -> Int
 highestPoint area =
   fromJustE "highestPoint" . maybeMaximum . map pY . projectilePath area
-
-insideArea :: TargetArea -> Position2 -> Bool
-insideArea (Position2 xmin ymin, Position2 xmax ymax) (Position2 x y) =
-  inBounds xmin xmax x == EQ && inBounds ymin ymax y == EQ
 
 vxmin :: TargetArea -> Int
 vxmin (Position2 xmin _, _) -- FIXME correct?
@@ -66,7 +62,7 @@ vymax area@(Position2 _ ymin, Position2 _ ymax)
   | otherwise = negate $ vymin area
 
 doesHit :: TargetArea -> Velocity -> Bool
-doesHit area = insideArea area . last . projectilePath area
+doesHit area = insideBounds area . last . projectilePath area
 
 hits :: TargetArea -> [Velocity]
 hits area = do
