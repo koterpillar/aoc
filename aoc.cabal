@@ -61,7 +61,9 @@ library
       src
   default-extensions:
       BangPatterns
+      FunctionalDependencies
       LambdaCase
+      MultiParamTypeClasses
       OverloadedStrings
       RecordWildCards
       TupleSections
@@ -91,7 +93,9 @@ executable main
       main
   default-extensions:
       BangPatterns
+      FunctionalDependencies
       LambdaCase
+      MultiParamTypeClasses
       OverloadedStrings
       RecordWildCards
       TupleSections
