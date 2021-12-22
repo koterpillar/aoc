@@ -2,39 +2,10 @@
 
 module Y2021.Day21 where
 
-import           Control.Monad.Identity
-
-import qualified Data.Map               as Map
+import qualified Data.Map as Map
 
 import           AOC
 import           Utils
-
-newtype Counts m =
-  Counts
-    { getCounts :: [(m, Int)]
-    }
-  deriving (Ord, Eq, Show)
-
-instance Functor Counts where
-  fmap f (Counts as) = Counts [(f a, b) | (a, b) <- as]
-
-instance Applicative Counts where
-  pure a = Counts [(a, 1)]
-  liftA2 f (Counts as) (Counts bs) =
-    Counts [(f a b, ca * cb) | (a, ca) <- as, (b, cb) <- bs]
-
-instance Monad Counts where
-  Counts as >>= f =
-    Counts [(b, ca * cb) | (a, ca) <- as, (b, cb) <- getCounts (f a)]
-
-class Shrink m where
-  shrink :: Ord a => m a -> m a
-
-instance Shrink Identity where
-  shrink = id
-
-instance Shrink Counts where
-  shrink = Counts . Map.toList . mapFromListSum . getCounts
 
 mod1 :: Int -> Int -> Int
 mod1 a b =
@@ -46,53 +17,88 @@ type Positions = [Int]
 
 type Player = Int
 
-data Dice m where
-  Deterministic :: Int -> Dice Identity
-  Dirac :: Dice Counts
+newtype Counts a =
+  Counts
+    { getCounts :: Map a Int
+    }
+  deriving (Eq, Ord, Show)
 
-instance Eq (Dice m) where
-  Deterministic a == Deterministic b = a == b
-  Dirac == Dirac = True
+cpure :: Ord a => a -> Counts a
+cpure x = Counts $ Map.singleton x 1
 
-instance Ord (Dice m) where
-  Deterministic a `compare` Deterministic b = a `compare` b
-  Dirac `compare` Dirac = EQ
+cFromListCount :: Ord a => [(a, Int)] -> Counts a
+cFromListCount = Counts . mapFromListSum
 
-roll :: Dice m -> m (Int, Dice m)
-roll (Deterministic a) = pure (a, Deterministic $ a + 1 `mod1` 100)
-roll Dirac             = Counts [((n, Dirac), 1) | n <- [1, 2, 3]]
+cFromList :: Ord a => [a] -> Counts a
+cFromList = cFromListCount . flip zip (repeat 1)
 
-data Game m =
+cToList :: Counts a -> [(a, Int)]
+cToList = Map.toList . getCounts
+
+cToSingle :: Show a => Counts a -> a
+cToSingle c =
+  case cToList c of
+    [(x, 1)] -> x
+    vs       -> error $ "cToSingle: " ++ show vs
+
+ctotal :: Counts a -> Int
+ctotal = sum . Map.elems . getCounts
+
+cmap :: Ord b => (a -> b) -> Counts a -> Counts b
+cmap f = Counts . Map.mapKeys f . getCounts
+
+cmapf :: Ord b => Counts a -> (a -> b) -> Counts b
+cmapf = flip cmap
+
+cjoin :: Ord a => Counts (Counts a) -> Counts a
+cjoin = Counts . mapFromListSum . concatMap toListMul . cToList
+  where
+    toListMul (c, n) = [(v, m * n) | (v, m) <- cToList c]
+
+call :: (a -> Bool) -> Counts a -> Bool
+call f = all f . Map.keys . getCounts
+
+crights :: Ord b => Counts (Either a b) -> Maybe (Counts b)
+crights = fmap cFromListCount . traverse go . cToList
+  where
+    go (Right b, c) = Just (b, c)
+    go _            = Nothing
+
+data Dice
+  = Deterministic Int
+  | Dirac
+  deriving (Eq, Ord, Show)
+
+diceSides :: [Int]
+diceSides = [1, 2, 3]
+
+roll :: Dice -> Counts (Int, Dice)
+roll (Deterministic a) =
+  cpure (clamp a + clamp (a + 1) + clamp (a + 2), Deterministic $ clamp $ a + 3)
+  where
+    clamp n = n `mod1` 100
+roll Dirac =
+  cFromList
+    [(a + b + c, Dirac) | a <- diceSides, b <- diceSides, c <- diceSides]
+
+data Game =
   Game
     { gamePositions :: !(Map Player Int)
-    , gameDice      :: Dice m
+    , gameDice      :: Dice
     , gameTurn      :: !Int
     , gameScore     :: !(Map Player Int)
     , gameUntil     :: !Int
     }
-  deriving (Ord, Eq)
+  deriving (Ord, Eq, Show)
 
-instance Show (Game m) where
-  show Game {..} =
-    "Game: pos=" ++
-    show gamePositions ++
-    " turn=" ++ show gameTurn ++ " score=" ++ show gameScore
-
-gameThrowDice :: Monad m => Game m -> m (Int, Game m)
-gameThrowDice game = do
-  (v1, d1) <- roll $ gameDice game
-  (v2, d2) <- roll d1
-  (v3, d3) <- roll d2
-  pure (v1 + v2 + v3, game {gameDice = d3})
-
-gamePlayers :: Game m -> [Player]
+gamePlayers :: Game -> [Player]
 gamePlayers = Map.keys . gamePositions
 
-gameCurrentPlayer :: Game m -> Player
+gameCurrentPlayer :: Game -> Player
 gameCurrentPlayer game =
   (gameTurn game + 1) `mod1` Map.size (gamePositions game)
 
-startGame :: Positions -> Game Identity
+startGame :: Positions -> Game
 startGame positions = Game {..}
   where
     gamePositions = Map.fromList $ zip [1 ..] positions
@@ -101,18 +107,19 @@ startGame positions = Game {..}
     gameScore = Map.fromList $ zip [1 ..] $ replicate (length positions) 0
     gameUntil = 1000
 
-startGameDirac :: Positions -> Game Counts
+startGameDirac :: Positions -> Game
 startGameDirac positions =
   (startGame positions) {gameDice = Dirac, gameUntil = 21}
 
-gameStep :: (Monad m, Shrink m) => Game m -> m (Game m)
-gameStep g0 = uncurry go <$> shrink (gameThrowDice g0)
+gameStep :: Game -> Counts Game
+gameStep g = cmap (uncurry go) $ roll $ gameDice g
   where
-    go movement g =
+    go movement dice' =
       g
         { gameTurn = succ $ gameTurn g
         , gamePositions = gamePositions'
         , gameScore = gameScore'
+        , gameDice = dice'
         }
       where
         player = gameCurrentPlayer g
@@ -123,27 +130,54 @@ gameStep g0 = uncurry go <$> shrink (gameThrowDice g0)
         gamePositions' = Map.insert player position' (gamePositions g)
         gameScore' = Map.adjust (+ position') player (gameScore g)
 
-gameWin :: Game m -> Maybe Player
+gameWin :: Game -> Maybe Player
 gameWin g = fmap fst $ find ((>= gameUntil g) . snd) $ Map.toList $ gameScore g
 
-gamePlay :: (Monad m, Shrink m) => Game m -> m (Game m, Player)
-gamePlay g =
-  case gameWin g of
-    Just player -> pure (g, player)
-    Nothing     -> gameStep g >>= gamePlay
+type Win = (Game, Player)
+
+gamePlay :: Game -> Counts Win
+gamePlay = go . cmap Left . cpure
+  where
+    go gs =
+      case crights gs of
+        Just wins -> wins
+        Nothing ->
+          go $
+          traceShowF (cmap (bimap gameTurn (const "win"))) $
+          cjoin $ cmap (either stepWin (cpure . Right)) gs
+    stepWin g =
+      case gameWin g of
+        Just p  -> cpure $ Right (g, p)
+        Nothing -> cmap Left $ gameStep g
 
 part1 :: Positions -> Int
 part1 game = loserScore * endTurn
   where
-    (game', winner) = runIdentity $ gamePlay $ traceShowId $ startGame game
+    (game', winner) = cToSingle $ gamePlay $ traceShowId $ startGame game
     [loser] = filter (/= winner) (gamePlayers game')
     Just loserScore = Map.lookup loser (gameScore game')
     endTurn = gameTurn game' * 3
 
 part2 :: Positions -> Int
-part2 = undefined
+part2 game = max s1 s2
+  where
+    [(_, s1), (_, s2)] =
+      cToList $ cmap snd $ gamePlay $ traceShowId $ startGameDirac game
 
-tasks = Tasks 2021 21 parse [Task part1 739785, Task part2 444356092776315]
+testDirac :: Counts Int
+testDirac = cjoin $ cmap (\a -> cmap (a +) droll) droll
+  where
+    droll = cmap fst $ roll Dirac
+
+tasks =
+  Tasks
+    2021
+    21
+    parse
+    [ Task part1 739785
+    , Assert "normal counts" (3 ^ 6) $ ctotal testDirac
+    , Task part2 444356092776315
+    ]
 
 parse :: Parser Text Positions
 parse = linesP &** (tsplitP ": " &* pairPWith (\_ x -> x) (constP ()) integerP)
