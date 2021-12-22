@@ -45,7 +45,7 @@ ctotal :: Counts a -> Int
 ctotal = sum . Map.elems . getCounts
 
 cmap :: Ord b => (a -> b) -> Counts a -> Counts b
-cmap f = Counts . Map.mapKeys f . getCounts
+cmap f = Counts . Map.mapKeysWith (+) f . getCounts
 
 cmapf :: Ord b => Counts a -> (a -> b) -> Counts b
 cmapf = flip cmap
@@ -133,22 +133,29 @@ gameStep g = cmap (uncurry go) $ roll $ gameDice g
 gameWin :: Game -> Maybe Player
 gameWin g = fmap fst $ find ((>= gameUntil g) . snd) $ Map.toList $ gameScore g
 
+gameIsWin :: Game -> Bool
+gameIsWin = isJust . gameWin
+
 type Win = (Game, Player)
 
+cexamples :: Show a => Counts a -> String
+cexamples gs =
+  "Total: " <>
+  show (ctotal gs) <>
+  " Examples: " <> intercalate ", " (map show $ take 2 $ cToList gs)
+
+traceCounts :: Show a => Counts a -> Counts a
+traceCounts = traceF cexamples
+
 gamePlay :: Game -> Counts Win
-gamePlay = go . cmap Left . cpure
+gamePlay = go . cpure
   where
-    go gs =
-      case crights gs of
-        Just wins -> wins
-        Nothing ->
-          go $
-          traceShowF (cmap (bimap gameTurn (const "win"))) $
-          cjoin $ cmap (either stepWin (cpure . Right)) gs
-    stepWin g =
-      case gameWin g of
-        Just p  -> cpure $ Right (g, p)
-        Nothing -> cmap Left $ gameStep g
+    go gs
+      | call gameIsWin gs = cmapf gs $ \g -> (g, fromJust $ gameWin g)
+      | otherwise = go $ cjoin $ cmap stepWin gs
+    stepWin g
+      | gameIsWin g = cpure g
+      | otherwise = gameStep g
 
 part1 :: Positions -> Int
 part1 game = loserScore * endTurn
@@ -162,7 +169,9 @@ part2 :: Positions -> Int
 part2 game = max s1 s2
   where
     [(_, s1), (_, s2)] =
-      cToList $ cmap snd $ gamePlay $ traceShowId $ startGameDirac game
+      cToList $
+      traceCounts $
+      cmap snd $ traceCounts $ gamePlay $ traceShowId $ startGameDirac game
 
 testDirac :: Counts Int
 testDirac = cjoin $ cmap (\a -> cmap (a +) droll) droll
