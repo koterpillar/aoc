@@ -20,6 +20,9 @@ instance Functor (Parser src) where
 pureP :: (src -> dest) -> Parser src dest
 pureP = Parser . (pure .)
 
+constP :: dest -> Parser src dest
+constP = Parser . const . Right
+
 justParse :: Parser src dest -> src -> dest
 justParse parser src =
   case runParse parser src of
