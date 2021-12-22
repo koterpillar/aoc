@@ -61,9 +61,10 @@ gridBounds = boundsG . inside
 gridDisplay :: Grid -> Text
 gridDisplay (Grid inside outside) =
   "Outside: " <>
-  if outside
-    then "#"
-    else "." <> "\n" <> displayG inside
+  (if outside
+     then "#"
+     else ".") <>
+  "\n" <> displayG inside
 
 gridCount :: Grid -> Int
 gridCount (Grid _ True)  = error "infinite"
