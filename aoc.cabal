@@ -53,6 +53,7 @@ library
       Y2021.Day17
       Y2021.Day18
       Y2021.Day19
+      Y2021.Day20
   other-modules:
       Paths_aoc
   hs-source-dirs:
