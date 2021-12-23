@@ -29,7 +29,7 @@ import           System.Directory            (doesFileExist)
 import           System.IO                   (isEOF)
 import           System.Timeout
 
-import AOC.SelectExample
+import           AOC.SelectExample
 import           Miniparse
 import           Utils
 
