@@ -28,7 +28,13 @@ data Range =
     { rangeGreaterOrEqual :: !(Maybe Int)
     , rangeLessThan       :: !(Maybe Int)
     }
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq)
+
+instance Show Range where
+  show (Range (Just a) (Just b)) = "Range [" <> show a <> ".." <> show b <> ")"
+  show (Range (Just a) Nothing)  = "Range [" <> show a <> ".."
+  show (Range Nothing (Just b))  = "Range " <> show b <> "..)"
+  show (Range Nothing Nothing)   = "Range .."
 
 nullRange :: Range
 nullRange = Range Nothing Nothing
@@ -76,9 +82,8 @@ cRange axis cs = fromMaybe nullRange $ Map.lookup axis cs
 cvolume :: Cuboid -> Maybe Int
 cvolume cs = product <$> traverse (rangeLength . (`cRange` cs)) allAxis
 
-cConstraints :: Cuboid -> [(Axis, Constr)]
-cConstraints cs =
-  [(axis, c) | axis <- allAxis, c <- rangeConstraints $ cRange axis cs]
+cRanges :: Cuboid -> [(Axis, Range)]
+cRanges cs = [(axis, cRange axis cs) | axis <- allAxis]
 
 cFromRange :: Constr -> Range
 cFromRange (LessThan n)       = mkRangeLT n
@@ -112,9 +117,11 @@ dtCountIn v cs (Branch axis c yes no) = sum $ catMaybes [yes', no']
     no' = dtCountIn v <$> fmap csWith rNo <*> pure no
 
 cToTree :: value -> Cuboid -> DecisionTree value -> DecisionTree value
-cToTree v cs rest =
-  foldr (\(axis, constr) next -> Branch axis constr (Value v) next) rest $
-  cConstraints cs
+cToTree v cs rest = foldr (uncurry go) rest $ cRanges cs
+  where
+    go axis (Range (Just a) b) next = Branch axis (LessThan a) next $ go axis (Range Nothing b) next
+    go axis (Range Nothing (Just b)) next = Branch axis (GreaterOrEqual b) next $ Value v
+    go axis (Range Nothing Nothing) next = Value v
 
 dtSet :: value -> Cuboid -> DecisionTree value -> DecisionTree value
 dtSet v cs (Branch axis c yes no) = Branch axis c yes' no'
@@ -130,10 +137,34 @@ part1cuboid :: Cuboid
 part1cuboid =
   Map.fromList [(axis, Range (Just (-50)) (Just 51)) | axis <- allAxis]
 
-part1 :: Input -> Int
-part1 = dtCountIn I part1cuboid . foldl (flip $ uncurry dtSet) (Value O)
+initial :: DecisionTree Bit
+initial = Value O
 
-tasks = Tasks 2021 22 parse [Task part1 590784]
+applyInput :: Input -> DecisionTree Bit -> DecisionTree Bit
+applyInput input initial = foldl (flip $ uncurry dtSet) initial input
+
+part1 :: Input -> Int
+part1 input = dtCountIn I part1cuboid $ applyInput input initial
+
+example0 :: Input
+example0 = [(I, mkc r1), (I, mkc r2), (O, mkc r3), (I, mkc r4)]
+  where
+    mkc r = Map.fromList [(a, r) | a <- allAxis]
+    mkr a b = fromJustE "mkr" $ mkRange a (b + 1)
+    r1 = mkr 10 12
+    r2 = mkr 11 13
+    r3 = mkr 9 11
+    r4 = mkr 10 10
+
+tasks =
+  Tasks
+    2021
+    22
+    parse
+    [ Assert "count in one cube" (101 ^ 3) $ dtCountIn I part1cuboid $ Value I
+    , Assert "count example 0 step 1" 27 $ dtCount I $ traceShowId $ applyInput (take 1 example0) initial
+    , Task part1 590784
+    ]
 
 type Input = [(Bit, Cuboid)]
 
