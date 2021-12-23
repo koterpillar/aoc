@@ -87,9 +87,11 @@ cFromRange (GreaterOrEqual n) = mkRangeGE n
 constrainRange :: Constr -> Range -> Maybe Range
 constrainRange c r = rangeIntersect r $ cFromRange c
 
+constrainRangeBoth :: Constr -> Range -> (Maybe Range, Maybe Range)
+constrainRangeBoth c r = (constrainRange c r, constrainRange (constrNot c) r)
+
 data DecisionTree value
   = Value value
-  | NoValue
   | Branch Axis Constr (DecisionTree value) (DecisionTree value)
   deriving (Ord, Eq, Show)
 
@@ -97,12 +99,17 @@ dtCount :: Eq value => value -> DecisionTree value -> Int
 dtCount v = dtCountIn v Map.empty
 
 dtCountIn :: Eq value => value -> Cuboid -> DecisionTree value -> Int
-dtCountIn _ _ NoValue = 0
 dtCountIn v cs (Value v')
   | v == v' =
     fromJustE ("infinite region while counting: " <> show cs) $ cvolume cs
   | otherwise = 0
-dtCountIn v cs (Branch axis c pos neg) = _
+dtCountIn v cs (Branch axis c yes no) = sum $ catMaybes [yes', no']
+  where
+    r = cRange axis cs
+    (rYes, rNo) = constrainRangeBoth c r
+    csWith r = Map.insert axis r cs
+    yes' = dtCountIn v <$> fmap csWith rYes <*> pure yes
+    no' = dtCountIn v <$> fmap csWith rNo <*> pure no
 
 cToTree :: value -> Cuboid -> DecisionTree value -> DecisionTree value
 cToTree v cs rest =
@@ -113,15 +120,18 @@ dtSet :: value -> Cuboid -> DecisionTree value -> DecisionTree value
 dtSet v cs (Branch axis c yes no) = Branch axis c yes' no'
   where
     r = cRange axis cs
-    rYes = constrainRange c r
-    rNo = constrainRange (constrNot c) r
-    cs' r = Map.insert axis r cs
-    yes' = foldr (dtSet v . cs') yes rYes
-    no' = foldr (dtSet v . cs') no rNo
+    (rYes, rNo) = constrainRangeBoth c r
+    csWith r = Map.insert axis r cs
+    yes' = foldr (dtSet v . csWith) yes rYes
+    no' = foldr (dtSet v . csWith) no rNo
 dtSet v cs prim = cToTree v cs prim
 
+part1cuboid :: Cuboid
+part1cuboid =
+  Map.fromList [(axis, Range (Just (-50)) (Just 51)) | axis <- allAxis]
+
 part1 :: Input -> Int
-part1 = dtCount I . foldl (flip $ uncurry dtSet) (Value O)
+part1 = dtCountIn I part1cuboid . foldl (flip $ uncurry dtSet) (Value O)
 
 tasks = Tasks 2021 22 parse [Task part1 590784]
 
@@ -140,7 +150,7 @@ cuboidP :: Parser Text Cuboid
 cuboidP =
   tsplitP "," &**
   (tsplitP "=" &* pairP &*
-   (axisP &= (tsplitP "=" &* pairP &* (integerP &= integerP)))) &*
+   (axisP &= (tsplitP ".." &* pairP &* (integerP &= integerP)))) &*
   pureP mkCuboid
 
 mkCuboid :: [(Axis, (Int, Int))] -> Cuboid
