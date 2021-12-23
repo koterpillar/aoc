@@ -101,7 +101,7 @@ dtCountIn v cs (Value v')
   | otherwise = 0
 dtCountIn v cs t@(Branch axis c yes no) = sum $ catMaybes [yes', no']
   where
-    r = traceShow t $ cRange axis cs
+    r = cRange axis cs
     (ryes, rno) =
       traceF
         (\yn ->
@@ -143,16 +143,6 @@ applyInput input initial = foldl (flip $ uncurry dtSet) initial input
 part1 :: Input -> Int
 part1 input = dtCountIn I part1cuboid $ applyInput input initial
 
-example0 :: Input
-example0 = [(I, mkc r1), (I, mkc r2), (O, mkc r3), (I, mkc r4)]
-  where
-    mkc r = Map.fromList [(a, r) | a <- allAxis]
-    mkr a b = fromJustE "mkr" $ mkRange a (b + 1)
-    r1 = mkr 10 12
-    r2 = mkr 11 13
-    r3 = mkr 9 11
-    r4 = mkr 10 10
-
 tasks =
   Tasks
     2021
@@ -163,10 +153,27 @@ tasks =
     , Assert "count in one cube" (101 ^ 3) $ dtCountIn I part1cuboid $ Value I
     , Assert "count example 0 step 1" 27 $
       dtCount I $ traceShowId $ applyInput (take 1 example0) initial
+    , Assert "count example 0 step 2" (27 + 19) $
+      dtCount I $ traceShowId $ applyInput (take 2 example0) initial
     , Task part1 590784
     ]
 
 type Input = [(Bit, Cuboid)]
+
+example0 :: Input
+example0 =
+  [ (I, justParse cuboidP "x=10..12,y=10..12,z=10..12")
+  , (I, mkc r2)
+  , (O, mkc r3)
+  , (I, mkc r4)
+  ]
+  where
+    mkc r = Map.fromList [(a, r) | a <- allAxis]
+    mkr a b = fromJustE "mkr" $ mkRange a (b + 1)
+    r1 = mkr 10 12
+    r2 = mkr 11 13
+    r3 = mkr 9 11
+    r4 = mkr 10 10
 
 parse :: Parser Text Input
 parse = linesP &** (wordsP &* pairP &* (instrP &= cuboidP))
@@ -185,4 +192,5 @@ cuboidP =
   pureP mkCuboid
 
 mkCuboid :: [(Axis, (Int, Int))] -> Cuboid
-mkCuboid = Map.fromList . map (second $ \(a, b) -> Range (Just a) (Just b))
+mkCuboid =
+  Map.fromList . map (second $ \(a, b) -> Range (Just a) (Just (b + 1)))
