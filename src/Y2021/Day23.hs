@@ -1,6 +1,7 @@
 module Y2021.Day23 where
 
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 import           AOC
 import           Grid
@@ -37,7 +38,7 @@ instance Hashable Situation where
   hashWithSalt s (Situation h r) = hashWithSalt s (h, r)
 
 hallwayX :: [Int]
-hallwayX = [1 .. 11]
+hallwayX = [1, 2, 4, 6, 8, 10, 11]
 
 hallwayY :: Int
 hallwayY = 1
@@ -98,37 +99,65 @@ moveFromRoom s a' = do
       , posRooms = Map.adjust tail a' $ posRooms s
       }
 
+posRoomYs :: Situation -> Amphi -> [(Amphi, Int)]
+posRoomYs s a = zip as ys
+  where
+    as = posRoom s a
+    ys = drop (length roomY - length as) roomY
+
 -- situation -> room x -> (amphi, y)
 topInRoom :: Situation -> Amphi -> Maybe (Amphi, Int)
-topInRoom s a =
-  case posRoom s a of
-    []   -> Nothing
-    a:as -> Just (a, head roomY - length as + 1)
+topInRoom s a = listToMaybe $ posRoomYs s a
 
 isGoal :: Situation -> Bool
 isGoal s@Situation {..} = all (\a -> posRoom s a == [a, a]) amphis
 
 targetEstimate :: Situation -> Int
-targetEstimate Situation {..} = sum estimateHallway + sum estimateRooms
+targetEstimate s@Situation {..} = sum estimateHallway + sum estimateRooms
   where
     estimateHallway = map (uncurry estimateHallwayA) $ Map.toList posHallway
-    estimateHallwayA x a = moveEnergy a (x, hallwayY) (target a)
-    estimateRooms = map (uncurry estimateRoom) $ Map.toList posRooms
-    estimateRoom a as
-      | as == [a, a] = 0
-      | otherwise = sum $ zipWith (estimateRoomA (roomX a)) as roomY
+    estimateHallwayA x a = moveEnergy a (Position2 x hallwayY) (target a)
+    estimateRooms = concatMap estimateRoom amphis
+    estimateRoom a' =
+      if posRoom s a' == [a', a']
+        then []
+        else map (uncurry $ estimateRoomA (roomX a')) (posRoomYs s a')
     estimateRoomA x a y =
-      sum $ map (moveEnergy a (x, hallwayY)) [(x, y), target a]
-    target a = (roomX a, head roomY)
+      sum $ map (moveEnergy a (Position2 x hallwayY)) [Position2 x y, target a]
+    target a = Position2 (roomX a) (head roomY)
 
-moveEnergy :: Amphi -> (Int, Int) -> (Int, Int) -> Int
-moveEnergy a (x1, y1) (x2, y2) = aEnergy a * (abs (x2 - x1) + abs (y2 - y1))
+moveEnergy :: Amphi -> Position2 -> Position2 -> Int
+moveEnergy a (Position2 x1 y1) (Position2 x2 y2) =
+  aEnergy a * (abs (x2 - x1) + abs (y2 - y1))
+
+apositions :: Situation -> Set (Amphi, Position2)
+apositions s = Set.fromList (hallway ++ rooms)
+  where
+    hallway = [(a, Position2 x hallwayY) | (x, a) <- Map.toList $ posHallway s]
+    rooms = do
+      a' <- amphis
+      (a, y) <- posRoomYs s a'
+      pure (a, Position2 (roomX a') y)
 
 energySpent :: Situation -> Situation -> Int
-energySpent s1 s2 = error $ "energySpent: " ++ show (s1, s2)
+energySpent s1 s2 =
+  if a1 /= a2
+    then error
+           ("Inconsistent positions: " <>
+            show (a1, p1) <> " /= " <> show (a2, p2))
+    else moveEnergy a1 p1 p2
+  where
+    ps1 = apositions s1
+    ps2 = apositions s2
+    (a1, p1) = fromSingleE (show (s1, s2)) $ Set.toList $ Set.difference ps1 ps2
+    (a2, p2) = fromSingleE (show (s1, s2)) $ Set.toList $ Set.difference ps2 ps1
+
+fromSingleE :: Show a => String -> [a] -> a
+fromSingleE _ [a]  = a
+fromSingleE msg as = error $ "fromSingleE: " <> show as <> ": " <> msg
 
 solve :: Situation -> Maybe [Situation]
-solve = aStar (hashSetFromList . moves) energySpent (const 0) isGoal
+solve = aStar (hashSetFromList . moves) energySpent targetEstimate isGoal
 
 totalEnergySpent :: [Situation] -> Int
 totalEnergySpent = sum . zipWithTail energySpent
