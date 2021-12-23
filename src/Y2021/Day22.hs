@@ -10,30 +10,54 @@ import           AOC
 import           Bit
 import           Utils
 
-type Range = (Int, Int)
+mapSet :: Ord k => k -> Maybe a -> Map k a -> Map k a
+mapSet k (Just a) = Map.insert k a
+mapSet k Nothing  = Map.delete k
+
+data Constr
+  = LessThan Int
+  | GreaterOrEqual Int
+  deriving (Ord, Eq, Show)
+
+constrNot :: Constr -> Constr
+constrNot (LessThan n)       = GreaterOrEqual n
+constrNot (GreaterOrEqual n) = LessThan n
+
+data Range =
+  Range
+    { rangeGreaterOrEqual :: !(Maybe Int)
+    , rangeLessThan       :: !(Maybe Int)
+    }
+  deriving (Ord, Eq, Show)
+
+nullRange :: Range
+nullRange = Range Nothing Nothing
+
+mkRangeGE :: Int -> Range
+mkRangeGE v = Range (Just v) Nothing
+
+mkRangeLT :: Int -> Range
+mkRangeLT v = Range Nothing (Just v)
+
+mkRange' :: Maybe Int -> Maybe Int -> Maybe Range
+mkRange' (Just a) (Just b)
+  | a < b = Just $ Range (Just a) (Just b)
+  | otherwise = Nothing
+mkRange' a b = Just $ Range a b
 
 mkRange :: Int -> Int -> Maybe Range
 mkRange a b
-  | a >= b = Just (a, b)
+  | a < b = Just $ Range (Just a) (Just b)
   | otherwise = Nothing
 
-rangeLength :: Range -> Int
-rangeLength (a, b) = b - a + 1
+rangeLength :: Range -> Maybe Int
+rangeLength (Range a b) = liftA2 (-) b a
 
 rangeIntersect :: Range -> Range -> Maybe Range
-rangeIntersect (a1, b1) (a2, b2) = mkRange (max a1 a2) (min b1 b2)
+rangeIntersect (Range a1 b1) (Range a2 b2) = mkRange' (max a1 a2) (min b1 b2)
 
--- a -> b -> (a - b)
-rangeDiff :: Range -> Range -> [Range]
-rangeDiff a@(a1, a2) b =
-  case rangeIntersect a b of
-    Just (c1, c2) -> mapMaybe (uncurry mkRange) [(a1, c1 - 1), (c2 + 1, a2)]
-    Nothing       -> [a]
-
-data DecisionTree value
-  = Value value
-  | Branch Axis (Map Range (DecisionTree value))
-  deriving (Ord, Eq, Show)
+rangeConstraints :: Range -> [Constr]
+rangeConstraints (Range a b) = catMaybes [LessThan <$> a, GreaterOrEqual <$> b]
 
 data Axis
   = AX
@@ -44,54 +68,64 @@ data Axis
 allAxis :: [Axis]
 allAxis = [AX, AY, AZ]
 
-type Range3 = Map Axis Range
+type Cuboid = Map Axis Range
 
-r3volume :: Range3 -> Maybe Int
-r3volume r3 =
-  product <$> traverse (fmap rangeLength . (`Map.lookup` r3)) allAxis
+cRange :: Axis -> Cuboid -> Range
+cRange axis cs = fromMaybe nullRange $ Map.lookup axis cs
 
-r3ForAxis :: Functor f => Axis -> (Maybe Range -> f Range) -> Range3 -> f Range3
-r3ForAxis a f m =
-  let fr = f (Map.lookup a m)
-   in fmap (\r -> Map.insert a r m) fr
+cvolume :: Cuboid -> Maybe Int
+cvolume cs = product <$> traverse (rangeLength . (`cRange` cs)) allAxis
 
-r3intersectAxis :: Axis -> Range -> Range3 -> Maybe Range3
-r3intersectAxis a r =
-  r3ForAxis a $ \case
-    Nothing -> Just r
-    Just r' -> rangeIntersect r r'
+cConstraints :: Cuboid -> [(Axis, Constr)]
+cConstraints cs =
+  [(axis, c) | axis <- allAxis, c <- rangeConstraints $ cRange axis cs]
 
-r3DiffAxis :: Axis -> Range -> Range3 -> [Range3]
-r3DiffAxis a r =
-  r3ForAxis a $ \case
-    Nothing -> []
-    Just r' -> rangeDiff r' r
+cFromRange :: Constr -> Range
+cFromRange (LessThan n)       = mkRangeLT n
+cFromRange (GreaterOrEqual n) = mkRangeGE n
 
-r3intersect :: Range3 -> Range3 -> Maybe Range3
-r3intersect r1 r2 = foldM (flip $ uncurry r3intersectAxis) r1 (Map.toList r2)
+constrainRange :: Constr -> Range -> Maybe Range
+constrainRange c r = rangeIntersect r $ cFromRange c
+
+data DecisionTree value
+  = Value value
+  | NoValue
+  | Branch Axis Constr (DecisionTree value) (DecisionTree value)
+  deriving (Ord, Eq, Show)
 
 dtCount :: Eq value => value -> DecisionTree value -> Int
-dtCount target = go Map.empty
+dtCount v = dtCountIn v Map.empty
+
+dtCountIn :: Eq value => value -> Cuboid -> DecisionTree value -> Int
+dtCountIn _ _ NoValue = 0
+dtCountIn v cs (Value v')
+  | v == v' =
+    fromJustE ("infinite region while counting: " <> show cs) $ cvolume cs
+  | otherwise = 0
+dtCountIn v cs (Branch axis c pos neg) = _
+
+cToTree :: value -> Cuboid -> DecisionTree value -> DecisionTree value
+cToTree v cs rest =
+  foldr (\(axis, constr) next -> Branch axis constr (Value v) next) rest $
+  cConstraints cs
+
+dtSet :: value -> Cuboid -> DecisionTree value -> DecisionTree value
+dtSet v cs (Branch axis c yes no) = Branch axis c yes' no'
   where
-    go r3 (Value v)
-      | v == target =
-        fromJustE ("infinite region while counting: " <> show r3) $ r3volume r3
-      | otherwise = 0
-    go r3 (Branch axis branches) =
-      sum
-        [ go r3' b
-        | (r, b) <- Map.toList branches
-        , r3' <- maybeToList (r3intersectAxis axis r r3)
-        ]
+    r = cRange axis cs
+    rYes = constrainRange c r
+    rNo = constrainRange (constrNot c) r
+    cs' r = Map.insert axis r cs
+    yes' = foldr (dtSet v . cs') yes rYes
+    no' = foldr (dtSet v . cs') no rNo
+dtSet v cs prim = cToTree v cs prim
 
-dtSet :: value -> Range3 -> DecisionTree value -> DecisionTree value
-dtSet = _
-
+part1 :: Input -> Int
 part1 = dtCount I . foldl (flip $ uncurry dtSet) (Value O)
 
 tasks = Tasks 2021 22 parse [Task part1 590784]
 
-type Input = [(Bit, Range3)]
+type Input = [(Bit, Cuboid)]
 
 parse :: Parser Text Input
 parse = linesP &** (wordsP &* pairP &* (instrP &= cuboidP))
@@ -102,9 +136,12 @@ instrP = choiceP [("on", I), ("off", O)]
 axisP :: Parser Text Axis
 axisP = choiceP [("x", AX), ("y", AY), ("z", AZ)]
 
-cuboidP :: Parser Text Range3
+cuboidP :: Parser Text Cuboid
 cuboidP =
   tsplitP "," &**
   (tsplitP "=" &* pairP &*
    (axisP &= (tsplitP "=" &* pairP &* (integerP &= integerP)))) &*
-  pureP Map.fromList
+  pureP mkCuboid
+
+mkCuboid :: [(Axis, (Int, Int))] -> Cuboid
+mkCuboid = Map.fromList . map (second $ \(a, b) -> Range (Just a) (Just b))
