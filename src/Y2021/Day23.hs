@@ -28,14 +28,13 @@ aEnergy D = 1000
 
 data Situation =
   Situation
-    { posHallway     :: !(Map Int Amphi)
-    , posRooms       :: !(Map Amphi [Amphi])
-    , posEnergySpent :: !Int
+    { posHallway :: !(Map Int Amphi)
+    , posRooms   :: !(Map Amphi [Amphi])
     }
   deriving (Ord, Eq, Show)
 
 instance Hashable Situation where
-  hashWithSalt s (Situation m1 m2 m3) = hashWithSalt s (m1, m2, m3)
+  hashWithSalt s (Situation h r) = hashWithSalt s (h, r)
 
 hallwayX :: [Int]
 hallwayX = [1 .. 11]
@@ -65,6 +64,7 @@ posHallwayFree s x = Map.notMember x $ posHallway s
 
 moves :: Situation -> [Situation]
 moves s@Situation {..} =
+  map traceShowId $
   mapMaybe (moveFromHallway s) hallwayX ++ concatMap (moveFromRoom s) amphis
 
 moveFromHallway :: Situation -> Int -> Maybe Situation
@@ -80,11 +80,11 @@ moveFromHallway s x = do
     s
       { posHallway = Map.delete x $ posHallway s
       , posRooms = Map.adjust (a :) a $ posRooms s
-      , posEnergySpent = posEnergySpent s + energy
       }
 
 moveFromRoom :: Situation -> Amphi -> [Situation]
 moveFromRoom s a' = do
+  guard $ posRoom s a' /= [a', a']
   let x = roomX a'
   (a, y) <- maybeToList $ topInRoom s a'
   let targetXL =
@@ -96,7 +96,6 @@ moveFromRoom s a' = do
     s
       { posHallway = Map.insert targetX a $ posHallway s
       , posRooms = Map.adjust tail a' $ posRooms s
-      , posEnergySpent = posEnergySpent s + energy
       }
 
 -- situation -> room x -> (amphi, y)
@@ -109,17 +108,35 @@ topInRoom s a =
 isGoal :: Situation -> Bool
 isGoal s@Situation {..} = all (\a -> posRoom s a == [a, a]) amphis
 
+targetEstimate :: Situation -> Int
+targetEstimate Situation {..} = sum estimateHallway + sum estimateRooms
+  where
+    estimateHallway = map (uncurry estimateHallwayA) $ Map.toList posHallway
+    estimateHallwayA x a = moveEnergy a (x, hallwayY) (target a)
+    estimateRooms = map (uncurry estimateRoom) $ Map.toList posRooms
+    estimateRoom a as
+      | as == [a, a] = 0
+      | otherwise = sum $ zipWith (estimateRoomA (roomX a)) as roomY
+    estimateRoomA x a y =
+      sum $ map (moveEnergy a (x, hallwayY)) [(x, y), target a]
+    target a = (roomX a, head roomY)
+
+moveEnergy :: Amphi -> (Int, Int) -> (Int, Int) -> Int
+moveEnergy a (x1, y1) (x2, y2) = aEnergy a * (abs (x2 - x1) + abs (y2 - y1))
+
+energySpent :: Situation -> Situation -> Int
+energySpent s1 s2 = error $ "energySpent: " ++ show (s1, s2)
+
 solve :: Situation -> Maybe [Situation]
-solve =
-  aStar
-    (hashSetFromList . moves)
-    (subtract `on` posEnergySpent)
-    (const 0)
-    isGoal
+solve = aStar (hashSetFromList . moves) energySpent (const 0) isGoal
+
+totalEnergySpent :: [Situation] -> Int
+totalEnergySpent = sum . zipWithTail energySpent
 
 part1 :: Situation -> Int
 part1 pos =
-  posEnergySpent $ last $ fromJustE ("no solution for " <> show pos) $ solve pos
+  totalEnergySpent $
+  (pos :) $ fromJustE ("no solution for " <> show pos) $ solve $ traceShowId pos
 
 tasks :: Tasks
 tasks =
