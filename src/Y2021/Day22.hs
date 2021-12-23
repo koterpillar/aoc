@@ -18,10 +18,10 @@ data Range =
   deriving (Ord, Eq)
 
 instance Show Range where
-  show (Range (Just a) (Just b)) = "Range [" <> show a <> ".." <> show b <> ")"
-  show (Range (Just a) Nothing) = "Range [" <> show a <> ".."
-  show (Range Nothing (Just b)) = "Range " <> show b <> "..)"
-  show (Range Nothing Nothing) = "Range .."
+  show (Range a b) = "Range [" <> s' a <> ".." <> s' b <> ")"
+    where
+      s' (Just n) = show n
+      s' Nothing  = "∞"
 
 nullRange :: Range
 nullRange = Range Nothing Nothing
@@ -47,7 +47,10 @@ rangeLength :: Range -> Maybe Int
 rangeLength (Range a b) = liftA2 (-) b a
 
 rangeIntersect :: Range -> Range -> Maybe Range
-rangeIntersect (Range a1 b1) (Range a2 b2) = mkRange' (max a1 a2) (min b1 b2)
+rangeIntersect (Range a1 b1) (Range a2 b2) =
+  mkRange'
+    (maybeMaximum $ catMaybes [a1, a2])
+    (maybeMinimum $ catMaybes [b1, b2])
 
 data Axis
   = AX
@@ -76,31 +79,46 @@ splitRangeAt c r =
 data DecisionTree value
   = Value value
   | Branch Axis Int (DecisionTree value) (DecisionTree value)
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq)
 
-dtCount :: Eq value => value -> DecisionTree value -> Int
+instance Show value => Show (DecisionTree value) where
+  show (Value v) = show v
+  show (Branch axis c yes no) =
+    "{" <>
+    show yes <>
+    "|" <> tail (show axis) <> "=" <> show c <> "|" <> show no <> "}"
+
+dtCount :: (Eq value, Show value) => value -> DecisionTree value -> Int
 dtCount v = dtCountIn v Map.empty
 
-dtCountIn :: Eq value => value -> Cuboid -> DecisionTree value -> Int
+dtCountIn ::
+     (Eq value, Show value) => value -> Cuboid -> DecisionTree value -> Int
 dtCountIn v cs (Value v')
   | v == v' =
-    fromJustE ("infinite region while counting: " <> show cs) $ cvolume cs
+    fromJustE
+      ("infinite region while counting " <> show v <> " inside " <> show cs) $
+    cvolume cs
   | otherwise = 0
-dtCountIn v cs (Branch axis c yes no) = sum $ catMaybes [yes', no']
+dtCountIn v cs t@(Branch axis c yes no) = sum $ catMaybes [yes', no']
   where
-    r = cRange axis cs
-    (rYes, rNo) = splitRangeAt c r
-    csWith r = Map.insert axis r cs
-    yes' = dtCountIn v <$> fmap csWith rYes <*> pure yes
-    no' = dtCountIn v <$> fmap csWith rNo <*> pure no
+    r = traceShow t $ cRange axis cs
+    (ryes, rno) =
+      traceF
+        (\yn ->
+           "current range: " <>
+           show r <> " split at: " <> show c <> " result: " <> show yn) $
+      splitRangeAt c r
+    csWith r' = Map.insert axis r' cs
+    yes' = dtCountIn v <$> fmap csWith ryes <*> pure yes
+    no' = dtCountIn v <$> fmap csWith rno <*> pure no
 
 cToTree :: value -> Cuboid -> DecisionTree value -> DecisionTree value
-cToTree v cs rest = foldr (uncurry go) rest $ cRanges cs
+cToTree v cs rest = go allAxis
   where
-    go axis (Range (Just a) b) next =
-      Branch axis a next $ go axis (Range Nothing b) next
-    go axis (Range Nothing (Just b)) next = Branch axis b (Value v) next
-    go axis (Range Nothing Nothing) next = Value v
+    go [] = Value v
+    go (axis:as) = Branch axis a rest $ Branch axis b (go as) rest
+      where
+        (Range (Just a) (Just b)) = cRange axis cs
 
 dtSet :: value -> Cuboid -> DecisionTree value -> DecisionTree value
 dtSet v cs (Branch axis c yes no) = Branch axis c yes' no'
@@ -140,7 +158,9 @@ tasks =
     2021
     22
     parse
-    [ Assert "count in one cube" (101 ^ 3) $ dtCountIn I part1cuboid $ Value I
+    [ Assert "split range" (Just $ mkRangeLT 10, Just $ mkRangeGE 10) $
+      splitRangeAt 10 nullRange
+    , Assert "count in one cube" (101 ^ 3) $ dtCountIn I part1cuboid $ Value I
     , Assert "count example 0 step 1" 27 $
       dtCount I $ traceShowId $ applyInput (take 1 example0) initial
     , Task part1 590784
