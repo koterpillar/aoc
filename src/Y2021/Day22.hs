@@ -143,6 +143,9 @@ applyInput input initial = foldl (flip $ uncurry dtSet) initial input
 part1 :: Input -> Int
 part1 input = dtCountIn I part1cuboid $ applyInput input initial
 
+part2 :: Input -> Int
+part2 input = dtCount I $ applyInput input initial
+
 tasks =
   Tasks
     2021
@@ -155,7 +158,8 @@ tasks =
       dtCount I $ traceShowId $ applyInput (take 1 example0) initial
     , Assert "count example 0 step 2" (27 + 19) $
       dtCount I $ traceShowId $ applyInput (take 2 example0) initial
-    , Task part1 590784
+    , Task part1 474140
+    , Task part2 2758514936282235
     ]
 
 type Input = [(Bit, Cuboid)]
