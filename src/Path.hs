@@ -9,7 +9,7 @@ module Path
 
 import           Data.Graph.AStar
 
-import           Data.Hashable    (Hashable)
+import           Data.Hashable    (Hashable (..))
 
 import           Data.HashSet     (HashSet)
 import qualified Data.HashSet     as HashSet
@@ -20,6 +20,9 @@ import           Utils
 
 hashSetFromList :: (Eq a, Hashable a) => [a] -> HashSet a
 hashSetFromList = HashSet.fromList
+
+instance (Hashable k, Hashable a) => Hashable (Map k a) where
+  hashWithSalt s = hashWithSalt s . Map.toList
 
 data Tree edge node =
   Tree

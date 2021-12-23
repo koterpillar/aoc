@@ -64,6 +64,7 @@ library
       src
   default-extensions:
       BangPatterns
+      FlexibleInstances
       FunctionalDependencies
       LambdaCase
       MultiParamTypeClasses
@@ -96,6 +97,7 @@ executable main
       main
   default-extensions:
       BangPatterns
+      FlexibleInstances
       FunctionalDependencies
       LambdaCase
       MultiParamTypeClasses

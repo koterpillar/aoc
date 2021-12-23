@@ -31,6 +31,7 @@ dependencies:
 
 default-extensions:
   - BangPatterns
+  - FlexibleInstances
   - FunctionalDependencies
   - LambdaCase
   - MultiParamTypeClasses
