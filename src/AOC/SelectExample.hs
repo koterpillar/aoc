@@ -24,6 +24,7 @@ selectExample 2021 18 examples = examples !! 7
 selectExample 2021 19 examples = examples !! 5
 selectExample 2021 20 examples = head examples
 selectExample 2021 22 examples = examples !! 2
+selectExample 2021 23 examples = head examples
 selectExample year day examples =
   error $
   "Cannot select from " <>
