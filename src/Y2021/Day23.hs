@@ -64,8 +64,7 @@ posHallwayFree :: Situation -> Int -> Bool
 posHallwayFree s x = Map.notMember x $ posHallway s
 
 moves :: Situation -> [Situation]
-moves s@Situation {..} =
-  map traceShowId $
+moves s =
   mapMaybe (moveFromHallway s) hallwayX ++ concatMap (moveFromRoom s) amphis
 
 moveFromHallway :: Situation -> Int -> Maybe Situation
@@ -77,6 +76,7 @@ moveFromHallway s x = do
   let targetY = last roomY - length targetAs
   traverse_ (guard . posHallwayFree s) (hallwayBetween x targetX)
   let energy = aEnergy a * abs (targetX - x) * abs (targetY - hallwayY)
+  traceM $ "moving " <> show a <> " from hallway to its room"
   pure
     s
       { posHallway = Map.delete x $ posHallway s
@@ -85,7 +85,7 @@ moveFromHallway s x = do
 
 moveFromRoom :: Situation -> Amphi -> [Situation]
 moveFromRoom s a' = do
-  guard $ posRoom s a' /= [a', a']
+  guard $ not $ all (== a') $ posRoom s a'
   let x = roomX a'
   (a, y) <- maybeToList $ topInRoom s a'
   let targetXL =
@@ -93,6 +93,11 @@ moveFromRoom s a' = do
   let targetXR = takeWhile (posHallwayFree s) $ dropWhile (<= x) hallwayX
   targetX <- targetXL ++ targetXR
   let energy = aEnergy a * abs (targetX - x) * abs (y - hallwayY)
+  traceM $
+    "moving " <>
+    show a <>
+    " from room " <>
+    show a' <> " to hallway, leaving " <> show (tail $ posRoom s a') <> " there"
   pure
     s
       { posHallway = Map.insert targetX a $ posHallway s
@@ -145,7 +150,8 @@ energySpent s1 s2 =
     then error
            ("Inconsistent positions: " <>
             show (a1, p1) <> " /= " <> show (a2, p2))
-    else moveEnergy a1 p1 p2
+    else traceF (\e -> "spent " <> show e <> "\tfor " <> show s2) $
+         moveEnergy a1 p1 p2
   where
     ps1 = apositions s1
     ps2 = apositions s2
