@@ -41,6 +41,9 @@ cjoin = Counts . mapFromListSum . concatMap toListMul . cToList
   where
     toListMul (c, n) = [(v, m * n) | (v, m) <- cToList c]
 
+cflatMap :: Ord b => (a -> Counts b) -> Counts a -> Counts b
+cflatMap f = cjoin . cmap f
+
 call :: (a -> Bool) -> Counts a -> Bool
 call f = all f . Map.keys . getCounts
 

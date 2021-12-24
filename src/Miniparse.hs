@@ -20,8 +20,14 @@ instance Functor (Parser src) where
 pureP :: (src -> dest) -> Parser src dest
 pureP = Parser . (pure .)
 
+idP :: Parser src src
+idP = pureP id
+
 constP :: dest -> Parser src dest
 constP = Parser . const . Right
+
+failP :: String -> Parser src dest
+failP = Parser . const . Left
 
 justParse :: Parser src dest -> src -> dest
 justParse parser src =
@@ -106,6 +112,13 @@ infixl 7 &**
 Parser pa &= Parser pb = Parser (\(a, b) -> liftA2 (,) (pa a) (pb b))
 
 infixl 6 &=
+
+(&=>) :: Parser a a' -> (a' -> Parser b b') -> Parser (a, b) (a', b')
+pa &=> f =
+  Parser $ \(a, b) -> do
+    a' <- runParse pa a
+    b' <- runParse (f a') b
+    pure (a', b')
 
 (&+) :: Show a => Parser a b -> Parser a c -> Parser [a] (b, c)
 pa &+ pb = pairP &* (pa &= pb)
