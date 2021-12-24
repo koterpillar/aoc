@@ -1,3 +1,6 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Y2021.Day24 where
 
 import           Data.Map.Strict (Map)
@@ -42,10 +45,10 @@ iSource (Mul _ (SrcRegister r)) = Just r
 iSource (Div _ (SrcRegister r)) = Just r
 iSource (Mod _ (SrcRegister r)) = Just r
 iSource (Eql _ (SrcRegister r)) = Just r
-iSource _ = Nothing
+iSource _                       = Nothing
 
 iDest :: Instruction -> Register
-iDest (Inp r) = r
+iDest (Inp r)   = r
 iDest (Add r _) = r
 iDest (Mul r _) = r
 iDest (Div r _) = r
@@ -81,39 +84,62 @@ aluGet (SrcValue v) = const v
 aluOp :: (Int -> Int -> Int) -> Register -> Src -> ALU -> ALU
 aluOp f r1 r2 a = aluSet r1 (f (aluGet (SrcRegister r1) a) (aluGet r2 a)) a
 
-newtype Inputs a =
+data SelectMax
+
+data SelectMin
+
+class InputSelector a where
+  iselect :: Int -> Int -> Int
+
+instance InputSelector SelectMax where
+  iselect = max
+
+instance InputSelector SelectMin where
+  iselect = min
+
+newtype Inputs select a =
   Inputs
     { getInputs :: Map a [Int]
     }
   deriving (Ord, Eq, Show)
 
-iToList :: Inputs a -> [(a, [Int])]
+iToList :: Inputs s a -> [(a, [Int])]
 iToList = Map.toList . getInputs
 
-ipure :: Ord a => a -> Inputs a
+ipure :: Ord a => a -> Inputs s a
 ipure a = Inputs $ Map.singleton a []
 
-ichoose :: Inputs Int
+ichoose :: Inputs s Int
 ichoose = Inputs $ Map.fromList [(d, [d]) | d <- [1 .. 9]]
 
-imap :: Ord b => (a -> b) -> Inputs a -> Inputs b
-imap f = Inputs . Map.mapKeysWith (zipWith max) f . getInputs
+imap ::
+     forall a b s. (Ord b, InputSelector s)
+  => (a -> b)
+  -> Inputs s a
+  -> Inputs s b
+imap f = Inputs . Map.mapKeysWith (zipWith (iselect @s)) f . getInputs
 
-ijoin :: Ord a => Inputs (Inputs a) -> Inputs a
-ijoin = Inputs . Map.fromListWith (zipWith max) . concatMap toListMul . iToList
+ijoin ::
+     forall a s. (Ord a, InputSelector s)
+  => Inputs s (Inputs s a)
+  -> Inputs s a
+ijoin =
+  Inputs .
+  Map.fromListWith (zipWith (iselect @s)) . concatMap toListMul . iToList
   where
     toListMul (c, n) = [(v, m ++ n) | (v, m) <- iToList c]
 
-iflatMap :: Ord b => Inputs a -> (a -> Inputs b) -> Inputs b
+iflatMap ::
+     (Ord b, InputSelector s) => Inputs s a -> (a -> Inputs s b) -> Inputs s b
 iflatMap a f = ijoin $ imap f a
 
-ifilter :: (a -> Bool) -> Inputs a -> Inputs a
+ifilter :: (a -> Bool) -> Inputs s a -> Inputs s a
 ifilter f = Inputs . Map.filterWithKey (\k _ -> f k) . getInputs
 
 cheatMul :: Int -> Int -> Int
 cheatMul a b = (a * b) `mod` 26
 
-runInstruction :: Instruction -> ALU -> Inputs ALU
+runInstruction :: InputSelector s => Instruction -> ALU -> Inputs s ALU
 runInstruction (Inp r) a = flip imap ichoose $ \d -> aluSet r d a
 runInstruction (Add r1 r2) a = ipure $ aluOp (+) r1 r2 a
 runInstruction (Mul r1 r2) a = ipure $ aluOp (*) r1 r2 a
@@ -130,29 +156,32 @@ runInstruction (Eql r1 r2) a =
     r2
     a
 
-runProgram :: Program -> Inputs ALU -> Inputs ALU
+runProgram :: InputSelector s => Program -> Inputs s ALU -> Inputs s ALU
 runProgram [] a = a
 runProgram (i:is) a = a''
   where
     a' = traceF aluTrace $ ijoin $ imap (runInstruction $ traceShowId i) a
     a'' = runProgram is a'
 
-inputValues :: Inputs a -> [a]
+inputValues :: Inputs s a -> [a]
 inputValues = map fst . iToList
 
-aluTrace :: Inputs ALU -> String
+aluTrace :: InputSelector s => Inputs s ALU -> String
 aluTrace as =
   "branches: " <> show size <> " " <> unwords (map showReg registers)
   where
     size = Map.size $ getInputs as
     showReg r = show r <> ": " <> showValues (aluGet $ SrcRegister r)
-    showValues f = case inputValues $ imap f as of vs | length vs > 10 -> "(" <> show (length vs) <> ")"
-                                                      | otherwise -> show vs
+    showValues f =
+      case inputValues $ imap f as of
+        vs
+          | length vs > 10 -> "(" <> show (length vs) <> ")"
+          | otherwise -> show vs
 
 success :: ALU -> Bool
 success a = aluGet (SrcRegister Z) a == 0
 
-inputsSingleKey :: Inputs a -> Maybe [Int]
+inputsSingleKey :: InputSelector s => Inputs s a -> Maybe [Int]
 inputsSingleKey i =
   case Map.elems $ getInputs $ imap (const ()) i of
     [k] -> Just k
@@ -161,19 +190,32 @@ inputsSingleKey i =
 
 reorder1 :: Program -> Program
 reorder1 [] = []
-reorder1 ((Inp r1):i2:is) | iSource i2 /= Just r1 && iDest i2 /= r1 = i2 : reorder1 (Inp r1 : is)
-reorder1 (i:is) = i:reorder1 is
+reorder1 ((Inp r1):i2:is)
+  | iSource i2 /= Just r1 && iDest i2 /= r1 = i2 : reorder1 (Inp r1 : is)
+reorder1 (i:is) = i : reorder1 is
 
 reorder :: Program -> Program
 reorder = iterateSettle reorder1
 
-part1 :: Program -> Maybe [Int]
-part1 =
-  fmap reverse . inputsSingleKey .
-  ifilter success . flip runProgram (ipure aluInit) . listProgress 18 . reorder . traceShowF length
+bestInput ::
+     forall s. InputSelector s
+  => Program
+  -> Maybe [Int]
+bestInput =
+  fmap reverse .
+  inputsSingleKey @s .
+  ifilter success .
+  flip runProgram (ipure aluInit) .
+  listProgress 18 . reorder . traceShowF length
 
-part1' :: Program -> ()
-part1' p = trace (show $ part1 p) ()
+part1 :: Program -> Maybe [Int]
+part1 = bestInput @SelectMax
+
+part2 :: Program -> Maybe [Int]
+part2 = bestInput @SelectMin
+
+traceShowIt :: (Show b) => (a -> b) -> a -> ()
+traceShowIt f x = trace (show $ f x) ()
 
 tasks =
   Tasks
@@ -182,9 +224,18 @@ tasks =
     parse
     [ Assert "part1" (Just [7]) $
       part1 [Inp Z, Add Z (SrcValue 2), Mod Z (SrcValue 3)]
-    , Assert "part1 two inputs" (Just [7,8]) $
-      part1 [Inp Z, Add Z (SrcValue 2), Mod Z (SrcValue 3), Inp X, Add X (SrcValue 1), Mod X (SrcValue 3), Add Z (SrcRegister X)]
-    , Task part1' ()
+    , Assert "part1 two inputs" (Just [7, 8]) $
+      part1
+        [ Inp Z
+        , Add Z (SrcValue 2)
+        , Mod Z (SrcValue 3)
+        , Inp X
+        , Add X (SrcValue 1)
+        , Mod X (SrcValue 3)
+        , Add Z (SrcRegister X)
+        ]
+    , Task (traceShowIt part1) ()
+    , Task (traceShowIt part2) ()
     ]
 
 parse :: Parser Text [Instruction]
