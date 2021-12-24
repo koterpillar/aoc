@@ -29,13 +29,14 @@ aEnergy D = 1000
 
 data Situation =
   Situation
-    { posHallway :: !(Map Int Amphi)
-    , posRooms   :: !(Map Amphi [Amphi])
+    { posHallway   :: !(Map Int Amphi)
+    , posRooms     :: !(Map Amphi [Amphi])
+    , posRoomDepth :: !Int
     }
   deriving (Ord, Eq, Show)
 
 instance Hashable Situation where
-  hashWithSalt s (Situation h r) = hashWithSalt s (h, r)
+  hashWithSalt s (Situation h r d) = hashWithSalt s (h, r, d)
 
 hallwayX :: [Int]
 hallwayX = [1, 2, 4, 6, 8, 10, 11]
@@ -48,8 +49,8 @@ hallwayBetween x1 x2
   | x1 > x2 = hallwayBetween x2 x1
   | otherwise = [x1 + 1 .. x2 - 1]
 
-roomY :: [Int]
-roomY = [2, 3]
+roomHeadY :: Int
+roomHeadY = 2
 
 roomX :: Amphi -> Int
 roomX A = 3
@@ -73,7 +74,7 @@ moveFromHallway s x = do
   let targetX = roomX a
   let targetAs = posRoom s a
   guard $ all (== a) targetAs
-  let targetY = last roomY - length targetAs
+  let targetY = roomHeadY + posRoomDepth s - length targetAs - 1
   traverse_ (guard . posHallwayFree s) (hallwayBetween x targetX)
   let energy = aEnergy a * abs (targetX - x) * abs (targetY - hallwayY)
   pure
@@ -99,10 +100,10 @@ moveFromRoom s a' = do
       }
 
 posRoomYs :: Situation -> Amphi -> [(Amphi, Int)]
-posRoomYs s a = zip as ys
+posRoomYs s a = zip as [ys ..]
   where
     as = posRoom s a
-    ys = drop (length roomY - length as) roomY
+    ys = roomHeadY + posRoomDepth s - length as
 
 -- situation -> room x -> (amphi, y)
 topInRoom :: Situation -> Amphi -> Maybe (Amphi, Int)
@@ -124,7 +125,7 @@ targetEstimate s@Situation {..} = sum estimateHallway + sum estimateRooms
     -- FIXME overestimates
     estimateRoomA x a y =
       sum $ map (moveEnergy a (Position2 x hallwayY)) [Position2 x y] {-, target a-}
-    target a = Position2 (roomX a) (head roomY)
+    target a = Position2 (roomX a) roomHeadY
 
 moveEnergy :: Amphi -> Position2 -> Position2 -> Int
 moveEnergy a (Position2 x1 y1) (Position2 x2 y2) =
@@ -188,9 +189,14 @@ mkSituation grid = Situation {..}
   where
     posHallway = Map.empty
     posEnergySpent = 0
+    posRoomDepth = 2
     posRooms =
       Map.fromList
-        [ (a, catMaybes [Map.lookup (Position2 (roomX a) y) grid | y <- roomY])
+        [ ( a
+          , catMaybes
+              [ Map.lookup (Position2 (roomX a) y) grid
+              | y <- [roomHeadY .. roomHeadY + posRoomDepth]
+              ])
         | a <- amphis
         ]
 
