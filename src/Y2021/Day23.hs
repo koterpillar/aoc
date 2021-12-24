@@ -110,7 +110,8 @@ topInRoom :: Situation -> Amphi -> Maybe (Amphi, Int)
 topInRoom s a = listToMaybe $ posRoomYs s a
 
 isGoal :: Situation -> Bool
-isGoal s@Situation {..} = all (\a -> posRoom s a == [a, a]) amphis
+isGoal s@Situation {..} =
+  all (\a -> posRoom s a == replicate posRoomDepth a) amphis
 
 targetEstimate :: Situation -> Int
 targetEstimate s@Situation {..} = sum estimateHallway + sum estimateRooms
@@ -119,7 +120,7 @@ targetEstimate s@Situation {..} = sum estimateHallway + sum estimateRooms
     estimateHallwayA x a = moveEnergy a (Position2 x hallwayY) (target a)
     estimateRooms = concatMap estimateRoom amphis
     estimateRoom a' =
-      if posRoom s a' == [a', a']
+      if posRoom s a' == replicate posRoomDepth a'
         then []
         else map (uncurry $ estimateRoomA (roomX a')) (posRoomYs s a')
     -- FIXME overestimates
@@ -163,11 +164,25 @@ solve = aStar (hashSetFromList . moves) energySpent targetEstimate isGoal
 totalEnergySpent :: [Situation] -> Int
 totalEnergySpent = sum . zipWithTail energySpent
 
+toPart2 :: Situation -> Situation
+toPart2 s = s {posRoomDepth = posRoomDepth s + 2, posRooms = rooms'}
+  where
+    rooms' =
+      posRooms s & Map.adjust (insert1 [D, D]) A & Map.adjust (insert1 [C, B]) B &
+      Map.adjust (insert1 [B, A]) C &
+      Map.adjust (insert1 [A, C]) D
+    insert1 :: [a] -> [a] -> [a]
+    insert1 [a2, a3] (a1:as) = a1 : a2 : a3 : as
+    insert1 _ _              = error "insert1"
+
 part1 :: Situation -> Int
 part1 pos =
   totalEnergySpent $
   map traceShowId $
   (pos :) $ fromJustE ("no solution for " <> show pos) $ solve $ traceShowId pos
+
+part2 :: Situation -> Int
+part2 = part1 . toPart2
 
 tasks :: Tasks
 tasks =
@@ -177,6 +192,7 @@ tasks =
     parse
     [ AssertExample "top in room" (Just (B, 2)) (`topInRoom` A)
     , Task part1 12521
+    , Task part2 44169
     ]
 
 parse :: Parser Text Situation
