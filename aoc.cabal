@@ -29,6 +29,7 @@ library
       AOC
       AOC.SelectExample
       Bit
+      Counts
       Graph
       Grid
       Miniparse
