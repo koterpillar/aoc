@@ -108,6 +108,9 @@ progress milestone amount (!val)
   | amount `mod` milestone == 0 = traceShow amount val
   | otherwise = val
 
+listProgress :: Int -> [a] -> [a]
+listProgress milestone = zipWith (progress milestone) [0..]
+
 maybeMinimum :: Ord a => [a] -> Maybe a
 maybeMinimum [] = Nothing
 maybeMinimum xs = Just $ minimum xs
