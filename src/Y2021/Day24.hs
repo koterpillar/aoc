@@ -21,7 +21,11 @@ registers = [W, X, Y, Z]
 data Src
   = SrcRegister Register
   | SrcValue Int
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq)
+
+instance Show Src where
+  show (SrcRegister r) = show r
+  show (SrcValue v)    = show v
 
 data Instruction
   = Inp Register
@@ -31,6 +35,22 @@ data Instruction
   | Mod Register Src
   | Eql Register Src
   deriving (Ord, Eq, Show)
+
+iSource :: Instruction -> Maybe Register
+iSource (Add _ (SrcRegister r)) = Just r
+iSource (Mul _ (SrcRegister r)) = Just r
+iSource (Div _ (SrcRegister r)) = Just r
+iSource (Mod _ (SrcRegister r)) = Just r
+iSource (Eql _ (SrcRegister r)) = Just r
+iSource _ = Nothing
+
+iDest :: Instruction -> Register
+iDest (Inp r) = r
+iDest (Add r _) = r
+iDest (Mul r _) = r
+iDest (Div r _) = r
+iDest (Mod r _) = r
+iDest (Eql r _) = r
 
 type Program = [Instruction]
 
@@ -47,7 +67,10 @@ instance Show ALU where
 aluInit :: ALU
 aluInit = ALU $ Map.fromList $ zip registers $ repeat 0
 
+cheat = 26 ^ 5
+
 aluSet :: Register -> Int -> ALU -> ALU
+aluSet Z v = ALU . Map.insert Z (v `mod` cheat) . aluRegisters
 aluSet r v = ALU . Map.insert r v . aluRegisters
 
 aluGet :: Src -> ALU -> Int
@@ -87,6 +110,9 @@ iflatMap a f = ijoin $ imap f a
 ifilter :: (a -> Bool) -> Inputs a -> Inputs a
 ifilter f = Inputs . Map.filterWithKey (\k _ -> f k) . getInputs
 
+cheatMul :: Int -> Int -> Int
+cheatMul a b = (a * b) `mod` 26
+
 runInstruction :: Instruction -> ALU -> Inputs ALU
 runInstruction (Inp r) a = flip imap ichoose $ \d -> aluSet r d a
 runInstruction (Add r1 r2) a = ipure $ aluOp (+) r1 r2 a
@@ -108,8 +134,20 @@ runProgram :: Program -> Inputs ALU -> Inputs ALU
 runProgram [] a = a
 runProgram (i:is) a = a''
   where
-    a' = traceShowId $ ijoin $ imap (runInstruction i) a
+    a' = traceF aluTrace $ ijoin $ imap (runInstruction $ traceShowId i) a
     a'' = runProgram is a'
+
+inputValues :: Inputs a -> [a]
+inputValues = map fst . iToList
+
+aluTrace :: Inputs ALU -> String
+aluTrace as =
+  "branches: " <> show size <> " " <> unwords (map showReg registers)
+  where
+    size = Map.size $ getInputs as
+    showReg r = show r <> ": " <> showValues (aluGet $ SrcRegister r)
+    showValues f = case inputValues $ imap f as of vs | length vs > 10 -> "(" <> show (length vs) <> ")"
+                                                      | otherwise -> show vs
 
 success :: ALU -> Bool
 success a = aluGet (SrcRegister Z) a == 0
@@ -121,8 +159,18 @@ inputsSingleKey i =
     []  -> Nothing
     err -> error $ "inputsSingleKey: unexpected: " <> show err
 
+reorder1 :: Program -> Program
+reorder1 [] = []
+reorder1 ((Inp r1):i2:is) | iSource i2 /= Just r1 && iDest i2 /= r1 = i2 : reorder1 (Inp r1 : is)
+reorder1 (i:is) = i:reorder1 is
+
+reorder :: Program -> Program
+reorder = iterateSettle reorder1
+
 part1 :: Program -> Maybe [Int]
-part1 = inputsSingleKey . ifilter success . flip runProgram (ipure aluInit)
+part1 =
+  fmap reverse . inputsSingleKey .
+  ifilter success . flip runProgram (ipure aluInit) . listProgress 18 . reorder . traceShowF length
 
 part1' :: Program -> ()
 part1' p = trace (show $ part1 p) ()
@@ -134,6 +182,8 @@ tasks =
     parse
     [ Assert "part1" (Just [7]) $
       part1 [Inp Z, Add Z (SrcValue 2), Mod Z (SrcValue 3)]
+    , Assert "part1 two inputs" (Just [7,8]) $
+      part1 [Inp Z, Add Z (SrcValue 2), Mod Z (SrcValue 3), Inp X, Add X (SrcValue 1), Mod X (SrcValue 3), Add Z (SrcRegister X)]
     , Task part1' ()
     ]
 
