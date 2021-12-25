@@ -9,6 +9,8 @@ import qualified Data.Set        as Set
 import qualified Data.Text       as Text
 
 import           AOC
+import           Quantum         (Collapse (..), Quantum)
+import qualified Quantum
 import           Utils           hiding (Map)
 
 data Register
@@ -84,69 +86,52 @@ aluGet (SrcValue v) = const v
 aluOp :: (Int -> Int -> Int) -> Register -> Src -> ALU -> ALU
 aluOp f r1 r2 a = aluSet r1 (f (aluGet (SrcRegister r1) a) (aluGet r2 a)) a
 
-data SelectMax
+newtype Max =
+  Max [Int]
+  deriving (Eq, Ord, Show)
 
-data SelectMin
+newtype Min =
+  Min [Int]
+  deriving (Eq, Ord, Show)
 
-class InputSelector a where
-  iselect :: Int -> Int -> Int
+instance Collapse Max where
+  cinit = Max []
+  cappend (Max a) (Max b) = Max $ a ++ b
+  collapse (Max a) (Max b) = Max $ zipWith max a b
 
-instance InputSelector SelectMax where
-  iselect = max
+instance Collapse Min where
+  cinit = Min []
+  cappend (Min a) (Min b) = Min $ a ++ b
+  collapse (Min a) (Min b) = Min $ zipWith min a b
 
-instance InputSelector SelectMin where
-  iselect = min
-
-newtype Inputs select a =
-  Inputs
-    { getInputs :: Map a [Int]
-    }
-  deriving (Ord, Eq, Show)
-
-iToList :: Inputs s a -> [(a, [Int])]
-iToList = Map.toList . getInputs
-
-ipure :: Ord a => a -> Inputs s a
-ipure a = Inputs $ Map.singleton a []
-
-ichoose :: Inputs s Int
-ichoose = Inputs $ Map.fromList [(d, [d]) | d <- [1 .. 9]]
-
-imap ::
-     forall a b s. (Ord b, InputSelector s)
-  => (a -> b)
-  -> Inputs s a
-  -> Inputs s b
-imap f = Inputs . Map.mapKeysWith (zipWith (iselect @s)) f . getInputs
-
-ijoin ::
-     forall a s. (Ord a, InputSelector s)
-  => Inputs s (Inputs s a)
-  -> Inputs s a
-ijoin =
-  Inputs .
-  Map.fromListWith (zipWith (iselect @s)) . concatMap toListMul . iToList
+class Collapse c =>
+      DigitCollapse c
   where
-    toListMul (c, n) = [(v, m ++ n) | (v, m) <- iToList c]
+  cdigits :: [Int] -> c
+  cToList :: c -> [Int]
 
-iflatMap ::
-     (Ord b, InputSelector s) => Inputs s a -> (a -> Inputs s b) -> Inputs s b
-iflatMap a f = ijoin $ imap f a
+instance DigitCollapse Max where
+  cdigits = Max
+  cToList (Max a) = a
 
-ifilter :: (a -> Bool) -> Inputs s a -> Inputs s a
-ifilter f = Inputs . Map.filterWithKey (\k _ -> f k) . getInputs
+instance DigitCollapse Min where
+  cdigits = Min
+  cToList (Min a) = a
+
+ichoose :: DigitCollapse c => Quantum c Int
+ichoose = Quantum.fromList [(d, cdigits [d]) | d <- [1 .. 9]]
 
 cheatMul :: Int -> Int -> Int
 cheatMul a b = (a * b) `mod` 26
 
-runInstruction :: InputSelector s => Instruction -> ALU -> Inputs s ALU
-runInstruction (Inp r) a = flip imap ichoose $ \d -> aluSet r d a
-runInstruction (Add r1 r2) a = ipure $ aluOp (+) r1 r2 a
-runInstruction (Mul r1 r2) a = ipure $ aluOp (*) r1 r2 a
-runInstruction (Div r1 r2) a = ipure $ aluOp div r1 r2 a
-runInstruction (Mod r1 r2) a = ipure $ aluOp mod r1 r2 a
+runInstruction :: DigitCollapse c => Instruction -> ALU -> Quantum c ALU
+runInstruction (Inp r) a = Quantum.map (\d -> aluSet r d a) ichoose
+runInstruction (Add r1 r2) a = Quantum.pure $ aluOp (+) r1 r2 a
+runInstruction (Mul r1 r2) a = Quantum.pure $ aluOp (*) r1 r2 a
+runInstruction (Div r1 r2) a = Quantum.pure $ aluOp div r1 r2 a
+runInstruction (Mod r1 r2) a = Quantum.pure $ aluOp mod r1 r2 a
 runInstruction (Eql r1 r2) a =
-  ipure $
+  Quantum.pure $
   aluOp
     (\x y ->
        if x == y
@@ -156,24 +141,21 @@ runInstruction (Eql r1 r2) a =
     r2
     a
 
-runProgram :: InputSelector s => Program -> Inputs s ALU -> Inputs s ALU
+runProgram :: DigitCollapse c => Program -> Quantum c ALU -> Quantum c ALU
 runProgram [] a = a
 runProgram (i:is) a = a''
   where
-    a' = traceF aluTrace $ ijoin $ imap (runInstruction $ traceShowId i) a
+    a' = traceF aluTrace $ Quantum.flatMap a $ runInstruction $ traceShowId i
     a'' = runProgram is a'
 
-inputValues :: Inputs s a -> [a]
-inputValues = map fst . iToList
-
-aluTrace :: InputSelector s => Inputs s ALU -> String
+aluTrace :: DigitCollapse c => Quantum c ALU -> String
 aluTrace as =
   "branches: " <> show size <> " " <> unwords (map showReg registers)
   where
-    size = Map.size $ getInputs as
+    size = Quantum.size as
     showReg r = show r <> ": " <> showValues (aluGet $ SrcRegister r)
     showValues f =
-      case inputValues $ imap f as of
+      case Quantum.values $ Quantum.map f as of
         vs
           | length vs > 10 -> "(" <> show (length vs) <> ")"
           | otherwise -> show vs
@@ -181,12 +163,12 @@ aluTrace as =
 success :: ALU -> Bool
 success a = aluGet (SrcRegister Z) a == 0
 
-inputsSingleKey :: InputSelector s => Inputs s a -> Maybe [Int]
+inputsSingleKey :: (DigitCollapse c, Show c) => Quantum c a -> Maybe [Int]
 inputsSingleKey i =
-  case Map.elems $ getInputs $ imap (const ()) i of
-    [k] -> Just k
-    []  -> Nothing
-    err -> error $ "inputsSingleKey: unexpected: " <> show err
+  case Quantum.toList $ Quantum.map (const ()) i of
+    [(_, k)] -> Just $ cToList k
+    []       -> Nothing
+    err      -> error $ "inputsSingleKey: unexpected: " <> show err
 
 reorder1 :: Program -> Program
 reorder1 [] = []
@@ -198,21 +180,21 @@ reorder :: Program -> Program
 reorder = iterateSettle reorder1
 
 bestInput ::
-     forall s. InputSelector s
+     forall c. (DigitCollapse c, Show c)
   => Program
   -> Maybe [Int]
 bestInput =
   fmap reverse .
-  inputsSingleKey @s .
-  ifilter success .
-  flip runProgram (ipure aluInit) .
+  inputsSingleKey @c .
+  Quantum.filter success .
+  flip runProgram (Quantum.pure aluInit) .
   listProgress 18 . reorder . traceShowF length
 
 part1 :: Program -> Maybe [Int]
-part1 = bestInput @SelectMax
+part1 = bestInput @Max
 
 part2 :: Program -> Maybe [Int]
-part2 = bestInput @SelectMin
+part2 = bestInput @Min
 
 traceShowIt :: (Show b) => (a -> b) -> a -> ()
 traceShowIt f x = trace (show $ f x) ()

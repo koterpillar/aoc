@@ -1,11 +1,10 @@
-{-# LANGUAGE GADTs #-}
-
 module Y2021.Day21 where
 
 import qualified Data.Map as Map
 
 import           AOC
-import           Counts
+import           Quantum  (Collapse (..), Quantum)
+import qualified Quantum
 import           Utils
 
 mod1 :: Int -> Int -> Int
@@ -13,6 +12,35 @@ mod1 a b =
   case mod a b of
     0 -> b
     x -> x
+
+newtype QCount =
+  QCount Int
+  deriving (Eq, Ord, Show)
+
+instance Collapse QCount where
+  cinit = QCount 1
+  collapse (QCount a) (QCount b) = QCount $ a + b
+  cappend (QCount a) (QCount b) = QCount $ a * b
+
+type Counts = Quantum QCount
+
+cToSingle :: Show a => Quantum QCount a -> a
+cToSingle c =
+  case Quantum.toList c of
+    [(x, QCount 1)] -> x
+    vs              -> error $ "cToSingle: " ++ show vs
+
+ctotal :: Counts a -> Int
+ctotal cs = sum [c | (_, QCount c) <- Quantum.toList cs]
+
+cexamples :: Show a => Counts a -> String
+cexamples gs =
+  "Total: " <>
+  show (ctotal gs) <>
+  " Examples: " <> intercalate ", " (map show $ take 2 $ Quantum.toList gs)
+
+traceCounts :: Show a => Counts a -> Counts a
+traceCounts = traceF cexamples
 
 type Positions = [Int]
 
@@ -28,11 +56,12 @@ diceSides = [1, 2, 3]
 
 roll :: Dice -> Counts (Int, Dice)
 roll (Deterministic a) =
-  cpure (clamp a + clamp (a + 1) + clamp (a + 2), Deterministic $ clamp $ a + 3)
+  Quantum.pure
+    (clamp a + clamp (a + 1) + clamp (a + 2), Deterministic $ clamp $ a + 3)
   where
     clamp n = n `mod1` 100
 roll Dirac =
-  cFromList
+  Quantum.fromListSingle
     [(a + b + c, Dirac) | a <- diceSides, b <- diceSides, c <- diceSides]
 
 data Game =
@@ -66,7 +95,7 @@ startGameDirac positions =
   (startGame positions) {gameDice = Dirac, gameUntil = 21}
 
 gameStep :: Game -> Counts Game
-gameStep g = cmap (uncurry go) $ roll $ gameDice g
+gameStep g = Quantum.map (uncurry go) $ roll $ gameDice g
   where
     go movement dice' =
       g
@@ -93,13 +122,14 @@ gameIsWin = isJust . gameWin
 type Win = (Game, Player)
 
 gamePlay :: Game -> Counts Win
-gamePlay = go . cpure
+gamePlay = go . Quantum.pure
   where
     go gs
-      | call gameIsWin gs = cmapf gs $ \g -> (g, fromJust $ gameWin g)
-      | otherwise = go $ cjoin $ cmap stepWin gs
+      | Quantum.all gameIsWin gs =
+        Quantum.map (\g -> (g, fromJust $ gameWin g)) gs
+      | otherwise = go $ Quantum.flatMap gs stepWin
     stepWin g
-      | gameIsWin g = cpure g
+      | gameIsWin g = Quantum.pure g
       | otherwise = gameStep g
 
 part1 :: Positions -> Int
@@ -113,15 +143,16 @@ part1 game = loserScore * endTurn
 part2 :: Positions -> Int
 part2 game = max s1 s2
   where
-    [(_, s1), (_, s2)] =
-      cToList $
+    [(_, QCount s1), (_, QCount s2)] =
+      Quantum.toList $
       traceCounts $
-      cmap snd $ traceCounts $ gamePlay $ traceShowId $ startGameDirac game
+      Quantum.map snd $
+      traceCounts $ gamePlay $ traceShowId $ startGameDirac game
 
 testDirac :: Counts Int
-testDirac = cjoin $ cmap (\a -> cmap (a +) droll) droll
+testDirac = Quantum.flatMap droll (\a -> Quantum.map (a +) droll)
   where
-    droll = cmap fst $ roll Dirac
+    droll = Quantum.map fst $ roll Dirac
 
 tasks =
   Tasks

@@ -29,11 +29,11 @@ library
       AOC
       AOC.SelectExample
       Bit
-      Counts
       Graph
       Grid
       Miniparse
       Path
+      Quantum
       Utils
       Utils.Trace
       Y2021.Day01
