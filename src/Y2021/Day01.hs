@@ -5,13 +5,13 @@ import           Utils
 
 part1 = countTrue . zipWithTail (<)
 
-take' n xs =
-  let result = take n xs
-   in if length result == n
-        then pure result
-        else mempty
+chunks n as = do
+  t <- tails as
+  let chunk = take n t
+  guard $ length chunk == n
+  pure chunk
 
-slidingSum n = map sum . (=<<) (take' n) . tails
+slidingSum n = map sum . chunks n
 
 part2 = countTrue . zipWithTail (<) . slidingSum 3
 
