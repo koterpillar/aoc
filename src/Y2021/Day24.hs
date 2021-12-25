@@ -184,7 +184,6 @@ bestInput ::
   => Program
   -> Maybe [Int]
 bestInput =
-  fmap reverse .
   inputsSingleKey @c .
   Quantum.filter success .
   flip runProgram (Quantum.pure aluInit) .
