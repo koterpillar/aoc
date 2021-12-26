@@ -134,9 +134,6 @@ instance DigitCollapse Min where
 ichoose :: DigitCollapse c => Quantum c Int
 ichoose = Quantum.fromList [(d, cdigit d) | d <- [1 .. 9]]
 
-cheatMul :: Int -> Int -> Int
-cheatMul a b = (a * b) `mod` 26
-
 eql :: Int -> Int -> Int
 eql x y
   | x == y = 1
