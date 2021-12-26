@@ -56,10 +56,10 @@ data Axis
   = AX
   | AY
   | AZ
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq, Bounded, Enum, Show)
 
 allAxis :: [Axis]
-allAxis = [AX, AY, AZ]
+allAxis = boundedAll
 
 type Cuboid = Map Axis Range
 

@@ -17,10 +17,10 @@ data Wire
   | E
   | F
   | G
-  deriving (Ord, Eq, Show, Enum)
+  deriving (Ord, Eq, Show, Enum, Bounded)
 
 wires :: [Wire]
-wires = [A .. G]
+wires = boundedAll
 
 type Display = Set Wire
 

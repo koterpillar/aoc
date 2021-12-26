@@ -13,10 +13,10 @@ data Amphi
   | B
   | C
   | D
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq, Bounded, Enum, Show)
 
 amphis :: [Amphi]
-amphis = [A, B, C, D]
+amphis = boundedAll
 
 instance Hashable Amphi where
   hashWithSalt s a = hashWithSalt s (show a)

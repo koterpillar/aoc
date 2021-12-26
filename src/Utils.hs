@@ -109,7 +109,7 @@ progress milestone amount (!val)
   | otherwise = val
 
 listProgress :: Int -> [a] -> [a]
-listProgress milestone = zipWith (progress milestone) [0..]
+listProgress milestone = zipWith (progress milestone) [0 ..]
 
 maybeMinimum :: Ord a => [a] -> Maybe a
 maybeMinimum [] = Nothing
@@ -148,3 +148,6 @@ mostCommon = fmap snd . maybeMaximum . map swap . Map.toList . mapFromListCount
 
 fromJustE :: String -> Maybe a -> a
 fromJustE = fromMaybe . error
+
+boundedAll :: (Bounded a, Enum a) => [a]
+boundedAll = [minBound .. maxBound]
