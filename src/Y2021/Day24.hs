@@ -137,22 +137,18 @@ ichoose = Quantum.fromList [(d, cdigit d) | d <- [1 .. 9]]
 cheatMul :: Int -> Int -> Int
 cheatMul a b = (a * b) `mod` 26
 
+eql :: Int -> Int -> Int
+eql x y
+  | x == y = 1
+  | otherwise = 0
+
 runInstruction :: DigitCollapse c => Instruction -> ALU -> Quantum c ALU
-runInstruction (Inp r) a = Quantum.map (\d -> aluSet r d a) ichoose
+runInstruction (Inp r) a     = Quantum.map (\d -> aluSet r d a) ichoose
 runInstruction (Add r1 r2) a = Quantum.pure $ aluOp (+) r1 r2 a
 runInstruction (Mul r1 r2) a = Quantum.pure $ aluOp (*) r1 r2 a
 runInstruction (Div r1 r2) a = Quantum.pure $ aluOp div r1 r2 a
 runInstruction (Mod r1 r2) a = Quantum.pure $ aluOp mod r1 r2 a
-runInstruction (Eql r1 r2) a =
-  Quantum.pure $
-  aluOp
-    (\x y ->
-       if x == y
-         then 1
-         else 0)
-    r1
-    r2
-    a
+runInstruction (Eql r1 r2) a = Quantum.pure $ aluOp eql r1 r2 a
 
 runProgram :: DigitCollapse c => Program -> Quantum c ALU -> Quantum c ALU
 runProgram [] a = a
@@ -162,16 +158,7 @@ runProgram (i:is) a = a''
     a'' = runProgram is a'
 
 aluTrace :: DigitCollapse c => Quantum c ALU -> String
-aluTrace as =
-  "branches: " <> show size <> " " <> unwords (map showReg registers)
-  where
-    size = Quantum.size as
-    showReg r = show r <> ": " <> showValues (aluGet $ SrcRegister r)
-    showValues f =
-      case Quantum.values $ Quantum.map f as of
-        vs
-          | length vs > 10 -> "(" <> show (length vs) <> ")"
-          | otherwise -> show vs
+aluTrace as = "branches: " <> show (Quantum.size as)
 
 success :: ALU -> Bool
 success a = aluGet (SrcRegister Z) a == 0
@@ -218,7 +205,7 @@ bestInput =
   inputsSingleKey @c .
   Quantum.filter success .
   flip runProgram (Quantum.pure aluInit) .
-  listProgress 10 . optimize . traceShowF length
+  listProgress 10 . traceShowF length . optimize . traceShowF length
 
 part1 :: Program -> Maybe [Int]
 part1 = bestInput @Max
