@@ -41,13 +41,19 @@ data Instruction
   | Eql Register Src
   deriving (Ord, Eq, Show)
 
-iSource :: Instruction -> Maybe Register
-iSource (Add _ (SrcRegister r)) = Just r
-iSource (Mul _ (SrcRegister r)) = Just r
-iSource (Div _ (SrcRegister r)) = Just r
-iSource (Mod _ (SrcRegister r)) = Just r
-iSource (Eql _ (SrcRegister r)) = Just r
-iSource _                       = Nothing
+iSource :: Instruction -> [Register]
+iSource (Add r1 (SrcRegister r2)) = [r1, r2]
+iSource (Add r1 (SrcValue _))     = [r1]
+iSource (Mul r1 (SrcValue 0))     = []
+iSource (Mul r1 (SrcRegister r2)) = [r1, r2]
+iSource (Mul r1 (SrcValue _))     = [r1]
+iSource (Div r1 (SrcRegister r2)) = [r1, r2]
+iSource (Div r1 (SrcValue _))     = [r1]
+iSource (Mod r1 (SrcRegister r2)) = [r1, r2]
+iSource (Mod r1 (SrcValue _))     = [r1]
+iSource (Eql r1 (SrcRegister r2)) = [r1, r2]
+iSource (Eql r1 (SrcValue _))     = [r1]
+iSource _                         = []
 
 iDest :: Instruction -> Register
 iDest (Inp r)   = r
@@ -59,29 +65,36 @@ iDest (Eql r _) = r
 
 type Program = [Instruction]
 
-newtype ALU =
+data ALU =
   ALU
-    { aluRegisters :: Map Register Int
+    { aluW :: !Int
+    , aluX :: !Int
+    , aluY :: !Int
+    , aluZ :: !Int
     }
   deriving (Eq, Ord)
 
 instance Show ALU where
-  show (ALU rs) =
-    "ALU " <> unwords (map (\(r, v) -> show r <> "=" <> show v) $ Map.toList rs)
+  show (ALU w x y z) =
+    "ALU W=" <> show w <> " X=" <> show x <> " Y=" <> show y <> " Z=" <> show z
 
 aluInit :: ALU
-aluInit = ALU $ Map.fromList $ zip registers $ repeat 0
+aluInit = ALU 0 0 0 0
 
 cheat = 26 ^ 5
 
 aluSet :: Register -> Int -> ALU -> ALU
-aluSet Z v = ALU . Map.insert Z (v `mod` cheat) . aluRegisters
-aluSet r v = ALU . Map.insert r v . aluRegisters
+aluSet W w (ALU _ x y z) = ALU w x y z
+aluSet X x (ALU w _ y z) = ALU w x y z
+aluSet Y y (ALU w x _ z) = ALU w x y z
+aluSet Z z (ALU w x y _) = ALU w x y (z `mod` cheat)
 
 aluGet :: Src -> ALU -> Int
-aluGet (SrcRegister r) =
-  fromJustE ("aluGet: " <> show r) . Map.lookup r . aluRegisters
-aluGet (SrcValue v) = const v
+aluGet (SrcRegister W) (ALU w _ _ _) = w
+aluGet (SrcRegister X) (ALU _ x _ _) = x
+aluGet (SrcRegister Y) (ALU _ _ y _) = y
+aluGet (SrcRegister Z) (ALU _ _ _ z) = z
+aluGet (SrcValue v) _                = v
 
 aluOp :: (Int -> Int -> Int) -> Register -> Src -> ALU -> ALU
 aluOp f r1 r2 a = aluSet r1 (f (aluGet (SrcRegister r1) a) (aluGet r2 a)) a
@@ -96,30 +109,30 @@ newtype Min =
 
 instance Collapse Max where
   cinit = Max []
-  cappend (Max a) (Max b) = Max $ a ++ b
+  cappend (Max a) (Max b) = Max $ b ++ a
   collapse (Max a) (Max b) = Max $ zipWith max a b
 
 instance Collapse Min where
   cinit = Min []
-  cappend (Min a) (Min b) = Min $ a ++ b
+  cappend (Min a) (Min b) = Min $ b ++ a
   collapse (Min a) (Min b) = Min $ zipWith min a b
 
 class Collapse c =>
       DigitCollapse c
   where
-  cdigits :: [Int] -> c
+  cdigit :: Int -> c
   cToList :: c -> [Int]
 
 instance DigitCollapse Max where
-  cdigits = Max
-  cToList (Max a) = a
+  cdigit d = Max [d]
+  cToList (Max a) = reverse a
 
 instance DigitCollapse Min where
-  cdigits = Min
-  cToList (Min a) = a
+  cdigit d = Min [d]
+  cToList (Min a) = reverse a
 
 ichoose :: DigitCollapse c => Quantum c Int
-ichoose = Quantum.fromList [(d, cdigits [d]) | d <- [1 .. 9]]
+ichoose = Quantum.fromList [(d, cdigit d) | d <- [1 .. 9]]
 
 cheatMul :: Int -> Int -> Int
 cheatMul a b = (a * b) `mod` 26
@@ -170,14 +183,32 @@ inputsSingleKey i =
     []       -> Nothing
     err      -> error $ "inputsSingleKey: unexpected: " <> show err
 
-reorder1 :: Program -> Program
-reorder1 [] = []
-reorder1 ((Inp r1):i2:is)
-  | iSource i2 /= Just r1 && iDest i2 /= r1 = i2 : reorder1 (Inp r1 : is)
-reorder1 (i:is) = i : reorder1 is
+dependsOn :: Instruction -> Instruction -> Bool
+i1 `dependsOn` i2 = iDest i2 `elem` iSource i1
 
-reorder :: Program -> Program
-reorder = iterateSettle reorder1
+independent :: Instruction -> Instruction -> Bool
+independent i1 i2 = not (i1 `dependsOn` i2) && not (i2 `dependsOn` i1)
+
+weight :: Instruction -> Int
+weight (Mul _ (SrcValue 0)) = -1
+weight (Inp _)              = 1
+weight _                    = 0
+
+noop :: Instruction -> Bool
+noop (Add _ (SrcValue 0)) = True
+noop (Mul _ (SrcValue 1)) = True
+noop (Div _ (SrcValue 1)) = True
+noop _                    = False
+
+optimize1 :: Program -> Program
+optimize1 [] = []
+optimize1 [i] = [i]
+optimize1 (i1:i2:is)
+  | independent i1 i2 && weight i1 > weight i2 = i2 : optimize1 (i1 : is)
+  | otherwise = i1 : optimize1 (i2 : is)
+
+optimize :: Program -> Program
+optimize = iterateSettle optimize1 . filter (not . noop)
 
 bestInput ::
      forall c. (DigitCollapse c, Show c)
@@ -187,7 +218,7 @@ bestInput =
   inputsSingleKey @c .
   Quantum.filter success .
   flip runProgram (Quantum.pure aluInit) .
-  listProgress 18 . reorder . traceShowF length
+  listProgress 10 . optimize . traceShowF length
 
 part1 :: Program -> Maybe [Int]
 part1 = bestInput @Max
