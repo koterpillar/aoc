@@ -3,15 +3,15 @@
 
 module Y2021.Day24 where
 
-import           Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
-import qualified Data.Set        as Set
-import qualified Data.Text       as Text
+import           Control.Monad.State
+
+import           Data.Map.Strict     (Map)
+import qualified Data.Map.Strict     as Map
+import qualified Data.Set            as Set
+import qualified Data.Text           as Text
 
 import           AOC
-import           Quantum         (Collapse (..), Quantum)
-import qualified Quantum
-import           Utils           hiding (Map)
+import           Utils               hiding (Map)
 
 data Register
   = W
@@ -41,184 +41,158 @@ data Instruction
   | Eql Register Src
   deriving (Ord, Eq, Show)
 
-iSource :: Instruction -> [Register]
-iSource (Add r1 (SrcRegister r2)) = [r1, r2]
-iSource (Add r1 (SrcValue _))     = [r1]
-iSource (Mul r1 (SrcValue 0))     = []
-iSource (Mul r1 (SrcRegister r2)) = [r1, r2]
-iSource (Mul r1 (SrcValue _))     = [r1]
-iSource (Div r1 (SrcRegister r2)) = [r1, r2]
-iSource (Div r1 (SrcValue _))     = [r1]
-iSource (Mod r1 (SrcRegister r2)) = [r1, r2]
-iSource (Mod r1 (SrcValue _))     = [r1]
-iSource (Eql r1 (SrcRegister r2)) = [r1, r2]
-iSource (Eql r1 (SrcValue _))     = [r1]
-iSource _                         = []
-
-iDest :: Instruction -> Register
-iDest (Inp r)   = r
-iDest (Add r _) = r
-iDest (Mul r _) = r
-iDest (Div r _) = r
-iDest (Mod r _) = r
-iDest (Eql r _) = r
-
 type Program = [Instruction]
 
-data ALU =
+data Expression
+  = EConst Int
+  | EInput Int
+  | EAdd Expression Expression
+  | EMul Expression Expression
+  | EDiv Expression Expression
+  | EMod Expression Expression
+  | EEql Expression Expression
+  | ESwitch Expression [Expression] Expression Expression
+  deriving (Eq, Ord)
+
+instance Show Expression where
+  showsPrec p (EConst v) = showsPrec p v
+  showsPrec p (EInput v) = ("I" ++) . showsPrec p v
+  showsPrec p (EAdd e1 e2) =
+    showParen (p > 6) $ showsPrec 6 e1 . showString "+" . showsPrec 6 e2
+  showsPrec p (EMul e1 e2) =
+    showParen (p > 7) $ showsPrec 7 e1 . showString "*" . showsPrec 7 e2
+  showsPrec p (EDiv e1 e2) =
+    showParen (p > 7) $ showsPrec 7 e1 . showString "/" . showsPrec 7 e2
+  showsPrec p (EMod e1 e2) =
+    showParen (p > 7) $ showsPrec 7 e1 . showString "%" . showsPrec 7 e2
+  showsPrec p (EEql e1 e2) =
+    showParen (p >= 4) $ showsPrec 4 e1 . showString "==" . showsPrec 4 e2
+  showsPrec p (ESwitch ec es et ef) =
+    showParen (p >= 3) $
+    showsPrec 3 ec .
+    showString "in" .
+    showsPrec 3 es .
+    showString "?" . showsPrec 3 et . showString ":" . showsPrec 3 ef
+
+newtype ALU =
   ALU
-    { aluW :: !Int
-    , aluX :: !Int
-    , aluY :: !Int
-    , aluZ :: !Int
+    { aluRegisters :: Map Register Expression
     }
   deriving (Eq, Ord)
 
+initALU :: ALU
+initALU = ALU Map.empty
+
 instance Show ALU where
-  show (ALU w x y z) =
-    "ALU W=" <> show w <> " X=" <> show x <> " Y=" <> show y <> " Z=" <> show z
+  show = unwords . map (uncurry showRE) . Map.toList . aluRegisters
+    where
+      showRE r e = show r ++ " = " ++ show e
 
-aluInit :: ALU
-aluInit = ALU 0 0 0 0
+mkInput :: State Int Expression
+mkInput = do
+  i <- get
+  modify succ
+  pure $ EInput i
 
-cheat = 26 ^ 5
-
-aluSet :: Register -> Int -> ALU -> ALU
-aluSet W w (ALU _ x y z) = ALU w x y z
-aluSet X x (ALU w _ y z) = ALU w x y z
-aluSet Y y (ALU w x _ z) = ALU w x y z
-aluSet Z z (ALU w x y _) = ALU w x y (z `mod` cheat)
-
-aluGet :: Src -> ALU -> Int
-aluGet (SrcRegister W) (ALU w _ _ _) = w
-aluGet (SrcRegister X) (ALU _ x _ _) = x
-aluGet (SrcRegister Y) (ALU _ _ y _) = y
-aluGet (SrcRegister Z) (ALU _ _ _ z) = z
-aluGet (SrcValue v) _                = v
-
-aluOp :: (Int -> Int -> Int) -> Register -> Src -> ALU -> ALU
-aluOp f r1 r2 a = aluSet r1 (f (aluGet (SrcRegister r1) a) (aluGet r2 a)) a
-
-newtype Max =
-  Max [Int]
-  deriving (Eq, Ord, Show)
-
-newtype Min =
-  Min [Int]
-  deriving (Eq, Ord, Show)
-
-instance Collapse Max where
-  cinit = Max []
-  cappend (Max a) (Max b) = Max $ b ++ a
-  collapse (Max a) (Max b) = Max $ zipWith max a b
-
-instance Collapse Min where
-  cinit = Min []
-  cappend (Min a) (Min b) = Min $ b ++ a
-  collapse (Min a) (Min b) = Min $ zipWith min a b
-
-class Collapse c =>
-      DigitCollapse c
+applyInstruction2 ::
+     (Expression -> Expression -> Expression)
+  -> Register
+  -> Src
+  -> ALU
+  -> State Int ALU
+applyInstruction2 mkE r s (ALU a) =
+  pure $ ALU $ Map.insert r (mkE (aluGetR r) (aluGetS s)) a
   where
-  cdigit :: Int -> c
-  cToList :: c -> [Int]
+    aluGetR r = fromMaybe (EConst 0) $ Map.lookup r a
+    aluGetS (SrcRegister r) = aluGetR r
+    aluGetS (SrcValue v)    = EConst v
 
-instance DigitCollapse Max where
-  cdigit d = Max [d]
-  cToList (Max a) = reverse a
+applyInstruction :: Instruction -> ALU -> State Int ALU
+applyInstruction (Inp r) a =
+  (\i -> ALU $ Map.insert r i $ aluRegisters a) <$> mkInput
+applyInstruction (Add r v) a = applyInstruction2 EAdd r v a
+applyInstruction (Mul r v) a = applyInstruction2 EMul r v a
+applyInstruction (Div r v) a = applyInstruction2 EDiv r v a
+applyInstruction (Mod r v) a = applyInstruction2 EMod r v a
+applyInstruction (Eql r v) a = applyInstruction2 EEql r v a
 
-instance DigitCollapse Min where
-  cdigit d = Min [d]
-  cToList (Min a) = reverse a
+synth' :: Program -> ALU
+synth' p = evalState (foldM (flip applyInstruction) initALU p) 1
 
-ichoose :: DigitCollapse c => Quantum c Int
-ichoose = Quantum.fromList [(d, cdigit d) | d <- [1 .. 9]]
+simplify :: Expression -> Expression
+simplify (EConst v) = EConst v
+simplify (EInput n) = EInput n
+simplify (EAdd e1 e2) = simplify' $ EAdd (simplify e1) (simplify e2)
+simplify (EMul e1 e2) = simplify' $ EMul (simplify e1) (simplify e2)
+simplify (EDiv e1 e2) = simplify' $ EDiv (simplify e1) (simplify e2)
+simplify (EMod e1 e2) = simplify' $ EMod (simplify e1) (simplify e2)
+simplify (EEql e1 e2) = simplify' $ EEql (simplify e1) (simplify e2)
+simplify (ESwitch ec es et ef) =
+  simplify' $
+  ESwitch (simplify ec) (map simplify es) (simplify et) (simplify ef)
 
-eql :: Int -> Int -> Int
-eql x y
-  | x == y = 1
-  | otherwise = 0
+simplify' :: Expression -> Expression
+simplify' (EAdd e (EConst 0)) = e
+simplify' (EAdd (EConst 0) e) = e
+simplify' (EAdd (ESwitch ec es et ef) e2) =
+  ESwitch ec es (EAdd et e2) (EAdd ef e2)
+simplify' (EMul _ (EConst 0)) = EConst 0
+simplify' (EMul e (EConst 1)) = e
+simplify' (EMul (EConst 1) e) = e
+simplify' (EMul (EConst 0) _) = EConst 0
+simplify' (EMul e1 (ESwitch ec es et ef)) =
+  ESwitch ec es (EMul e1 et) (EMul e1 ef)
+simplify' (EDiv (EConst 0) _) = EConst 0
+simplify' (EDiv e (EConst 1)) = e
+simplify' (EDiv (EInput _) (EConst v))
+  | v > 9 = EConst 0
+simplify' (EMod (EConst 0) _) = EConst 0
+simplify' (EMod e (EConst 1)) = e
+simplify' (EMod (EInput n) (EConst v))
+  | v > 9 = EInput n
+simplify' (EEql e1 e2) = ESwitch e1 [e2] (EConst 1) (EConst 0)
+simplify' (ESwitch (ESwitch ec es (EConst 1) (EConst 0)) [EConst 0] et ef) =
+  ESwitch ec es et ef
+simplify' (ESwitch (EConst v) [EConst v2] et ef)
+  | v == v2 = et
+  | otherwise = ef
+simplify' (ESwitch (EConst v) [e1] et ef) = ESwitch e1 [EConst v] et ef
+simplify' (ESwitch (EInput _) [EConst v] _ e)
+  | v > 9 || v < 0 = e
+simplify' e = e
 
-runInstruction :: DigitCollapse c => Instruction -> ALU -> Quantum c ALU
-runInstruction (Inp r) a     = Quantum.map (\d -> aluSet r d a) ichoose
-runInstruction (Add r1 r2) a = Quantum.pure $ aluOp (+) r1 r2 a
-runInstruction (Mul r1 r2) a = Quantum.pure $ aluOp (*) r1 r2 a
-runInstruction (Div r1 r2) a = Quantum.pure $ aluOp div r1 r2 a
-runInstruction (Mod r1 r2) a = Quantum.pure $ aluOp mod r1 r2 a
-runInstruction (Eql r1 r2) a = Quantum.pure $ aluOp eql r1 r2 a
+simplifyALU :: ALU -> ALU
+simplifyALU (ALU a) = ALU $ Map.map (iterateSettle simplify) a
 
-runProgram :: DigitCollapse c => Program -> Quantum c ALU -> Quantum c ALU
-runProgram [] a = a
-runProgram (i:is) a = a''
-  where
-    a' = traceF aluTrace $ Quantum.flatMap a $ runInstruction $ traceShowId i
-    a'' = runProgram is a'
-
-aluTrace :: DigitCollapse c => Quantum c ALU -> String
-aluTrace as = "branches: " <> show (Quantum.size as)
-
-success :: ALU -> Bool
-success a = aluGet (SrcRegister Z) a == 0
-
-inputsSingleKey :: (DigitCollapse c, Show c) => Quantum c a -> Maybe [Int]
-inputsSingleKey i =
-  case Quantum.toList $ Quantum.map (const ()) i of
-    [(_, k)] -> Just $ cToList k
-    []       -> Nothing
-    err      -> error $ "inputsSingleKey: unexpected: " <> show err
-
-dependsOn :: Instruction -> Instruction -> Bool
-i1 `dependsOn` i2 = iDest i2 `elem` iSource i1
-
-independent :: Instruction -> Instruction -> Bool
-independent i1 i2 = not (i1 `dependsOn` i2) && not (i2 `dependsOn` i1)
-
-weight :: Instruction -> Int
-weight (Mul _ (SrcValue 0)) = -1
-weight (Inp _)              = 1
-weight _                    = 0
-
-noop :: Instruction -> Bool
-noop (Add _ (SrcValue 0)) = True
-noop (Mul _ (SrcValue 1)) = True
-noop (Div _ (SrcValue 1)) = True
-noop _                    = False
-
-optimize1 :: Program -> Program
-optimize1 [] = []
-optimize1 [i] = [i]
-optimize1 (i1:i2:is)
-  | independent i1 i2 && weight i1 > weight i2 = i2 : optimize1 (i1 : is)
-  | otherwise = i1 : optimize1 (i2 : is)
-
-optimize :: Program -> Program
-optimize = iterateSettle optimize1 . filter (not . noop)
-
-bestInput ::
-     forall c. (DigitCollapse c, Show c)
-  => Program
-  -> Maybe [Int]
-bestInput =
-  inputsSingleKey @c .
-  Quantum.filter success .
-  flip runProgram (Quantum.pure aluInit) .
-  listProgress 10 . traceShowF length . optimize . traceShowF length
+synth :: Program -> ALU
+synth = simplifyALU . synth'
 
 part1 :: Program -> Maybe [Int]
-part1 = bestInput @Max
+part1 = undefined
 
 part2 :: Program -> Maybe [Int]
-part2 = bestInput @Min
+part2 = undefined
 
-traceShowIt :: (Show b) => (a -> b) -> a -> ()
-traceShowIt f x = trace (show $ f x) ()
+traceShow_ :: (Show b) => (a -> b) -> a -> ()
+traceShow_ f x = trace (show $ f x) ()
+
+testSynth :: Program -> ()
+testSynth p = traceShow (map go $ tail $ inits p) ()
+  where
+    go :: Program -> ()
+    go p = trace (show $ synth $ traceShowF last p) ()
 
 tasks =
   Tasks
     2021
     24
     parse
-    [ Assert "part1" (Just [7]) $
+    [ Assert "synth" "X = (I1+2)*3" $
+      show $ synth [Inp X, Add X (SrcValue 2), Mul X (SrcValue 3)]
+    , Assert "synth eql 0" "X = 1" $ show $ synth [Eql X (SrcValue 0)]
+    , Task testSynth ()
+    -- , Task (traceShow_ synth) ()
+    , Assert "part1" (Just [7]) $
       part1 [Inp Z, Add Z (SrcValue 2), Mod Z (SrcValue 3)]
     , Assert "part1 two inputs" (Just [7, 8]) $
       part1
@@ -230,8 +204,8 @@ tasks =
         , Mod X (SrcValue 3)
         , Add Z (SrcRegister X)
         ]
-    , Task (traceShowIt part1) ()
-    , Task (traceShowIt part2) ()
+    , Task (traceShow_ part1) ()
+    , Task (traceShow_ part2) ()
     ]
 
 parse :: Parser Text [Instruction]
