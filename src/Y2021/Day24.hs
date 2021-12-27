@@ -122,43 +122,65 @@ synth' p = evalState (foldM (flip applyInstruction) initALU p) 1
 simplify :: Expression -> Expression
 simplify (EConst v) = EConst v
 simplify (EInput n) = EInput n
-simplify (EAdd e1 e2) = simplify' $ EAdd (simplify e1) (simplify e2)
-simplify (EMul e1 e2) = simplify' $ EMul (simplify e1) (simplify e2)
-simplify (EDiv e1 e2) = simplify' $ EDiv (simplify e1) (simplify e2)
-simplify (EMod e1 e2) = simplify' $ EMod (simplify e1) (simplify e2)
-simplify (EEql e1 e2) = simplify' $ EEql (simplify e1) (simplify e2)
+simplify (EAdd e1 e2) = simplifySteps $ EAdd (simplify e1) (simplify e2)
+simplify (EMul e1 e2) = simplifySteps $ EMul (simplify e1) (simplify e2)
+simplify (EDiv e1 e2) = simplifySteps $ EDiv (simplify e1) (simplify e2)
+simplify (EMod e1 e2) = simplifySteps $ EMod (simplify e1) (simplify e2)
+simplify (EEql e1 e2) = simplifySteps $ EEql (simplify e1) (simplify e2)
 simplify (ESwitch ec es et ef) =
-  simplify' $
+  simplifySteps $
   ESwitch (simplify ec) (map simplify es) (simplify et) (simplify ef)
 
+simplifySteps = simplify' . simplifyIdempotent . simplifyConst
+
+eql :: Int -> Int -> Int
+eql x y
+  | x == y = 1
+  | otherwise = 0
+
+range :: Expression -> [Int]
+range (EConst v) = [v]
+range (EInput _) = [1 .. 9]
+range (EAdd e1 e2) = nubInt $ liftA2 (+) (range e1) (range e2)
+range (EMul e1 e2) = nubInt $ liftA2 (*) (range e1) (range e2)
+range (EDiv e1 e2) = nubInt $ liftA2 div (range e1) (range e2)
+range (EMod e1 e2) = nubInt $ liftA2 mod (range e1) (range e2)
+range (EEql e1 e2) = nubInt $ liftA2 eql (range e1) (range e2)
+range (ESwitch ec es et ef) =
+  nubInt $ ifL tpossible (range et) ++ ifL fpossible (range ef)
+  where
+    rc = Set.fromList $ range ec
+    rs = Set.fromList $ concatMap range es
+    exists = not . Set.null
+    tpossible = exists $ Set.intersection rc rs
+    fpossible = exists $ Set.difference rc rs
+    ifL True xs = xs
+    ifL False _ = []
+
+simplifyConst :: Expression -> Expression
+simplifyConst e =
+  case range e of
+    [v] -> EConst v
+    _   -> e
+
+simplifyIdempotent :: Expression -> Expression
+simplifyIdempotent (EAdd e (EConst 0)) = e
+simplifyIdempotent (EAdd (EConst 0) e) = e
+simplifyIdempotent (EMul e (EConst 1)) = e
+simplifyIdempotent (EMul (EConst 1) e) = e
+simplifyIdempotent (EDiv e (EConst 1)) = e
+simplifyIdempotent (EMod e (EConst 1)) = e
+simplifyIdempotent e                   = e
+
 simplify' :: Expression -> Expression
-simplify' (EAdd e (EConst 0)) = e
-simplify' (EAdd (EConst 0) e) = e
 simplify' (EAdd (ESwitch ec es et ef) e2) =
   ESwitch ec es (EAdd et e2) (EAdd ef e2)
-simplify' (EMul _ (EConst 0)) = EConst 0
-simplify' (EMul e (EConst 1)) = e
-simplify' (EMul (EConst 1) e) = e
-simplify' (EMul (EConst 0) _) = EConst 0
 simplify' (EMul e1 (ESwitch ec es et ef)) =
   ESwitch ec es (EMul e1 et) (EMul e1 ef)
-simplify' (EDiv (EConst 0) _) = EConst 0
-simplify' (EDiv e (EConst 1)) = e
-simplify' (EDiv (EInput _) (EConst v))
-  | v > 9 = EConst 0
-simplify' (EMod (EConst 0) _) = EConst 0
-simplify' (EMod e (EConst 1)) = e
-simplify' (EMod (EInput n) (EConst v))
-  | v > 9 = EInput n
 simplify' (EEql e1 e2) = ESwitch e1 [e2] (EConst 1) (EConst 0)
 simplify' (ESwitch (ESwitch ec es (EConst 1) (EConst 0)) [EConst 0] et ef) =
   ESwitch ec es et ef
-simplify' (ESwitch (EConst v) [EConst v2] et ef)
-  | v == v2 = et
-  | otherwise = ef
 simplify' (ESwitch (EConst v) [e1] et ef) = ESwitch e1 [EConst v] et ef
-simplify' (ESwitch (EInput _) [EConst v] _ e)
-  | v > 9 || v < 0 = e
 simplify' e = e
 
 simplifyALU :: ALU -> ALU
