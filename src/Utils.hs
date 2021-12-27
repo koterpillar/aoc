@@ -1,5 +1,6 @@
 module Utils
   ( module Utils
+  , module Data.Containers.ListUtils
   , module Data.Either
   , module Data.Maybe
   , module Data.List
@@ -33,36 +34,38 @@ module Utils
   , when
   ) where
 
-import           Control.Applicative (liftA2, (<|>))
+import           Control.Applicative       (liftA2, (<|>))
 import           Control.Monad
 
-import           Data.Bifunctor      (bimap, first, second)
+import           Data.Bifunctor            (bimap, first, second)
 
-import           Data.Char           (chr, isDigit, isLower, isUpper, ord)
+import           Data.Char                 (chr, isDigit, isLower, isUpper, ord)
+
+import           Data.Containers.ListUtils (nubInt, nubOrd)
 
 import           Data.Either
 
-import           Data.Foldable       (traverse_)
+import           Data.Foldable             (traverse_)
 
-import           Data.Functor        (($>))
+import           Data.Functor              (($>))
 
-import           Data.Function       (on, (&))
+import           Data.Function             (on, (&))
 
 import           Data.List
-import           Data.List.Split     (splitOn)
+import           Data.List.Split           (splitOn)
 
-import           Data.Map            (Map)
-import qualified Data.Map            as Map
+import           Data.Map                  (Map)
+import qualified Data.Map                  as Map
 
 import           Data.Maybe
 
-import           Data.Set            (Set)
+import           Data.Set                  (Set)
 
-import           Data.Text           (Text)
-import qualified Data.Text           as Text
-import qualified Data.Text.IO        as Text
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
+import qualified Data.Text.IO              as Text
 
-import           Data.Tuple          (swap)
+import           Data.Tuple                (swap)
 
 import           Text.Read
 
