@@ -4,6 +4,7 @@ module Utils
   , module Data.Either
   , module Data.Maybe
   , module Data.List
+  , module Data.Tuple
   , module Utils.Trace
   , Map
   , Set
@@ -28,7 +29,6 @@ module Utils
   , readEither
   , second
   , splitOn
-  , swap
   , traverse_
   , unless
   , when
@@ -65,7 +65,7 @@ import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
 import qualified Data.Text.IO              as Text
 
-import           Data.Tuple                (swap)
+import           Data.Tuple
 
 import           Text.Read
 
@@ -91,6 +91,9 @@ iterateSettle fn v =
     else iterateSettle fn v'
   where
     v' = fn v
+
+dupe :: a -> (a, a)
+dupe a = (a, a)
 
 pad :: Int -> Text -> Text
 pad sz = Text.justifyRight sz ' '

@@ -186,7 +186,7 @@ instrP :: Parser Text Bit
 instrP = choiceP [("on", I), ("off", O)]
 
 axisP :: Parser Text Axis
-axisP = choiceP [("x", AX), ("y", AY), ("z", AZ)]
+axisP = choiceEBP ["x", "y", "z"]
 
 cuboidP :: Parser Text Cuboid
 cuboidP =

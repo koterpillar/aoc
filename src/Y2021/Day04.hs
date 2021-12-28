@@ -46,8 +46,7 @@ parsePlayP =
   where
     parseNumbersLine = singleP &* integersP ","
     mkPlay numbers boards = Play boards numbers Nothing Set.empty
-    parseBoardLine =
-      tsplitP " " &* pureP (filter $ not . Text.null) &** integerP
+    parseBoardLine = wordsP &** integerP
     parseBoard = traverseP parseBoardLine &* Parser mkBoard
     mkBoard lns
       | length lns == bSize && all ((== bSize) . length) lns =
@@ -74,10 +73,7 @@ pStep play@Play {..} =
         }
 
 pAllWins :: Play -> [Int]
-pAllWins play = pWinningScore play ++ rest (pStep play)
-  where
-    rest (Just p) = pAllWins p
-    rest Nothing  = []
+pAllWins = concatMap pWinningScore . unfoldr (fmap dupe . pStep)
 
 part1 :: Play -> Int
 part1 = head . pAllWins

@@ -47,6 +47,10 @@ choiceP choices =
             show src ++
             ", expected one of: " ++ intercalate "," (map (show . fst) choices)
 
+choiceEBP ::
+     (Ord src, Show src, Bounded dest, Enum dest) => [src] -> Parser src dest
+choiceEBP = choiceP . (`zip` boundedAll)
+
 linesP :: Parser Text [Text]
 linesP = pureP Text.lines
 
@@ -63,7 +67,7 @@ unconsP :: Parser [a] (a, [a])
 unconsP =
   Parser $ \case
     (x:xs) -> Right (x, xs)
-    [] -> Left "unexpected empty lines"
+    []     -> Left "unexpected empty lines"
 
 tsplitP :: Text -> Parser Text [Text]
 tsplitP sep = pureP $ Text.splitOn sep
@@ -93,7 +97,7 @@ digitGridP :: Parser Text (Grid2 Int)
 digitGridP = fromMatrixG <$> linesP &** digitsP
 
 bitsP :: Parser Text BitString
-bitsP = charactersP &** choiceP [('0', O), ('1', I)]
+bitsP = charactersP &** choiceEBP ['0', '1']
 
 (&*) :: Parser a b -> Parser b c -> Parser a c
 Parser p1 &* Parser p2 = Parser $ p1 >=> p2
@@ -128,14 +132,14 @@ infixl 6 &+
 singleP :: Show a => Parser [a] a
 singleP =
   Parser $ \case
-    [x] -> Right x
+    [x]   -> Right x
     other -> Left $ "singleP: expected 1 element, got " ++ show other
 
 pairP :: Show a => Parser [a] (a, a)
 pairP =
   Parser $ \case
     [x, y] -> Right (x, y)
-    other -> Left $ "pairP: expected 2 elements, got " ++ show other
+    other  -> Left $ "pairP: expected 2 elements, got " ++ show other
 
 pairPWith :: Show a => (b -> c -> d) -> Parser a b -> Parser a c -> Parser [a] d
 pairPWith f pb pc = uncurry f <$> pb &+ pc
@@ -154,7 +158,7 @@ stateP p =
 unconsSP :: StateParser [a] (Maybe a)
 unconsSP =
   state $ \case
-    [] -> (Nothing, [])
+    []     -> (Nothing, [])
     (x:xs) -> (Just x, xs)
 
 unconsSP_ :: StateParser [a] a

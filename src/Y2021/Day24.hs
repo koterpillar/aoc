@@ -18,7 +18,7 @@ data Register
   | X
   | Y
   | Z
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq, Show, Enum, Bounded)
 
 registers :: [Register]
 registers = [W, X, Y, Z]
@@ -238,7 +238,7 @@ parse :: Parser Text [Instruction]
 parse = linesP &** instructionP
 
 registerP :: Parser Text Register
-registerP = charP &* choiceP (zip "wxyz" registers)
+registerP = charP &* choiceEBP "wxyz"
 
 srcP :: Parser Text Src
 srcP =
