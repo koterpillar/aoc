@@ -43,30 +43,46 @@ data Instruction
 
 type Program = [Instruction]
 
+data BinOp
+  = BAdd
+  | BMul
+  | BDiv
+  | BMod
+  | BEql
+  deriving (Eq, Ord, Show)
+
+binOp :: BinOp -> Int -> Int -> Int
+binOp BAdd = (+)
+binOp BMul = (*)
+binOp BDiv = div
+binOp BMod = mod
+binOp BEql = eql
+
+eql :: Int -> Int -> Int
+eql x y
+  | x == y = 1
+  | otherwise = 0
+
 data Expression
   = EConst Int
   | EInput Int
-  | EAdd Expression Expression
-  | EMul Expression Expression
-  | EDiv Expression Expression
-  | EMod Expression Expression
-  | EEql Expression Expression
+  | EB BinOp Expression Expression
   | ESwitch Expression [Expression] Expression Expression
   deriving (Eq, Ord)
 
 instance Show Expression where
   showsPrec p (EConst v) = showsPrec p v
   showsPrec p (EInput v) = ("I" ++) . showsPrec p v
-  showsPrec p (EAdd e1 e2) =
-    showParen (p > 6) $ showsPrec 6 e1 . showString "+" . showsPrec 6 e2
-  showsPrec p (EMul e1 e2) =
-    showParen (p > 7) $ showsPrec 7 e1 . showString "*" . showsPrec 7 e2
-  showsPrec p (EDiv e1 e2) =
-    showParen (p > 7) $ showsPrec 7 e1 . showString "/" . showsPrec 7 e2
-  showsPrec p (EMod e1 e2) =
-    showParen (p > 7) $ showsPrec 7 e1 . showString "%" . showsPrec 7 e2
-  showsPrec p (EEql e1 e2) =
-    showParen (p >= 4) $ showsPrec 4 e1 . showString "==" . showsPrec 4 e2
+  showsPrec p (EB BAdd e1 e2) =
+    showParen (p > 6) $ showsPrec 6 e1 . showString "+" . showsPrec 7 e2
+  showsPrec p (EB BMul e1 e2) =
+    showParen (p > 8) $ showsPrec 8 e1 . showString "*" . showsPrec 9 e2
+  showsPrec p (EB BDiv e1 e2) =
+    showParen (p > 8) $ showsPrec 8 e1 . showString "/" . showsPrec 9 e2
+  showsPrec p (EB BMod e1 e2) =
+    showParen (p > 8) $ showsPrec 8 e1 . showString "%" . showsPrec 9 e2
+  showsPrec p (EB BEql e1 e2) =
+    showParen (p >= 4) $ showsPrec 4 e1 . showString "==" . showsPrec 5 e2
   showsPrec p (ESwitch ec es et ef) =
     showParen (p >= 3) $
     showsPrec 3 ec .
@@ -94,14 +110,9 @@ mkInput = do
   modify succ
   pure $ EInput i
 
-applyInstruction2 ::
-     (Expression -> Expression -> Expression)
-  -> Register
-  -> Src
-  -> ALU
-  -> State Int ALU
-applyInstruction2 mkE r s (ALU a) =
-  pure $ ALU $ Map.insert r (mkE (aluGetR r) (aluGetS s)) a
+applyInstruction2 :: BinOp -> Register -> Src -> ALU -> State Int ALU
+applyInstruction2 op r s (ALU a) =
+  pure $ ALU $ Map.insert r (EB op (aluGetR r) (aluGetS s)) a
   where
     aluGetR r = fromMaybe (EConst 0) $ Map.lookup r a
     aluGetS (SrcRegister r) = aluGetR r
@@ -110,42 +121,38 @@ applyInstruction2 mkE r s (ALU a) =
 applyInstruction :: Instruction -> ALU -> State Int ALU
 applyInstruction (Inp r) a =
   (\i -> ALU $ Map.insert r i $ aluRegisters a) <$> mkInput
-applyInstruction (Add r v) a = applyInstruction2 EAdd r v a
-applyInstruction (Mul r v) a = applyInstruction2 EMul r v a
-applyInstruction (Div r v) a = applyInstruction2 EDiv r v a
-applyInstruction (Mod r v) a = applyInstruction2 EMod r v a
-applyInstruction (Eql r v) a = applyInstruction2 EEql r v a
+applyInstruction (Add r v) a = applyInstruction2 BAdd r v a
+applyInstruction (Mul r v) a = applyInstruction2 BMul r v a
+applyInstruction (Div r v) a = applyInstruction2 BDiv r v a
+applyInstruction (Mod r v) a = applyInstruction2 BMod r v a
+applyInstruction (Eql r v) a = applyInstruction2 BEql r v a
 
 synth' :: Program -> ALU
 synth' p = evalState (foldM (flip applyInstruction) initALU p) 1
 
-simplify :: Expression -> Expression
-simplify (EConst v) = EConst v
-simplify (EInput n) = EInput n
-simplify (EAdd e1 e2) = simplifySteps $ EAdd (simplify e1) (simplify e2)
-simplify (EMul e1 e2) = simplifySteps $ EMul (simplify e1) (simplify e2)
-simplify (EDiv e1 e2) = simplifySteps $ EDiv (simplify e1) (simplify e2)
-simplify (EMod e1 e2) = simplifySteps $ EMod (simplify e1) (simplify e2)
-simplify (EEql e1 e2) = simplifySteps $ EEql (simplify e1) (simplify e2)
-simplify (ESwitch ec es et ef) =
+simplifyRec :: Expression -> Expression
+simplifyRec (EConst v) = EConst v
+simplifyRec (EInput n) = EInput n
+simplifyRec (EB op e1 e2) =
+  simplifySteps $ EB op (simplifyRec e1) (simplifyRec e2)
+simplifyRec (ESwitch ec es et ef) =
   simplifySteps $
-  ESwitch (simplify ec) (map simplify es) (simplify et) (simplify ef)
+  ESwitch
+    (simplifyRec ec)
+    (map simplifyRec es)
+    (simplifyRec et)
+    (simplifyRec ef)
 
-simplifySteps = simplify' . simplifyIdempotent . simplifyConst
-
-eql :: Int -> Int -> Int
-eql x y
-  | x == y = 1
-  | otherwise = 0
+simplifySteps :: Expression -> Expression
+simplifySteps =
+  simplifySwitch .
+  simplifyAssocConst .
+  simplifyComm . simplifyDistr . simplifyIdempotent . simplifyConst
 
 range :: Expression -> [Int]
 range (EConst v) = [v]
 range (EInput _) = [1 .. 9]
-range (EAdd e1 e2) = nubInt $ liftA2 (+) (range e1) (range e2)
-range (EMul e1 e2) = nubInt $ liftA2 (*) (range e1) (range e2)
-range (EDiv e1 e2) = nubInt $ liftA2 div (range e1) (range e2)
-range (EMod e1 e2) = nubInt $ liftA2 mod (range e1) (range e2)
-range (EEql e1 e2) = nubInt $ liftA2 eql (range e1) (range e2)
+range (EB op e1 e2) = nubInt $ liftA2 (binOp op) (range e1) (range e2)
 range (ESwitch ec es et ef) =
   nubInt $ ifL tpossible (range et) ++ ifL fpossible (range ef)
   where
@@ -164,27 +171,66 @@ simplifyConst e =
     _   -> e
 
 simplifyIdempotent :: Expression -> Expression
-simplifyIdempotent (EAdd e (EConst 0)) = e
-simplifyIdempotent (EAdd (EConst 0) e) = e
-simplifyIdempotent (EMul e (EConst 1)) = e
-simplifyIdempotent (EMul (EConst 1) e) = e
-simplifyIdempotent (EDiv e (EConst 1)) = e
-simplifyIdempotent (EMod e (EConst 1)) = e
-simplifyIdempotent e                   = e
+simplifyIdempotent (EB BAdd e (EConst 0)) = e
+simplifyIdempotent (EB BAdd (EConst 0) e) = e
+simplifyIdempotent (EB BMul e (EConst 1)) = e
+simplifyIdempotent (EB BMul (EConst 1) e) = e
+simplifyIdempotent (EB BDiv e (EConst 1)) = e
+simplifyIdempotent (EB BMod e (EConst 1)) = e
+simplifyIdempotent e                      = e
 
-simplify' :: Expression -> Expression
-simplify' (EAdd (ESwitch ec es et ef) e2) =
-  ESwitch ec es (EAdd et e2) (EAdd ef e2)
-simplify' (EMul e1 (ESwitch ec es et ef)) =
-  ESwitch ec es (EMul e1 et) (EMul e1 ef)
-simplify' (EEql e1 e2) = ESwitch e1 [e2] (EConst 1) (EConst 0)
-simplify' (ESwitch (ESwitch ec es (EConst 1) (EConst 0)) [EConst 0] et ef) =
+simplifyDistr :: Expression -> Expression
+simplifyDistr (EB BMul (EB BAdd e1 e2) e3) =
+  EB BAdd (EB BMul e1 e3) (EB BMul e2 e3)
+simplifyDistr (EB BDiv (EB BAdd e1 e2) e3) =
+  EB BAdd (EB BDiv e1 e3) (EB BDiv e2 e3)
+simplifyDistr e = e
+
+canAssoc :: BinOp -> BinOp -> Maybe (BinOp, BinOp)
+canAssoc BAdd BAdd = Just (BAdd, BAdd)
+canAssoc BMul BMul = Just (BMul, BMul)
+canAssoc BDiv BMul = Just (BMul, BDiv)
+canAssoc _ _       = Nothing
+
+simplifyAssocConst :: Expression -> Expression
+simplifyAssocConst e@(EB op1 (EB op2 e1 e2@EConst {}) e3) =
+  case canAssoc op1 op2 of
+    Just (op1', op2') -> EB op1' e1 $ EB op2' e2 e3
+    Nothing           -> e
+simplifyAssocConst e = e
+
+isConst :: Expression -> Bool
+isConst (EConst _) = True
+isConst _          = False
+
+simplifyComm :: Expression -> Expression
+simplifyComm = go BAdd . go BMul
+  where
+    go :: BinOp -> Expression -> Expression
+    go op = scatter op . sortOn isConst . gather op
+    gather :: BinOp -> Expression -> [Expression]
+    gather op (EB op' e1 e2)
+      | op == op' = gather op e1 ++ gather op e2
+    gather _ e = [e]
+    scatter :: BinOp -> [Expression] -> Expression
+    scatter op = foldl1 (EB op)
+
+simplifySwitch :: Expression -> Expression
+simplifySwitch (EB BAdd (ESwitch ec es et ef) e2) =
+  ESwitch ec es (EB BAdd et e2) (EB BAdd ef e2)
+simplifySwitch (EB BMul e1 (ESwitch ec es et ef)) =
+  ESwitch ec es (EB BMul e1 et) (EB BMul e1 ef)
+simplifySwitch (EB BEql e1 e2) = ESwitch e1 [e2] (EConst 1) (EConst 0)
+simplifySwitch (ESwitch (ESwitch ec es (EConst 1) (EConst 0)) [EConst 0] et ef) =
   ESwitch ec es et ef
-simplify' (ESwitch (EConst v) [e1] et ef) = ESwitch e1 [EConst v] et ef
-simplify' e = e
+simplifySwitch (ESwitch (EConst v) [e1] et ef) = ESwitch e1 [EConst v] et ef
+simplifySwitch e = e
+
+simplify :: Expression -> Expression
+simplify = iterateSettle simplifyRec
 
 simplifyALU :: ALU -> ALU
-simplifyALU (ALU a) = ALU $ Map.map (iterateSettle simplify) a
+simplifyALU (ALU a) = ALU $ Map.map simplify a
 
 synth :: Program -> ALU
 synth = simplifyALU . synth'
@@ -209,9 +255,15 @@ tasks =
     2021
     24
     parse
-    [ Assert "synth" "X = (I1+2)*3" $
+    [ Assert "synth" "X = I1*3+6" $
       show $ synth [Inp X, Add X (SrcValue 2), Mul X (SrcValue 3)]
     , Assert "synth eql 0" "X = 1" $ show $ synth [Eql X (SrcValue 0)]
+    , Assert "simplify */" "I1*26" $
+      show $ simplify $ EB BDiv (EB BMul (EInput 1) (EConst 676)) (EConst 26)
+    , Assert "simplify (+)+(+)" "I1+I2+5" $
+      show $
+      simplify $
+      EB BAdd (EB BAdd (EInput 1) (EConst 2)) (EB BAdd (EInput 2) (EConst 3))
     , Task testSynth ()
     -- , Task (traceShow_ synth) ()
     , Assert "part1" (Just [7]) $
