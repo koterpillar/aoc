@@ -146,6 +146,7 @@ simplifyRec (ESwitch ec es et ef) =
 simplifySteps :: Expression -> Expression
 simplifySteps =
   simplifySwitch .
+  simplifySumMod .
   simplifyAssocConst .
   simplifyComm . simplifyDistr . simplifyIdempotent . simplifyConst
 
@@ -171,19 +172,19 @@ simplifyConst e =
     _   -> e
 
 simplifyIdempotent :: Expression -> Expression
-simplifyIdempotent (EB BAdd e (EConst 0)) = e
-simplifyIdempotent (EB BAdd (EConst 0) e) = e
-simplifyIdempotent (EB BMul e (EConst 1)) = e
-simplifyIdempotent (EB BMul (EConst 1) e) = e
-simplifyIdempotent (EB BDiv e (EConst 1)) = e
-simplifyIdempotent (EB BMod e (EConst 1)) = e
-simplifyIdempotent e                      = e
+simplifyIdempotent (EB op e1 (EConst v2))
+  | all (\v1 -> binOp op v1 v2 == v1) (range e1) = e1
+simplifyIdempotent (EB op (EConst v1) e2)
+  | all (\v2 -> binOp op v1 v2 == v2) (range e2) = e2
+simplifyIdempotent e = e
 
 simplifyDistr :: Expression -> Expression
 simplifyDistr (EB BMul (EB BAdd e1 e2) e3) =
   EB BAdd (EB BMul e1 e3) (EB BMul e2 e3)
 simplifyDistr (EB BDiv (EB BAdd e1 e2) e3) =
   EB BAdd (EB BDiv e1 e3) (EB BDiv e2 e3)
+simplifyDistr (EB op (ESwitch ec es et ef) e2) =
+  ESwitch ec es (EB op et e2) (EB op ef e2)
 simplifyDistr e = e
 
 canAssoc :: BinOp -> BinOp -> Maybe (BinOp, BinOp)
@@ -203,17 +204,29 @@ isConst :: Expression -> Bool
 isConst (EConst _) = True
 isConst _          = False
 
+traverseBins ::
+     BinOp -> ([Expression] -> [Expression]) -> Expression -> Expression
+traverseBins op f = eFromList . f . eToList
+  where
+    eToList :: Expression -> [Expression]
+    eToList (EB op' e1 e2)
+      | op == op' = eToList e1 ++ eToList e2
+    eToList e = [e]
+    eFromList :: [Expression] -> Expression
+    eFromList = foldl1 (EB op)
+
 simplifyComm :: Expression -> Expression
 simplifyComm = go BAdd . go BMul
   where
     go :: BinOp -> Expression -> Expression
-    go op = scatter op . sortOn isConst . gather op
-    gather :: BinOp -> Expression -> [Expression]
-    gather op (EB op' e1 e2)
-      | op == op' = gather op e1 ++ gather op e2
-    gather _ e = [e]
-    scatter :: BinOp -> [Expression] -> Expression
-    scatter op = foldl1 (EB op)
+    go op = traverseBins op $ sortOn isConst
+
+simplifySumMod :: Expression -> Expression
+simplifySumMod (EB BMod e1 (EConst divisor)) =
+  EB BMod (traverseBins BAdd (filter $ not . divisible) e1) (EConst divisor)
+  where
+    divisible e = all (\v -> v `mod` divisor == 0) $ range e
+simplifySumMod e = e
 
 simplifySwitch :: Expression -> Expression
 simplifySwitch (EB BAdd (ESwitch ec es et ef) e2) =
