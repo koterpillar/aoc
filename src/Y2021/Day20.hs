@@ -20,7 +20,7 @@ instructionSize = 2 ^ 9
 type Instructions = Map Int Bool
 
 dotP :: Parser Char Bool
-dotP = choiceP [('.', False), ('#', True)]
+dotP = choiceEBP ".#"
 
 dotsP :: Parser Text [Bool]
 dotsP = charactersP &** dotP
