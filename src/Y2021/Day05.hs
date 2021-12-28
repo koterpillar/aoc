@@ -7,7 +7,7 @@ import           Utils
 type VentLine = (Position2, Position2)
 
 ventLineP :: Parser Text VentLine
-ventLineP = tsplitP " -> " &* pairP &* (position2P &= position2P)
+ventLineP = tsplitP " -> " &* (position2P &+ position2P)
 
 vlBounds :: [VentLine] -> (Position2, Position2)
 vlBounds = pointBounds . concatMap (\(p1, p2) -> [p1, p2])

@@ -22,7 +22,7 @@ parse =
   linesP &* unconsP &*
   (charactersP &= (Map.fromList <$> pureP tail &* traverseP parseInsertion))
   where
-    parseInsertion = tsplitP " -> " &* pairP &* (charactersP &* pairP &= charP)
+    parseInsertion = tsplitP " -> " &* (charactersP &* pairP &+ charP)
 
 type PolymerMap = Map Pair Int
 

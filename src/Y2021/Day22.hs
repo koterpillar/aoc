@@ -180,7 +180,7 @@ example0 =
     r4 = mkr 10 10
 
 parse :: Parser Text Input
-parse = linesP &** (wordsP &* pairP &* (instrP &= cuboidP))
+parse = linesP &** (wordsP &* (instrP &+ cuboidP))
 
 instrP :: Parser Text Bit
 instrP = choiceP [("on", I), ("off", O)]
@@ -191,8 +191,7 @@ axisP = choiceEBP ["x", "y", "z"]
 cuboidP :: Parser Text Cuboid
 cuboidP =
   tsplitP "," &**
-  (tsplitP "=" &* pairP &*
-   (axisP &= (tsplitP ".." &* pairP &* (integerP &= integerP)))) &*
+  (tsplitP "=" &* (axisP &+ (tsplitP ".." &* (integerP &+ integerP)))) &*
   pureP mkCuboid
 
 mkCuboid :: [(Axis, (Int, Int))] -> Cuboid

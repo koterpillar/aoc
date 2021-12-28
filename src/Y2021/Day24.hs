@@ -251,10 +251,10 @@ instructionP :: Parser Text Instruction
 instructionP = wordsP &* unconsP &* (idP &=> instructionChoice) &* pureP snd
   where
     instructionChoice "inp" = Inp <$> (singleP &* registerP)
-    instructionChoice "add" = uncurry Add <$> (pairP &* (registerP &= srcP))
-    instructionChoice "mul" = uncurry Mul <$> (pairP &* (registerP &= srcP))
-    instructionChoice "div" = uncurry Div <$> (pairP &* (registerP &= srcP))
-    instructionChoice "mod" = uncurry Mod <$> (pairP &* (registerP &= srcP))
-    instructionChoice "eql" = uncurry Eql <$> (pairP &* (registerP &= srcP))
+    instructionChoice "add" = pairPWith Add registerP srcP
+    instructionChoice "mul" = pairPWith Mul registerP srcP
+    instructionChoice "div" = pairPWith Div registerP srcP
+    instructionChoice "mod" = pairPWith Mod registerP srcP
+    instructionChoice "eql" = pairPWith Eql registerP srcP
     instructionChoice other =
       failP $ "Unknown instruction: " <> Text.unpack other

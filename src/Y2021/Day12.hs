@@ -35,7 +35,7 @@ addLink c1 c2 = go c1 c2 . go c2 c1
 parseCaves :: Parser Text Caves
 parseCaves =
   foldr (uncurry addLink) Map.empty <$>
-  linesP &** (tsplitP "-" &* pairP &* (caveP &= caveP))
+  linesP &** (tsplitP "-" &* (caveP &+ caveP))
 
 type CTNode = ([Cave], Bool)
 

@@ -40,8 +40,8 @@ instructionFor instructions n =
 
 parse :: Parser Text (Instructions, Grid)
 parse =
-  lineGroupsP &* pairP &*
-  (pureP Text.concat &* (mkInstructions <$> dotsP) &=
+  lineGroupsP &*
+  (pureP Text.concat &* (mkInstructions <$> dotsP) &+
    (mkGrid <$> traverseP dotsP))
 
 gridBit :: Position2 -> Grid -> Bit

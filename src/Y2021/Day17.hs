@@ -97,12 +97,12 @@ displayScene scale area@(Position2 xmin ymin, Position2 xmax ymax) v = display
 
 targetAreaP :: Parser Text TargetArea
 targetAreaP =
-  pureP (Text.drop (Text.length "target area: x=")) &* tsplitP ", y=" &* pairP &*
-  (boundP &= boundP) &*
+  pureP (Text.drop (Text.length "target area: x=")) &* tsplitP ", y=" &*
+  (boundP &+ boundP) &*
   pureP mkBounds
   where
     boundP :: Parser Text (Int, Int)
-    boundP = tsplitP ".." &* pairP &* (integerP &= integerP)
+    boundP = tsplitP ".." &* (integerP &+ integerP)
     mkBounds ((xmin, xmax), (ymin, ymax)) =
       (Position2 xmin ymin, Position2 xmax ymax)
 
