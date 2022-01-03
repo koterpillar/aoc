@@ -68,18 +68,32 @@ htmlDecode = LazyText.toStrict . LazyText.toLazyText . htmlEncodedText
 removeTags :: Text -> Text
 removeTags = Text.replace "<em>" "" . Text.replace "</em>" ""
 
+codeBlockBegin :: Text
+codeBlockBegin = "<pre><code>"
+
+codeBlockEnd :: Text
+codeBlockEnd = "</code></pre>"
+
 codeBlocks :: Text -> [Text]
 codeBlocks =
+  map (removeTags . htmlDecode . dropBefore codeBlockEnd) .
+  dropAfterAll codeBlockBegin
+
+inlineCode :: Text -> [Text]
+inlineCode =
+  filter ((<) 10 . Text.length) .
   map (removeTags . htmlDecode . dropBefore exampleEnd) .
-  dropAfterAll exampleBegin
+  dropAfterAll inlineCodeBegin . Text.replace codeBlockBegin ""
   where
-    exampleBegin = "<pre><code>"
-    exampleEnd = "</code></pre>"
+    inlineCodeBegin = "<code>"
+    exampleEnd = "</code>"
 
 data ExampleScraper
   = ShowExamples
   | CodeBlock Int
   | LastCodeBlock
+  | InlineCode Int
+  | LastInlineCode
   | Inline Text
   deriving (Show)
 
@@ -92,19 +106,23 @@ getExample year day scraper =
     pure $! selectExample scraper page
 
 showExamples :: Text -> Text
-showExamples page = Text.unlines $ "Examples found:" : codeBlocksMsg
+showExamples page =
+  Text.unlines $ "Examples found:" : codeBlocksMsg ++ inlineCodeMsg
   where
-    codeBlocksMsg = labelExamples "code block" $ codeBlocks page
+    codeBlocksMsg = labelExamples "CodeBlock" $ codeBlocks page
+    inlineCodeMsg = labelExamples "InlineCode" $ inlineCode page
     labelExamples itemName =
       zipWith
         (\i e -> "--- " <> itemName <> " " <> tshow i <> " ---\n" <> e)
         [0 ..]
 
 selectExample :: ExampleScraper -> Text -> Text
-selectExample ShowExamples  = error . Text.unpack . showExamples
-selectExample (CodeBlock n) = (!! n) . codeBlocks
-selectExample LastCodeBlock = last . codeBlocks
-selectExample (Inline text) = const text
+selectExample ShowExamples   = error . Text.unpack . showExamples
+selectExample (CodeBlock n)  = (!! n) . codeBlocks
+selectExample LastCodeBlock  = last . codeBlocks
+selectExample (InlineCode n) = (!! n) . inlineCode
+selectExample LastInlineCode = last . inlineCode
+selectExample (Inline text)  = const text
 
 currentYear :: IO Integer
 currentYear = do
