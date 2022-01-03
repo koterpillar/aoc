@@ -1,6 +1,11 @@
-module Day01 where
+module Y2017.Day01 where
 
-import Data.Char
+import qualified Data.Text as Text
+
+import           AOC
+import           Utils
+
+import           Data.Char
 
 go' :: Eq a => [a] -> [a]
 go' (x1:x2:xs)
@@ -20,3 +25,11 @@ go2 lst = 2 * sumdigits (map fst $ filter (uncurry (==)) $ splitintwo lst)
 splitintwo lst = zip (take half lst) (drop half lst)
   where
     half = length lst `div` 2
+
+tasks =
+  Tasks
+    2017
+    1
+    (Inline "91212129")
+    (linesP &* singleP &* pureP Text.unpack)
+    [Task go 9, Task go2 6]
