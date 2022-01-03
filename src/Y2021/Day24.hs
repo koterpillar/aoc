@@ -217,6 +217,7 @@ tasks =
   Tasks
     2021
     24
+    (Inline "")
     parse
     [ Assert "part1" (Just [7]) $
       part1 [Inp Z, Add Z (SrcValue 2), Mod Z (SrcValue 3)]

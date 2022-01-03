@@ -150,6 +150,7 @@ tasks =
   Tasks
     2021
     22
+    (CodeBlock 2)
     parse
     [ Assert "split range" (Just $ mkRangeLT 10, Just $ mkRangeGE 10) $
       splitRangeAt 10 nullRange

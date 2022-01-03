@@ -27,7 +27,6 @@ library
   exposed-modules:
       AllTasks
       AOC
-      AOC.SelectExample
       Bit
       Graph
       Grid

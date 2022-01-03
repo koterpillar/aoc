@@ -117,6 +117,7 @@ tasks =
   Tasks
     2021
     18
+    (CodeBlock 7)
     (linesP &** (pureP Text.unpack &* stateP parseS))
     [ Assert "split 9" Nothing (snsplit $ PNumber 9)
     , Assert "split 11" (Just $ parse "[5,6]") (snsplit $ PNumber 11)

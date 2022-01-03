@@ -96,4 +96,4 @@ part1 = lightAfter 2
 part2 = lightAfter 50
 
 tasks :: Tasks
-tasks = Tasks 2021 20 parse [Task part1 35, Task part2 3351]
+tasks = Tasks 2021 20 (CodeBlock 0) parse [Task part1 35, Task part2 3351]

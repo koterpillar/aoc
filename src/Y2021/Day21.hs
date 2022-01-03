@@ -158,6 +158,7 @@ tasks =
   Tasks
     2021
     21
+    LastCodeBlock
     parse
     [ Task part1 739785
     , Assert "normal counts" (3 ^ 6) $ ctotal testDirac

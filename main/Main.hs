@@ -19,14 +19,14 @@ plast :: [a] -> [a]
 plast = pure . last
 
 filterYear :: Integer -> [Tasks] -> [Tasks]
-filterYear y = filter $ \(Tasks ty _ _ _) -> ty == y
+filterYear y = filter $ \(Tasks ty _ _ _ _) -> ty == y
 
 selectTasks :: Selector -> [Tasks] -> [Tasks]
 selectTasks All            = id
 selectTasks Last           = plast
 selectTasks (LastInYear y) = plast . filterYear y
 selectTasks (Year y)       = filterYear y
-selectTasks (One y d)      = filter $ \(Tasks ty td _ _) -> ty == y && td == d
+selectTasks (One y d)      = filter $ \(Tasks ty td _ _ _) -> ty == y && td == d
 
 parseSelector :: [String] -> Selector
 parseSelector []          = Last

@@ -49,7 +49,7 @@ iw1 n g =
 part1 :: Grid -> Int
 part1 = iw1 1
 
-tasks = Tasks 2021 25 parse [Task part1 58]
+tasks = Tasks 2021 25 (CodeBlock 0) parse [Task part1 58]
 
 mkGrid :: Grid2 Direction4 -> Grid
 mkGrid g = (g, b)

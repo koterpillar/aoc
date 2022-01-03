@@ -59,6 +59,7 @@ tasks =
   Tasks
     2021
     14
+    (CodeBlock 0)
     parse
     [ AssertExample "step" (toPairs "NCNBCHB") (\(p, i) -> step i $ toPairs p)
     , AssertExample

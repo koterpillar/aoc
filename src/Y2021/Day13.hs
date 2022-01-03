@@ -49,6 +49,7 @@ tasks =
   Tasks
     2021
     13
+    (CodeBlock 1)
     parseInstructions
     [ Assert "foldY" (Position2 1 4) (applyFoldPoint (FoldY 7) (Position2 1 10))
     , Assert "foldY" (Position2 1 4) (applyFoldPoint (FoldY 7) (Position2 1 4))

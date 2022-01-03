@@ -48,7 +48,7 @@ go = do
   goP $
     modifyP $
     pure . \case
-      (_, True) -> (0, True)
+      (_, True)  -> (0, True)
       (v, False) -> (v, False)
 
 part1 :: Grid -> Int
@@ -66,4 +66,10 @@ part2 = go 0
       | countFlashes grid == Map.size grid = n
       | otherwise = go (n + 1) (step grid)
 
-tasks = Tasks 2021 11 (mkGrid <$> digitGridP) [Task part1 1656, Task part2 195]
+tasks =
+  Tasks
+    2021
+    11
+    (CodeBlock 0)
+    (mkGrid <$> digitGridP)
+    [Task part1 1656, Task part2 195]

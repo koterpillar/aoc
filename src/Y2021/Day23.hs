@@ -189,6 +189,7 @@ tasks =
   Tasks
     2021
     23
+    (CodeBlock 0)
     parse
     [ AssertExample "top in room" (Just (B, 2)) (`topInRoom` A)
     , Task part1 12521

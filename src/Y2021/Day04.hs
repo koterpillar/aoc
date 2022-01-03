@@ -85,6 +85,7 @@ tasks =
   Tasks
     2021
     4
+    (CodeBlock 0)
     parsePlayP
     [ Assert "Expected win" True $ bWin drawn board
     , Assert "Board score" 3 $ bScore drawn board

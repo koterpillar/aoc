@@ -41,6 +41,7 @@ tasks =
   Tasks
     2021
     7
+    LastCodeBlock
     crabsP
     [ Assert "groupPositions" [2, 0, 1] $ groupPositions [0, 2, 0]
     , Assert "Fuel consumption 2 for 1" 1 $ fuelConsumption2 1

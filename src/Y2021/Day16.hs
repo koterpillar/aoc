@@ -120,6 +120,7 @@ tasks =
   Tasks
     2021
     16
+    (Inline "A0016C880162017C3686B18A3D4780")
     (pureP ttrim &* parse)
     [ assertPacket "literal packet" (Literal 6 2021) "D2FE28"
     , assertPacket

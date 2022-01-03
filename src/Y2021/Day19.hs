@@ -191,6 +191,7 @@ tasks =
   Tasks
     2021
     19
+    (CodeBlock 5)
     parse
     [ let p1 = mkPosition 1 2 3
           p2 = mkPosition 10 20 30

@@ -37,4 +37,10 @@ part2 input =
   let (Submarine _ (Position2 x y)) = moves2 input
    in x * y
 
-tasks = Tasks 2021 2 (linesP &** movementP) [Task part1 150, Task part2 900]
+tasks =
+  Tasks
+    2021
+    2
+    LastCodeBlock
+    (linesP &** movementP)
+    [Task part1 150, Task part2 900]
