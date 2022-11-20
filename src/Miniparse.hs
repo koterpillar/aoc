@@ -81,6 +81,9 @@ integerP = readP
 integersP :: Text -> Parser Text [Int]
 integersP sep = tsplitP sep &** integerP
 
+integersSpaceP :: Parser Text [Int]
+integersSpaceP = wordsP &** integerP
+
 charP :: Parser Text Char
 charP = pureP Text.unpack &* singleP
 

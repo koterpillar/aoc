@@ -46,7 +46,7 @@ parsePlayP =
   where
     parseNumbersLine = singleP &* integersP ","
     mkPlay numbers boards = Play boards numbers Nothing Set.empty
-    parseBoardLine = wordsP &** integerP
+    parseBoardLine = integersSpaceP
     parseBoard = traverseP parseBoardLine &* Parser mkBoard
     mkBoard lns
       | length lns == bSize && all ((== bSize) . length) lns =

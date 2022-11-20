@@ -23,5 +23,5 @@ tasks =
     2017
     2
     (CodeBlock 0)
-    (linesP &** (wordsP &** integerP))
+    (linesP &** integersSpaceP)
     [Task checksum 18, TaskScraper (CodeBlock 1) (sum . map divideDivisible) 9]
