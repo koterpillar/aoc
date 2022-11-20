@@ -162,6 +162,7 @@ data Tasks where
 
 data Task a where
   Task :: (Eq b, Show b) => (a -> b) -> b -> Task a
+  TaskScraper :: (Eq b, Show b) => ExampleScraper -> (a -> b) -> b -> Task a
   Assert :: (Eq b, Show b) => String -> b -> b -> Task a
   AssertExample :: (Eq b, Show b) => String -> b -> (a -> b) -> Task a
 
@@ -185,6 +186,7 @@ processTasks (Tasks year day scraper parser tasks) = do
 
 processTask ::
      Integer -> Int -> ExampleScraper -> Parser Text a -> Task a -> IO ()
+processTask year day _ parser (TaskScraper scraper solve expected) = processTask year day scraper parser (Task solve expected)
 processTask year day scraper parser (Task solve expected) = do
   example <- justParse parser <$> getExample year day scraper
   let exampleResult = solve example
