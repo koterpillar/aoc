@@ -1,6 +1,5 @@
-resolver: lts-18.18
+resolver: lts-20.0
 packages:
 - .
 extra-deps:
 - astar-0.3.0.0@sha256:8bf6350542e9db9451490e8993560ee843dc48a61d46a206985430f9b62461c8,967
-- MissingH-1.4.3.0@sha256:efbbe7065e17bc01ed925593a0c5b5793ab857585a8e9d5015d0025e526ab55c,4702

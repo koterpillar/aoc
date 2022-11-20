@@ -21,9 +21,6 @@ import           Utils
 hashSetFromList :: (Eq a, Hashable a) => [a] -> HashSet a
 hashSetFromList = HashSet.fromList
 
-instance (Hashable k, Hashable a) => Hashable (Map k a) where
-  hashWithSalt s = hashWithSalt s . Map.toList
-
 data Tree edge node =
   Tree
     { treeNode     :: node
