@@ -97,9 +97,12 @@ data ExampleScraper
   | Inline Text
   deriving (Show)
 
+scraperCacheName :: ExampleScraper -> Text
+scraperCacheName = Text.replace " " "-" . tshow
+
 getExample :: Integer -> Int -> ExampleScraper -> IO Text
 getExample year day scraper =
-  withCacheFile (".example-" <> tshow year <> "-" <> tshow day) $ do
+  withCacheFile (".example-" <> tshow year <> "-" <> tshow day <> "-" <> scraperCacheName scraper) $ do
     page <-
       simpleRequest $
       "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
