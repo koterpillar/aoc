@@ -103,6 +103,12 @@ allDir8 = [minBound .. maxBound]
 walk :: Walkable2 d => d -> Position2 -> Position2
 walk = walkN 1
 
+adjacent4 :: Position2 -> [Position2]
+adjacent4 p = [walk d p | d <- allDir4]
+
+adjacent8 :: Position2 -> [Position2]
+adjacent8 p = [walk d p | d <- allDir8]
+
 class Walkable2 d where
   walkN :: Int -> d -> Position2 -> Position2
 

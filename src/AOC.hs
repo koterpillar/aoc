@@ -102,7 +102,9 @@ scraperCacheName = Text.replace " " "-" . tshow
 
 getExample :: Integer -> Int -> ExampleScraper -> IO Text
 getExample year day scraper =
-  withCacheFile (".example-" <> tshow year <> "-" <> tshow day <> "-" <> scraperCacheName scraper) $ do
+  withCacheFile
+    (".example-" <>
+     tshow year <> "-" <> tshow day <> "-" <> scraperCacheName scraper) $ do
     page <-
       simpleRequest $
       "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
@@ -167,6 +169,7 @@ data Task a where
   AssertExample :: (Eq b, Show b) => String -> b -> (a -> b) -> Task a
 
 taskName :: Task a -> String
+taskName TaskScraper {}           = "Task"
 taskName Task {}                  = "Task"
 taskName (Assert name _ _)        = name
 taskName (AssertExample name _ _) = name
@@ -186,7 +189,8 @@ processTasks (Tasks year day scraper parser tasks) = do
 
 processTask ::
      Integer -> Int -> ExampleScraper -> Parser Text a -> Task a -> IO ()
-processTask year day _ parser (TaskScraper scraper solve expected) = processTask year day scraper parser (Task solve expected)
+processTask year day _ parser (TaskScraper scraper solve expected) =
+  processTask year day scraper parser (Task solve expected)
 processTask year day scraper parser (Task solve expected) = do
   example <- justParse parser <$> getExample year day scraper
   let exampleResult = solve example
