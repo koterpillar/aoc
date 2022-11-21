@@ -98,7 +98,7 @@ data ExampleScraper
   deriving (Show)
 
 scraperCacheName :: ExampleScraper -> Text
-scraperCacheName = Text.replace " " "-" . tshow
+scraperCacheName = Text.replace " " "-" . Text.replace "\"" "" . tshow
 
 getExample :: Integer -> Int -> ExampleScraper -> IO Text
 getExample year day scraper =
