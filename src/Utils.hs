@@ -16,6 +16,7 @@ module Utils
   , (>=>)
   , bimap
   , chr
+  , chunksOf
   , guard
   , first
   , forM_
@@ -52,7 +53,7 @@ import           Data.Functor              (($>))
 import           Data.Function             (on, (&))
 
 import           Data.List
-import           Data.List.Split           (splitOn)
+import           Data.List.Split           (chunksOf, splitOn)
 
 import           Data.Map                  (Map)
 import qualified Data.Map                  as Map

@@ -1,42 +1,34 @@
 module Y2017.Knot where
 
-import Control.Monad
-
-import Data.Bits
-
-import Data.Char
-
-import Data.List
-import Data.List.Split
-
+import           Data.Bits
 import qualified Data.Map.Strict as Map
-import Data.Map.Strict (Map)
+import qualified Data.Text       as Text
 
-import Numeric
+import           Numeric
 
-import Utils
-import qualified Data.Text as Text
+import           Utils
 
-data Knot = Knot
-  { kItems :: !(Map Int Int) -- ^ map positions to numbers
-  , kPos :: !Int
-  , kSkipSize :: !Int
-  }
+data Knot =
+  Knot
+    { kItems    :: !(Map Int Int) -- ^ map positions to numbers
+    , kPos      :: !Int
+    , kSkipSize :: !Int
+    }
 
 kAt :: Knot -> Int -> Int
 kAt k i =
   let (Just v) = Map.lookup i (kItems k)
-  in v
+   in v
 
 kLength = Map.size . kItems
 
 mkKnot :: Int -> Knot
 mkKnot len =
   Knot
-  { kItems = Map.fromList $ zip [0 .. len - 1] [0 .. len - 1]
-  , kPos = 0
-  , kSkipSize = 0
-  }
+    { kItems = Map.fromList $ zip [0 .. len - 1] [0 .. len - 1]
+    , kPos = 0
+    , kSkipSize = 0
+    }
 
 instance Show Knot where
   show k =
@@ -82,7 +74,8 @@ kSteps :: [Int] -> Knot -> Knot
 kSteps lens knot = foldr kStep knot $ reverse lens
 
 strToLens :: Text -> [Int]
-strToLens str = join $ replicate 64 $ map ord (Text.unpack str) ++ [17, 31, 73, 47, 23]
+strToLens str =
+  join $ replicate 64 $ map ord (Text.unpack str) ++ [17, 31, 73, 47, 23]
 
 kHash :: Text -> Knot -> Knot
 kHash str = kSteps $ strToLens str
@@ -91,7 +84,8 @@ kDense :: Knot -> [Int]
 kDense = map (foldr1 xor) . chunksOf 16 . Map.elems . kItems
 
 kShowDense :: [Int] -> Text
-kShowDense = mconcat . map (Text.justifyRight 2 '0' . Text.pack . flip showHex "")
+kShowDense =
+  mconcat . map (Text.justifyRight 2 '0' . Text.pack . flip showHex "")
 
 knotHash :: Text -> Text
 knotHash str = kShowDense $ kDense $ kHash str $ mkKnot 256
