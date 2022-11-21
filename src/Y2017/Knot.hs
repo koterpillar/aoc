@@ -1,4 +1,4 @@
-module Knot where
+module Y2017.Knot where
 
 import Control.Monad
 
@@ -15,6 +15,7 @@ import Data.Map.Strict (Map)
 import Numeric
 
 import Utils
+import qualified Data.Text as Text
 
 data Knot = Knot
   { kItems :: !(Map Int Int) -- ^ map positions to numbers
@@ -80,17 +81,17 @@ kStep len knot = kIncSkip $ kSkip (kSkipSize knot + len) $ kRotate len knot
 kSteps :: [Int] -> Knot -> Knot
 kSteps lens knot = foldr kStep knot $ reverse lens
 
-strToLens :: String -> [Int]
-strToLens str = join $ replicate 64 $ map ord str ++ [17, 31, 73, 47, 23]
+strToLens :: Text -> [Int]
+strToLens str = join $ replicate 64 $ map ord (Text.unpack str) ++ [17, 31, 73, 47, 23]
 
-kHash :: String -> Knot -> Knot
+kHash :: Text -> Knot -> Knot
 kHash str = kSteps $ strToLens str
 
 kDense :: Knot -> [Int]
 kDense = map (foldr1 xor) . chunksOf 16 . Map.elems . kItems
 
-kShowDense :: [Int] -> String
-kShowDense = join . map (pad' '0' 2 . flip showHex "")
+kShowDense :: [Int] -> Text
+kShowDense = mconcat . map (Text.justifyRight 2 '0' . Text.pack . flip showHex "")
 
-knotHash :: String -> String
+knotHash :: Text -> Text
 knotHash str = kShowDense $ kDense $ kHash str $ mkKnot 256
