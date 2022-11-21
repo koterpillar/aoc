@@ -37,6 +37,7 @@ library
       Utils.Trace
       Y2017.Day01
       Y2017.Day02
+      Y2017.Day03
       Y2021.Day01
       Y2021.Day02
       Y2021.Day03

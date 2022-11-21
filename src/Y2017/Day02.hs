@@ -1,7 +1,5 @@
 module Y2017.Day02 where
 
-import qualified Data.Text as Text
-
 import           AOC
 import           Utils
 
