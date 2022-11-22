@@ -38,7 +38,7 @@ countValid validator = length . filter (uncurry validator)
 tasks =
   Tasks
     2020
-    02
+    2
     (CodeBlock 0)
     parsePolicy
     [Task (countValid isValid1) 2, Task (countValid isValid2) 1]
