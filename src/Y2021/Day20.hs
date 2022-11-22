@@ -19,16 +19,9 @@ instructionSize = 2 ^ 9
 
 type Instructions = Map Int Bool
 
-dotP :: Parser Char Bool
-dotP = choiceEBP ".#"
-
-dotsP :: Parser Text [Bool]
-dotsP = charactersP &** dotP
-
-mkGrid :: [[Bool]] -> Grid
-mkGrid values = Grid {..}
+mkGrid :: Grid2 () -> Grid
+mkGrid inside = Grid {..}
   where
-    inside = Map.map (const ()) $ Map.filter id $ fromMatrixG values
     outside = False
 
 mkInstructions :: [Bool] -> Instructions
@@ -42,7 +35,7 @@ parse :: Parser Text (Instructions, Grid)
 parse =
   lineGroupsP &*
   (pureP Text.concat &* (mkInstructions <$> dotsP) &+
-   (mkGrid <$> traverseP dotsP))
+   (mkGrid <$> pureP Text.unlines &* dotGridP))
 
 gridBit :: Position2 -> Grid -> Bit
 gridBit p g

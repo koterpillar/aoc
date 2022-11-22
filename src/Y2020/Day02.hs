@@ -15,12 +15,11 @@ data Policy =
   deriving (Ord, Eq, Show)
 
 parsePolicy :: Parser Text [(Policy, Text)]
-parsePolicy = linesP &** (tsplitP ": " &* pairP &* (policyP &= idP))
+parsePolicy = linesP &** (tsplitP ": " &* (policyP &+ idP))
   where
     policyP =
       (\((pOne, pTwo), pChar) -> Policy {..}) <$>
-      wordsP &* pairP &*
-      ((tsplitP "-" &* pairP &* (integerP &= integerP)) &= charP)
+      wordsP &* ((tsplitP "-" &* (integerP &+ integerP)) &+ charP)
 
 isValid1 :: Policy -> Text -> Bool
 isValid1 Policy {..} t =

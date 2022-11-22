@@ -99,6 +99,15 @@ position2P = tsplitP "," &* pairPWith Position2 integerP integerP
 digitGridP :: Parser Text (Grid2 Int)
 digitGridP = fromMatrixG <$> linesP &** digitsP
 
+dotGridP :: Parser Text (Grid2 ())
+dotGridP = Map.map (const ()) . Map.filter id . fromMatrixG <$> linesP &** dotsP
+
+dotP :: Parser Char Bool
+dotP = choiceEBP ".#"
+
+dotsP :: Parser Text [Bool]
+dotsP = charactersP &** dotP
+
 bitsP :: Parser Text BitString
 bitsP = charactersP &** choiceEBP ['0', '1']
 
