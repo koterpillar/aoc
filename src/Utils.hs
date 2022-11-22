@@ -156,5 +156,13 @@ mostCommon = fmap snd . maybeMaximum . map swap . Map.toList . mapFromListCount
 fromJustE :: String -> Maybe a -> a
 fromJustE = fromMaybe . error
 
+headE :: String -> [a] -> a
+headE msg [] = error msg
+headE _ x = head x
+
+lastE :: String -> [a] -> a
+lastE msg [] = error msg
+lastE _ x = last x
+
 boundedAll :: (Bounded a, Enum a) => [a]
 boundedAll = [minBound .. maxBound]
