@@ -13,8 +13,7 @@ bug-reports:    https://github.com/koterpillar/aoc/issues
 author:         Alexey Kotlyarov
 maintainer:     a@koterpillar.com
 copyright:      2017-2021 Alexey Kotlyarov
-license:        BSD3
-license-file:   LICENSE
+license:        GPL-3
 build-type:     Simple
 extra-source-files:
     README.md
