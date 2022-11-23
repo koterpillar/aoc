@@ -23,6 +23,7 @@ dependencies:
 - html-entities
 - http-conduit
 - linear
+- memoize
 - MissingH
 - mtl
 - split

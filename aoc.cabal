@@ -44,6 +44,7 @@ library
       Y2020.Day03
       Y2020.Day04
       Y2020.Day05
+      Y2020.Day07
       Y2021.Day01
       Y2021.Day02
       Y2021.Day03
@@ -94,6 +95,7 @@ library
     , html-entities
     , http-conduit
     , linear
+    , memoize
     , mtl
     , split
     , text
@@ -129,6 +131,7 @@ executable main
     , html-entities
     , http-conduit
     , linear
+    , memoize
     , mtl
     , split
     , text
