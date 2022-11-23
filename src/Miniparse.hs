@@ -76,7 +76,11 @@ tspanP :: (Char -> Bool) -> Parser Text (Text, Text)
 tspanP = pureP . Text.span
 
 readP :: Read a => Parser Text a
-readP = Parser $ readEither . Text.unpack
+readP =
+  Parser $ \t ->
+    case readEither (Text.unpack t) of
+      Left err -> Left $ "readP: " ++ err ++ "; input: " ++ show t
+      Right x  -> Right x
 
 integerP :: Parser Text Int
 integerP = readP
