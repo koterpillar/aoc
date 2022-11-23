@@ -28,7 +28,7 @@ boundsG = pointBounds . Map.keys
 
 insideBounds :: (Position2, Position2) -> Position2 -> Bool
 insideBounds (Position2 xmin ymin, Position2 xmax ymax) (Position2 x y) =
-  x >= xmin && x <= xmax && y >= ymin && y <= ymax
+  inRange xmin xmax x && inRange ymin ymax y
 
 pointBounds :: [Position2] -> (Position2, Position2)
 pointBounds [] = error "No bounds for empty list"

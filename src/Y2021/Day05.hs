@@ -13,7 +13,7 @@ vlBounds :: [VentLine] -> (Position2, Position2)
 vlBounds = pointBounds . concatMap (\(p1, p2) -> [p1, p2])
 
 between :: Ord a => a -> a -> a -> Bool
-between a b c = a <= b && b <= c || a >= b && b >= c
+between a b c = inRange a c b || inRange c a b
 
 vlOn :: Position2 -> VentLine -> Bool
 vlOn (Position2 x y) (Position2 x1 y1, Position2 x2 y2)

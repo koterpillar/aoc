@@ -69,7 +69,8 @@ hexDigitP = Parser go
   where
     go c
       | isDigit c = Right $ ord c - ord '0'
-      | c <= 'F' && c >= 'A' = Right $ ord c - ord 'A' + 10
+      | inRange 'a' 'f' c = Right $ ord c - ord 'a' + 10
+      | inRange 'A' 'F' c = Right $ ord c - ord 'A' + 10
       | otherwise = Left $ "Invalid hex digit " <> show c
 
 hexToBits :: [Int] -> BitString

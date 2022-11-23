@@ -140,6 +140,9 @@ countIf p = length . filter p
 countTrue :: [Bool] -> Int
 countTrue = countIf id
 
+inRange :: Ord k => k -> k -> k -> Bool
+inRange lo hi k = lo <= k && k <= hi
+
 ttrim :: Text -> Text
 ttrim = Text.dropWhile (== '\n') . Text.dropWhileEnd (== '\n')
 

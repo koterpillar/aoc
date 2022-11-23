@@ -22,9 +22,7 @@ parsePolicy = linesP &** (tsplitP ": " &* (policyP &+ idP))
       wordsP &* ((tsplitP "-" &* (integerP &+ integerP)) &+ charP)
 
 isValid1 :: Policy -> Text -> Bool
-isValid1 Policy {..} t =
-  let n = Text.count (Text.singleton pChar) t
-   in pOne <= n && n <= pTwo
+isValid1 Policy {..} t = inRange pOne pTwo $ Text.count (Text.singleton pChar) t
 
 isValid2 :: Policy -> Text -> Bool
 isValid2 Policy {..} t = (at pOne == pChar) /= (at pTwo == pChar)
