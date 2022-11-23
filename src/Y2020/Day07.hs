@@ -1,9 +1,8 @@
 module Y2020.Day07 where
 
-import           Data.Function.Memoize
-import qualified Data.Map              as Map
-import qualified Data.Set              as Set
-import qualified Data.Text             as Text
+import qualified Data.Map  as Map
+import qualified Data.Set  as Set
+import qualified Data.Text as Text
 
 import           AOC
 import           Graph
@@ -46,9 +45,6 @@ findContainers =
 
 findCost :: Rules -> Int
 findCost rules = pred $ findCost' rules shinyGold
-
-instance Memoizable Text where
-  memoize f t = memoize (f . Text.pack) (Text.unpack t)
 
 findCost' :: Rules -> Bag -> Int
 findCost' rules =

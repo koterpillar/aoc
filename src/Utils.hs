@@ -3,6 +3,7 @@ module Utils
   , module Data.Containers.ListUtils
   , module Data.Either
   , module Data.Either.Extra
+  , module Data.Function.Memoize
   , module Data.Maybe
   , module Data.List
   , module Data.Tuple
@@ -53,6 +54,7 @@ import           Data.Foldable             (traverse_)
 import           Data.Functor              (($>))
 
 import           Data.Function             (on, (&))
+import           Data.Function.Memoize
 
 import           Data.List
 import           Data.List.Split           (chunksOf, splitOn)
@@ -171,3 +173,6 @@ lastE _ x    = last x
 
 boundedAll :: (Bounded a, Enum a) => [a]
 boundedAll = [minBound .. maxBound]
+
+instance Memoizable Text where
+  memoize f t = memoize (f . Text.pack) (Text.unpack t)
