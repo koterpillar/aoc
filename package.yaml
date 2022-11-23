@@ -18,6 +18,7 @@ dependencies:
 - astar
 - containers
 - directory
+- extra
 - hashable
 - html-entities
 - http-conduit

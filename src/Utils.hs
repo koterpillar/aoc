@@ -2,6 +2,7 @@ module Utils
   ( module Utils
   , module Data.Containers.ListUtils
   , module Data.Either
+  , module Data.Either.Extra
   , module Data.Maybe
   , module Data.List
   , module Data.Tuple
@@ -45,6 +46,7 @@ import           Data.Char                 (chr, isDigit, isLower, isUpper, ord)
 import           Data.Containers.ListUtils (nubInt, nubOrd)
 
 import           Data.Either
+import           Data.Either.Extra
 
 import           Data.Foldable             (traverse_)
 
@@ -158,11 +160,11 @@ fromJustE = fromMaybe . error
 
 headE :: String -> [a] -> a
 headE msg [] = error msg
-headE _ x = head x
+headE _ x    = head x
 
 lastE :: String -> [a] -> a
 lastE msg [] = error msg
-lastE _ x = last x
+lastE _ x    = last x
 
 boundedAll :: (Bounded a, Enum a) => [a]
 boundedAll = [minBound .. maxBound]

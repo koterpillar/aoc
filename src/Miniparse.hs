@@ -156,6 +156,16 @@ pairP =
 pairPWith :: Show a => (b -> c -> d) -> Parser a b -> Parser a c -> Parser [a] d
 pairPWith f pb pc = uncurry f <$> pb &+ pc
 
+filterP :: (a -> Bool) -> Parser a a
+filterP f =
+  Parser $ \a ->
+    if f a
+      then Right a
+      else Left "filterP: failed"
+
+lookupP :: Ord k => k -> Parser (Map k v) v
+lookupP k = Parser $ maybeToEither "lookupP: failed" . Map.lookup k
+
 type StateParser src dest = StateT src (Either String) dest
 
 stateP ::

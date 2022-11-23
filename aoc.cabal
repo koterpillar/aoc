@@ -88,6 +88,7 @@ library
     , base >=4.7 && <5
     , containers
     , directory
+    , extra
     , hashable
     , html-entities
     , http-conduit
@@ -122,6 +123,7 @@ executable main
     , base >=4.7 && <5
     , containers
     , directory
+    , extra
     , hashable
     , html-entities
     , http-conduit
