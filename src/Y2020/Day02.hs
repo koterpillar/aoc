@@ -32,7 +32,7 @@ isValid2 Policy {..} t = (at pOne == pChar) /= (at pTwo == pChar)
     at i = Text.index t (i - 1)
 
 countValid :: (a -> b -> Bool) -> [(a, b)] -> Int
-countValid validator = length . filter (uncurry validator)
+countValid = countIf . uncurry
 
 tasks =
   Tasks

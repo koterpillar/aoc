@@ -21,15 +21,12 @@ vlOn (Position2 x y) (Position2 x1 y1, Position2 x2 y2)
   | y1 == y2 = y == y1 && between x1 x x2
   | otherwise = False
 
-count :: (a -> Bool) -> [a] -> Int
-count p = length . filter p
-
 countOnLines :: (Position2 -> VentLine -> Bool) -> [VentLine] -> Int
-countOnLines onPred vlines = count (> 1) $ map countLines allPoints
+countOnLines onPred vlines = countIf (> 1) $ map countLines allPoints
   where
     (Position2 xmin ymin, Position2 xmax ymax) = vlBounds vlines
     allPoints = [Position2 x y | x <- [xmin .. xmax], y <- [ymin .. ymax]]
-    countLines pt = count (onPred pt) vlines
+    countLines pt = countIf (onPred pt) vlines
 
 part1 :: [VentLine] -> Int
 part1 = countOnLines vlOn
