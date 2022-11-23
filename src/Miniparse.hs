@@ -163,8 +163,13 @@ filterP f =
       then Right a
       else Left "filterP: failed"
 
-lookupP :: Ord k => k -> Parser (Map k v) v
-lookupP k = Parser $ maybeToEither "lookupP: failed" . Map.lookup k
+lookupP :: (Ord k, Show k) => k -> Parser (Map k v) v
+lookupP k =
+  Parser $ \m ->
+    case Map.lookup k m of
+      Nothing ->
+        Left $ "lookupP: " ++ show k ++ " not found, got " ++ show (Map.keys m)
+      Just v -> Right v
 
 type StateParser src dest = StateT src (Either String) dest
 
