@@ -31,9 +31,6 @@ yearParser :: Int -> Int -> Parser Text Int
 yearParser ymin ymax =
   filterP (\t -> Text.length t == 4) &* integerP &* rangeP ymin ymax
 
-tspanP :: (Char -> Bool) -> Parser Text (Text, Text)
-tspanP = pureP . Text.span
-
 byr = fieldParser "byr" $ yearParser 1920 2002
 
 iyr = fieldParser "iyr" $ yearParser 2010 2020

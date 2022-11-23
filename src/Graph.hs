@@ -18,6 +18,14 @@ fixPoint f x =
         then x
         else fixPoint f x'
 
+reverseGraph :: Ord v => Graph v -> Graph v
+reverseGraph graph = SMap.fromListWith Set.union neighbors
+  where
+    neighbors = do
+      (v, vs) <- SMap.toList graph
+      v' <- Set.toList vs
+      pure (v', Set.singleton v)
+
 reachableFrom :: Ord v => v -> Graph v -> Set v
 reachableFrom v graph = fixPoint (`vicinity` graph) (Set.singleton v)
 

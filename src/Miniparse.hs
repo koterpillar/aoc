@@ -72,6 +72,9 @@ unconsP =
 tsplitP :: Text -> Parser Text [Text]
 tsplitP sep = pureP $ Text.splitOn sep
 
+tspanP :: (Char -> Bool) -> Parser Text (Text, Text)
+tspanP = pureP . Text.span
+
 readP :: Read a => Parser Text a
 readP = Parser $ readEither . Text.unpack
 
