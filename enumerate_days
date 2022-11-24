@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
-echo "module AllTasks where" >> "$3"
-ls src/Y*/Day*.hs | sed 's!src/!import qualified !g;s!/!.!;s!.hs!!' >> "$3"
-ls src/Y*/Day*.hs | sed '1 s!src/!allTasks = [ !;s!src/!           , !g;s!/!.!;s!.hs!.tasks!;$ s!$! ]!' >> "$3"
+{
+    echo "module AllTasks where"
+    ls src/Y*/Day*.hs | sed 's!src/!import qualified !g;s!/!.!;s!.hs!!'
+    ls src/Y*/Day*.hs | sed '1 s!src/!allTasks = [ !;s!src/!           , !g;s!/!.!;s!.hs!.tasks!;$ s!$! ]!'
+} >> "$3"
