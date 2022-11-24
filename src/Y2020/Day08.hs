@@ -10,14 +10,14 @@ import           Utils
 data Instruction
   = Acc Int
   | Jmp Int
-  | Nop
+  | Nop Int
   deriving (Eq, Show)
 
 parseInstruction :: Parser Text Instruction
 parseInstruction =
   uncurry ($) <$>
   wordsP &*
-  (choiceP [("acc", Acc), ("jmp", Jmp), ("nop", const Nop)] &+
+  (choiceP [("acc", Acc), ("jmp", Jmp), ("nop", Nop)] &+
    pureP (Text.replace "+" "") &*
    integerP)
 
@@ -40,17 +40,85 @@ mkCPU = CPU {cPC = 0, cAcc = 0, cVisited = mempty}
 markVisited :: CPU -> CPU
 markVisited cpu = cpu {cVisited = Set.insert (cPC cpu) (cVisited cpu)}
 
-step :: Program -> CPU -> CPU
-step program cpu =
+data Error
+  = PastTheEnd
+  | OutOfBounds
+  deriving (Ord, Eq, Show)
+
+execute :: Instruction -> CPU -> CPU
+execute (Nop _) cpu = (markVisited cpu) {cPC = cPC cpu + 1}
+execute (Acc n) cpu = (markVisited cpu) {cPC = cPC cpu + 1, cAcc = cAcc cpu + n}
+execute (Jmp n) cpu = (markVisited cpu) {cPC = cPC cpu + n}
+
+getInstruction :: Program -> CPU -> Instruction
+getInstruction program cpu =
   case Map.lookup (cPC cpu) program of
-    Nothing      -> error $ "No instruction at address " ++ show (cPC cpu)
-    Just Nop     -> (markVisited cpu) {cPC = cPC cpu + 1}
-    Just (Acc n) -> (markVisited cpu) {cPC = cPC cpu + 1, cAcc = cAcc cpu + n}
-    Just (Jmp n) -> (markVisited cpu) {cPC = cPC cpu + n}
+    Nothing -> error $ "No instruction at address " ++ show (cPC cpu)
+    Just i  -> i
 
-findAccumBeforeLoop :: Program -> Int
-findAccumBeforeLoop program =
-  cAcc $
-  until (\cpu -> Set.member (cPC cpu) (cVisited cpu)) (step program) mkCPU
+looped :: CPU -> Bool
+looped cpu = Set.member (cPC cpu) (cVisited cpu)
 
-tasks = Tasks 2020 8 (CodeBlock 0) parseProgram [Task findAccumBeforeLoop 5]
+isOOB :: Program -> CPU -> Bool
+isOOB program CPU {..} = cPC == length program
+
+step :: Program -> CPU -> CPU
+step program cpu = execute (getInstruction program cpu) cpu
+
+data Result
+  = Loop CPU
+  | OOB CPU
+  | StrageOOB CPU
+  deriving (Eq, Show)
+
+rCPU :: Result -> CPU
+rCPU (Loop cpu)      = cpu
+rCPU (OOB cpu)       = cpu
+rCPU (StrageOOB cpu) = cpu
+
+run :: Program -> CPU -> Result
+run program cpu
+  | looped cpu = Loop cpu
+  | isOOB program cpu = OOB cpu
+  | not (Map.member (cPC cpu) program) = StrageOOB cpu
+  | otherwise = run program (step program cpu)
+
+findLoop :: Program -> Int
+findLoop program =
+  let Loop cpu = run program mkCPU
+   in cAcc cpu
+
+flipInstruction :: Instruction -> Maybe Instruction
+flipInstruction (Nop n) = Just $ Jmp n
+flipInstruction (Jmp n) = Just $ Nop n
+flipInstruction _       = Nothing
+
+runFlip :: Program -> CPU -> Result
+runFlip program cpu
+  | looped cpu = Loop cpu
+  | isOOB program cpu = OOB cpu
+  | not (Map.member (cPC cpu) program) = StrageOOB cpu
+  | otherwise = runOneFlip program cpu
+
+runOneFlip :: Program -> CPU -> Result
+runOneFlip program cpu =
+  case flipped of
+    Nothing -> runFlip program (step program cpu)
+    Just i' ->
+      let cpu' = execute i' cpu
+          result' = run program cpu'
+       in case result' of
+            r@OOB {} -> r
+            r        -> runFlip program $ execute instr cpu
+  where
+    instr = getInstruction program cpu
+    flipped = flipInstruction instr
+
+findOOB :: Program -> Int
+findOOB program =
+  case runFlip program mkCPU of
+    OOB cpu -> cAcc cpu
+    r       -> error $ "No OOB, got: " ++ show r
+
+tasks =
+  Tasks 2020 8 (CodeBlock 0) parseProgram [Task findLoop 5, Task findOOB 8]
