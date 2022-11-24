@@ -12,10 +12,12 @@ isValid (x1:xs) y =
 findInvalid :: [Int] -> Int
 findInvalid xs = findInvalid' (preambleLength xs) xs
 
+preambleLength :: [Int] -> Int
 preambleLength xs
   | length xs < 25 = 5
   | otherwise = 25
 
+findInvalid' :: Int -> [Int] -> Int
 findInvalid' l xs =
   if not $ isValid preamble x
     then x
@@ -23,4 +25,23 @@ findInvalid' l xs =
   where
     (preamble, x:_) = splitAt l xs
 
-tasks = Tasks 2020 9 (CodeBlock 0) (linesP &** integerP) [Task findInvalid 127]
+findSum :: [Int] -> Int
+findSum xs = minimum rng + maximum rng
+  where
+    rng = findSum' invalid [] xs
+    invalid = findInvalid xs
+
+findSum' :: Int -> [Int] -> [Int] -> [Int]
+findSum' target xs rest
+  | sum xs == target = xs
+  | sum xs > target = findSum' target (tail xs) rest
+  | null rest = error "exhausted"
+  | otherwise = findSum' target (xs ++ [head rest]) (tail rest)
+
+tasks =
+  Tasks
+    2020
+    9
+    (CodeBlock 0)
+    (linesP &** integerP)
+    [Task findInvalid 127, Task findSum 62]
