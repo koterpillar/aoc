@@ -2,13 +2,31 @@
 
 set -euo pipefail
 
-YEAR=$1
-DAY=$2
+if [ $# -gt 0 ]
+then
+  YEAR=$1
+  shift
+else
+  YEAR=$(date +%Y)
+fi
+
+DIR="src/Y${YEAR}"
+mkdir -p "$DIR"
+
+if [ $# -gt 0 ]
+then
+  DAY=$1
+else
+  LAST_DAY=$(find "$DIR" -name 'Day*.hs' | sed -E 's!.+Day!!;s!\.hs!!' | sort -n | tail -n 1)
+  DAY=$((LAST_DAY + 1))
+fi
+
+echo "Creating template for year $YEAR, day $DAY."
 
 printf -v DAY0 "%02d" "$DAY"
+FILE="$DIR/Day${DAY0}.hs"
 
-mkdir -p "src/Y${YEAR}"
-cat > "src/Y${YEAR}/Day${DAY0}.hs" <<EOF
+cat > "$FILE" <<EOF
 module Y${YEAR}.Day${DAY0} where
 
 import           AOC
@@ -23,3 +41,5 @@ tasks =
     [ Task part1 ()
     ]
 EOF
+
+echo "Created $FILE."
