@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+YEAR=$1
+DAY=$2
+
+printf -v DAY0 "%02d" "$DAY"
+
+mkdir -p "src/Y${YEAR}"
+cat > "src/Y${YEAR}/Day${DAY0}.hs" <<EOF
+module Y${YEAR}.Day${DAY0} where
+
+import           AOC
+import           Utils
+
+tasks =
+  Tasks
+    ${YEAR}
+    ${DAY}
+    ShowExamples
+    parser
+    [ Task part1 ()
+    ]
+EOF
