@@ -1,7 +1,5 @@
 module Y2020.Day08 where
 
-import qualified Data.Text as Text
-
 import           AOC
 import           Utils
 
@@ -15,8 +13,7 @@ parseInstruction :: Parser Text Instruction
 parseInstruction =
   uncurry ($) <$>
   wordsP &*
-  (choiceP [("acc", Acc), ("jmp", Jmp), ("nop", Nop)] &+
-   pureP (Text.replace "+" "") &*
+  (choiceP [("acc", Acc), ("jmp", Jmp), ("nop", Nop)] &+ pureP (treplace "+" "") &*
    integerP)
 
 type Program = Map Int Instruction

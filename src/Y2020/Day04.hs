@@ -28,7 +28,7 @@ rangeP lo hi = filterP $ inRange lo hi
 
 yearParser :: Int -> Int -> Parser Text Int
 yearParser ymin ymax =
-  filterP (\t -> Text.length t == 4) &* integerP &* rangeP ymin ymax
+  filterP (\t -> tlength t == 4) &* integerP &* rangeP ymin ymax
 
 byr = fieldParser "byr" $ yearParser 1920 2002
 
@@ -46,7 +46,7 @@ hgt =
 
 hcl = fieldParser "hcl" $ tspanP (== '#') &* filterP (uncurry valid)
   where
-    valid "#" t = Text.length t == 6 && Text.all isHexDigit t
+    valid "#" t = tlength t == 6 && Text.all isHexDigit t
     valid _ _   = False
     isHexDigit c = isDigit c || inRange 'a' 'f' c
 

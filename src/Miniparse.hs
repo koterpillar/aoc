@@ -77,10 +77,12 @@ tspanP = pureP . Text.span
 
 readP :: Read a => Parser Text a
 readP =
-  Parser $ \t ->
-    case readEither (Text.unpack t) of
-      Left err -> Left $ "readP: " ++ err ++ "; input: " ++ show t
-      Right x  -> Right x
+  stringP &*
+  Parser
+    (\t ->
+       case readEither t of
+         Left err -> Left $ "readP: " ++ err ++ "; input: " ++ show t
+         Right x  -> Right x)
 
 integerP :: Parser Text Int
 integerP = readP
@@ -91,11 +93,14 @@ integersP sep = tsplitP sep &** integerP
 integersSpaceP :: Parser Text [Int]
 integersSpaceP = wordsP &** integerP
 
-charP :: Parser Text Char
-charP = pureP Text.unpack &* singleP
-
 charactersP :: Parser Text [Char]
 charactersP = pureP Text.unpack
+
+charP :: Parser Text Char
+charP = charactersP &* singleP
+
+stringP :: Parser Text String
+stringP = charactersP
 
 digitsP :: Parser Text [Int]
 digitsP = charactersP &** (pureP Text.singleton &* integerP)

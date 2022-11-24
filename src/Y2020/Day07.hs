@@ -9,7 +9,7 @@ import           Utils
 type Bag = Text
 
 parseBag :: Parser Text Bag
-parseBag = pureP $ Text.replace " bag" "" . Text.replace " bags" ""
+parseBag = pureP $ treplace " bag" "" . treplace " bags" ""
 
 parseInner :: Parser Text (Int, Bag)
 parseInner = tspanP isDigit &* (integerP &= pureP Text.tail &* parseBag)
@@ -19,8 +19,7 @@ type Rule = (Bag, Set (Int, Bag))
 parseInners :: Parser Text (Set (Int, Bag))
 parseInners =
   setFromList <$>
-  pureP (Text.replace "." "") &* tsplitP ", " &*
-  pureP (filter (/= "no other bags")) &**
+  pureP (treplace "." "") &* tsplitP ", " &* pureP (filter (/= "no other bags")) &**
   parseInner
 
 parseRule :: Parser Text Rule

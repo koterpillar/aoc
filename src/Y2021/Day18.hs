@@ -1,7 +1,6 @@
 module Y2021.Day18 where
 
 import           Control.Monad.State
-import qualified Data.Text           as Text
 
 import           AOC
 import           Utils
@@ -118,7 +117,7 @@ tasks =
     2021
     18
     (CodeBlock 7)
-    (linesP &** (pureP Text.unpack &* stateP parseS))
+    (linesP &** (stringP &* stateP parseS))
     [ Assert "split 9" Nothing (snsplit $ PNumber 9)
     , Assert "split 11" (Just $ parse "[5,6]") (snsplit $ PNumber 11)
     , Assert "split 12" (Just $ parse "[6,6]") (snsplit $ PNumber 12)

@@ -13,8 +13,7 @@ parseCodes = linesP &** pureP seatCode
 seatCode :: Text -> Int
 seatCode =
   readBin .
-  Text.replace "F" "0" .
-  Text.replace "B" "1" . Text.replace "L" "0" . Text.replace "R" "1"
+  treplace "F" "0" . treplace "B" "1" . treplace "L" "0" . treplace "R" "1"
 
 readBin :: Text -> Int
 readBin =

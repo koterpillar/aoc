@@ -1,7 +1,5 @@
 module Y2021.Day10 where
 
-import qualified Data.Text as Text
-
 import           AOC
 import           Utils
 
@@ -67,7 +65,7 @@ tasks =
     2021
     10
     LastCodeBlock
-    (linesP &** pureP Text.unpack)
+    (linesP &** stringP)
     [ Assert "incomplete" (Left $ Incomplete ")]}") (parseBR "{[(")
     , Assert "median" 5 (median [5, 100, 0, 200, 1, 300, 3])
     , Task part1 26397

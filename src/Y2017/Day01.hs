@@ -1,7 +1,5 @@
 module Y2017.Day01 where
 
-import qualified Data.Text as Text
-
 import           AOC
 import           Utils
 
@@ -31,5 +29,5 @@ tasks =
     2017
     1
     (Inline "91212129")
-    (linesP &* singleP &* pureP Text.unpack)
+    (linesP &* singleP &* charactersP)
     [Task go 9, Task go2 6]

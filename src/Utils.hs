@@ -189,6 +189,12 @@ ttrim = Text.dropWhile (== '\n') . Text.dropWhileEnd (== '\n')
 tshow :: Show a => a -> Text
 tshow = Text.pack . show
 
+treplace :: Text -> Text -> Text -> Text
+treplace = Text.replace
+
+tlength :: Text -> Int
+tlength = Text.length
+
 zipTail :: [a] -> [(a, a)]
 zipTail a = zip a (tail a)
 

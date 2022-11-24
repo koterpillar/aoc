@@ -2,8 +2,6 @@ module Y2021.Day08 where
 
 import           Data.Foldable
 
-import qualified Data.Text     as Text
-
 import           AOC
 import           Utils
 
@@ -97,7 +95,7 @@ readingP =
   tsplitP "|" &* pairPWith Reading (setFromList <$> displaysP) displaysP
 
 readingsP :: Parser Text [Reading]
-readingsP = pureP (Text.replace "|\n" "|") &* linesP &** readingP
+readingsP = pureP (treplace "|\n" "|") &* linesP &** readingP
 
 part1 :: [Reading] -> Int
 part1 = sum . map countSimple
