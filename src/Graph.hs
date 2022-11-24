@@ -11,7 +11,7 @@ vicinity :: Ord v => Set v -> Graph v -> Set v
 vicinity vs graph = vs <> mconcat (mapMaybe (`mapLookup` graph) $ toList vs)
 
 reverseGraph :: Ord v => Graph v -> Graph v
-reverseGraph graph = SMap.fromListWith Set.union neighbors
+reverseGraph graph = SMap.fromListWith mappend neighbors
   where
     neighbors = do
       (v, vs) <- SMap.toList graph
@@ -31,7 +31,7 @@ connectedComponents :: Ord v => Graph v -> [Set v]
 connectedComponents graph = go (vertices graph)
   where
     go candidates
-      | Set.null candidates = []
+      | null candidates = []
       | otherwise =
         let candidate = head $ toList candidates
             component = reachableFrom candidate graph

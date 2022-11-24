@@ -44,7 +44,7 @@ parsePlayP =
   pureP (uncurry mkPlay)
   where
     parseNumbersLine = singleP &* integersP ","
-    mkPlay numbers boards = Play boards numbers Nothing Set.empty
+    mkPlay numbers boards = Play boards numbers Nothing mempty
     parseBoardLine = integersSpaceP
     parseBoard = traverseP parseBoardLine &* Parser mkBoard
     mkBoard lns

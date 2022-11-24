@@ -30,7 +30,7 @@ type Caves = Map Cave (Set Cave)
 addLink :: Cave -> Cave -> Caves -> Caves
 addLink c1 c2 = go c1 c2 . go c2 c1
   where
-    go ca cb = Map.insertWith Set.union ca (Set.singleton cb)
+    go ca cb = Map.insertWith mappend ca (Set.singleton cb)
 
 parseCaves :: Parser Text Caves
 parseCaves =
@@ -45,7 +45,7 @@ type CaveTree = Tree CTEdge CTNode
 
 ctMoves :: Caves -> CTNode -> [CTEdge]
 ctMoves _ ([], _)      = error "ctMoves: empty path"
-ctMoves caves (c:_, _) = toList $ fromMaybe Set.empty $ mapLookup c caves
+ctMoves caves (c:_, _) = toList $ fromMaybe mempty $ mapLookup c caves
 
 ctApply :: Cave -> CTNode -> Maybe CTNode
 ctApply Start _ = Nothing

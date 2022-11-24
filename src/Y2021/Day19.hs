@@ -115,9 +115,9 @@ traceMM = traceM . intercalate ", "
 unify' :: Int -> View -> View -> Maybe (Transform3, View)
 unify' anchorsNeeded as bs =
   listToMaybe $ do
-    traceM $ "unifying " <> show (Set.size as) <> " with " <> show (Set.size bs)
+    traceM $ "unifying " <> show (length as) <> " with " <> show (length bs)
     r <- rotationsT
-    a <- Set.elems as
+    a <- toList as
     b:br <- tails $ toList bs
     let t = unifyPoint r a b
     let trI = inverseT r `multiplyTT` t
@@ -134,13 +134,13 @@ unify' anchorsNeeded as bs =
       error "unify translation back failed"
     let as' = Set.fromList $ map b2a $ b : br
     let matched = Set.intersection as as'
-    let anchorsGot = Set.size matched
+    let anchorsGot = length matched
     guard $ anchorsGot >= anchorsNeeded
-    let result = Set.union as $ Set.map b2a bs
+    let result = as <> Set.map b2a bs
     traceMM
       [ "success"
       , "matched = " <> show anchorsGot
-      , "result = " <> show (Set.size result)
+      , "result = " <> show (length result)
       ]
     pure (trI, result)
 
@@ -169,7 +169,7 @@ unifyAll (canon:candidates) = do
           go canon' True rest unmatched
 
 part1 :: Scene -> Int
-part1 scene = Set.size beacons
+part1 scene = length beacons
   where
     (_, beacons) = fromJustE "part1: cannot unify" $ unifyAll $ toList scene
 

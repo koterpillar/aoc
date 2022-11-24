@@ -10,7 +10,7 @@ findSum :: Int -> Int -> [Int] -> Set Int
 findSum count total candidates =
   lastE "empty path" $
   fromJustE "no numbers add to requested" $
-  aStar prependNumber distance toGoal isGoal Set.empty
+  aStar prependNumber distance toGoal isGoal mempty
   where
     prependNumber :: Set Int -> HashSet (Set Int)
     prependNumber existing =

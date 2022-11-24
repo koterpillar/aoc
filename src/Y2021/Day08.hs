@@ -31,7 +31,7 @@ guessNumbers :: Set Display -> Display -> Maybe Int
 guessNumbers allnumbers = flip mapLookup result
   where
     findBySize n cs =
-      case find (\x -> Set.size x == n) cs of
+      case find (\x -> length x == n) cs of
         Nothing -> error $ "Cannot find set with " <> show n <> " elements"
         Just c  -> c
     n1 = findBySize 2 allnumbers
@@ -53,7 +53,7 @@ guessNumbers allnumbers = flip mapLookup result
     e = happensIn 4
     f = happensIn 9
     c = single "c" $ Set.difference n1 (Set.singleton f)
-    d = single "d" $ Set.difference n4 $ Set.union n1 $ Set.singleton b
+    d = single "d" $ Set.difference n4 $ mappend n1 $ Set.singleton b
     g =
       single "g" $
       Set.difference (Set.fromList wires) (Set.fromList [a, b, c, d, e, f])

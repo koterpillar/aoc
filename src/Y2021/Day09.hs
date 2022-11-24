@@ -37,14 +37,13 @@ basins grid = iterateSettle (map growBasin) initialBasins
     initialBasins :: [Basin]
     initialBasins = map Set.singleton $ lowPoints grid
     growBasin :: Basin -> Basin
-    growBasin b =
-      Set.union b $ Set.fromList $ concatMap growBasinPoint $ toList b
+    growBasin b = b <> Set.fromList (concatMap growBasinPoint b)
     growBasinPoint :: FPoint -> [FPoint]
     growBasinPoint (pt, d) =
       filter (\(_, d') -> d' > d && d' < 9) $ nearby grid pt
 
 part2 :: Map Position2 Int -> Int
 part2 =
-  product . map Set.size . take 3 . sortBy (flip compare `on` Set.size) . basins
+  product . map length . take 3 . sortBy (flip compare `on` length) . basins
 
 tasks = Tasks 2021 9 (CodeBlock 0) digitGridP [Task part1 15, Task part2 1134]
