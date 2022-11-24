@@ -41,7 +41,7 @@ mkGraph ps = mapFromList neighbors
   where
     neighbors = do
       p1 <- Map.keys ps
-      let p2s = filter (`Map.member` ps) (adjacent4 p1)
+      let p2s = filter (`mapMember` ps) (adjacent4 p1)
       pure (p1, Set.fromList p2s)
 
 tasks = Tasks 2017 14 (Inline "flqrgnkx") (pureP grid) [Task length 8108]

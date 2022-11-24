@@ -1,8 +1,7 @@
 module Y2021.Day17 where
 
-import           Data.Either
-import qualified Data.Map    as Map
-import qualified Data.Text   as Text
+import qualified Data.Map  as Map
+import qualified Data.Text as Text
 
 import           AOC
 import           Grid

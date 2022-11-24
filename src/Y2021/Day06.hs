@@ -1,7 +1,5 @@
 module Y2021.Day06 where
 
-import qualified Data.Map as Map
-
 import           AOC
 import           Utils
 
@@ -18,7 +16,7 @@ pondStep = mapFromListSum . concatMap step' . mapToList
     step n = [n - 1]
 
 pondTotal :: Pond -> Int
-pondTotal = sum . Map.elems
+pondTotal = sum
 
 countAfter :: Int -> Pond -> Int
 countAfter days = pondTotal . iterateN days pondStep

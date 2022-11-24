@@ -32,6 +32,7 @@ module Utils
   , readEither
   , second
   , splitOn
+  , toList
   , traverse_
   , unless
   , when
@@ -49,7 +50,7 @@ import           Data.Containers.ListUtils (nubInt, nubOrd)
 import           Data.Either
 import           Data.Either.Extra
 
-import           Data.Foldable             (traverse_)
+import           Data.Foldable             (toList, traverse_)
 
 import           Data.Functor              (($>))
 
@@ -144,6 +145,12 @@ mapFromListCount = mapFromListSum . map (, 1)
 
 mapToList :: Map k a -> [(k, a)]
 mapToList = Map.toList
+
+mapMember :: Ord k => k -> Map k a -> Bool
+mapMember = Map.member
+
+mapLookup :: Ord k => k -> Map k a -> Maybe a
+mapLookup = Map.lookup
 
 countIf :: (a -> Bool) -> [a] -> Int
 countIf p = length . filter p

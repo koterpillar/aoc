@@ -21,19 +21,19 @@ manhattanSpiral' curdir taken curpos =
     nexttaken = Map.insert nextpos (adjacentValues nextpos taken) taken
     nextwant = walk wantdir nextpos
     nextdir =
-      if Map.member nextwant taken
+      if mapMember nextwant taken
         then curdir
         else wantdir
 
 adjacentValues :: Position2 -> Grid2 Int -> Int
-adjacentValues pt vals = sum $ mapMaybe (`Map.lookup` vals) $ adjacent8 pt
+adjacentValues pt vals = sum $ mapMaybe (`mapLookup` vals) $ adjacent8 pt
 
 part1 input =
   let (p, _) = manhattanSpiral !! (input - 1)
    in manhattanDistance p start
 
 lastValue :: (Position2, Grid2 Int) -> Int
-lastValue (pos, grid) = fromJust $ Map.lookup pos grid
+lastValue (pos, grid) = fromJust $ mapLookup pos grid
 
 part2 input = head $ filter (> input) $ map lastValue manhattanSpiral
 

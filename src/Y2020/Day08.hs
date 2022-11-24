@@ -1,6 +1,5 @@
 module Y2020.Day08 where
 
-import qualified Data.Map  as Map
 import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
@@ -52,7 +51,7 @@ execute (Jmp n) cpu = (markVisited cpu) {cPC = cPC cpu + n}
 
 getInstruction :: Program -> CPU -> Instruction
 getInstruction program cpu =
-  case Map.lookup (cPC cpu) program of
+  case mapLookup (cPC cpu) program of
     Nothing -> error $ "No instruction at address " ++ show (cPC cpu)
     Just i  -> i
 
@@ -80,7 +79,7 @@ run :: Program -> CPU -> Result
 run program cpu
   | looped cpu = Loop cpu
   | isOOB program cpu = OOB cpu
-  | not (Map.member (cPC cpu) program) = StrageOOB cpu
+  | not (mapMember (cPC cpu) program) = StrageOOB cpu
   | otherwise = run program (step program cpu)
 
 findLoop :: Program -> Int
@@ -97,7 +96,7 @@ runFlip :: Program -> CPU -> Result
 runFlip program cpu
   | looped cpu = Loop cpu
   | isOOB program cpu = OOB cpu
-  | not (Map.member (cPC cpu) program) = StrageOOB cpu
+  | not (mapMember (cPC cpu) program) = StrageOOB cpu
   | otherwise = runOneFlip program cpu
 
 runOneFlip :: Program -> CPU -> Result

@@ -5,7 +5,6 @@ module Y2021.Day19 where
 import           Control.Monad.State
 import           Control.Monad.Writer
 
-import qualified Data.Map             as Map
 import qualified Data.Set             as Set
 
 import           Linear.Matrix
@@ -119,7 +118,7 @@ unify' anchorsNeeded as bs =
     traceM $ "unifying " <> show (Set.size as) <> " with " <> show (Set.size bs)
     r <- rotationsT
     a <- Set.elems as
-    b:br <- tails $ Set.toList bs
+    b:br <- tails $ toList bs
     let t = unifyPoint r a b
     let trI = inverseT r `multiplyTT` t
     let b2a p = p `multiplyPT` trI
@@ -172,15 +171,14 @@ unifyAll (canon:candidates) = do
 part1 :: Scene -> Int
 part1 scene = Set.size beacons
   where
-    (_, beacons) = fromJustE "part1: cannot unify" $ unifyAll $ Map.elems scene
+    (_, beacons) = fromJustE "part1: cannot unify" $ unifyAll $ toList scene
 
 part2 :: Scene -> Int
 part2 scene =
   fromJustE "no unified beacons" $
   maybeMaximum [manhattanLength $ subP p1 p2 | p1 <- positions, p2 <- positions]
   where
-    (positions, _) =
-      fromJustE "part2: cannot unify" $ unifyAll $ Map.elems scene
+    (positions, _) = fromJustE "part2: cannot unify" $ unifyAll $ toList scene
 
 testBasis :: View
 testBasis =
@@ -212,7 +210,7 @@ tasks =
             (Just (mkPosition (-10) 0 0, Set.insert (mkPosition 10 20 30) canon)) $
           first transformOrigin <$> unify' 4 canon candidate
     , AssertExample "unify 0 and 1" True $
-      (\(v1:v2:_) -> isJust $ unify v1 v2) . Map.elems
+      (\(v1:v2:_) -> isJust $ unify v1 v2) . toList
     , Assert "orientation 1" basis $
       (map $ flip multiplyPT $ head rotationsT) basis
     , Task part1 79

@@ -1,6 +1,5 @@
 module Y2020.Day07 where
 
-import qualified Data.Map  as Map
 import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
@@ -49,10 +48,9 @@ findCost rules = pred $ findCost' rules shinyGold
 findCost' :: Rules -> Bag -> Int
 findCost' rules =
   memoFix $ \memoFind bag ->
-    case Map.lookup bag rules of
-      Nothing -> error $ "no rule for " ++ show bag
-      Just inners ->
-        1 + sum [n * memoFind inner | (n, inner) <- Set.toList inners]
+    case mapLookup bag rules of
+      Nothing     -> error $ "no rule for " ++ show bag
+      Just inners -> 1 + sum [n * memoFind inner | (n, inner) <- toList inners]
 
 tasks =
   Tasks

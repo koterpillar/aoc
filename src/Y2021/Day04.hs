@@ -1,6 +1,5 @@
 module Y2021.Day04 where
 
-import qualified Data.Map  as Map
 import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
@@ -24,11 +23,11 @@ bWin :: Set Int -> Board -> Bool
 bWin drawn board =
   or $ do
     line <- bLines
-    let values = mapMaybe (`Map.lookup` board) line
+    let values = mapMaybe (`mapLookup` board) line
     pure $ all (`Set.member` drawn) values
 
 bScore :: Set Int -> Board -> Int
-bScore drawn = sum . filter (`Set.notMember` drawn) . Map.elems
+bScore drawn = sum . filter (`Set.notMember` drawn) . toList
 
 data Play =
   Play

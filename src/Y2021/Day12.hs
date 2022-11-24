@@ -45,7 +45,7 @@ type CaveTree = Tree CTEdge CTNode
 
 ctMoves :: Caves -> CTNode -> [CTEdge]
 ctMoves _ ([], _)      = error "ctMoves: empty path"
-ctMoves caves (c:_, _) = Set.toList $ fromMaybe Set.empty $ Map.lookup c caves
+ctMoves caves (c:_, _) = toList $ fromMaybe Set.empty $ mapLookup c caves
 
 ctApply :: Cave -> CTNode -> Maybe CTNode
 ctApply Start _ = Nothing

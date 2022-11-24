@@ -64,7 +64,7 @@ allAxis = boundedAll
 type Cuboid = Map Axis Range
 
 cRange :: Axis -> Cuboid -> Range
-cRange axis cs = fromMaybe nullRange $ Map.lookup axis cs
+cRange axis cs = fromMaybe nullRange $ mapLookup axis cs
 
 cvolume :: Cuboid -> Maybe Int
 cvolume cs = product <$> traverse (rangeLength . (`cRange` cs)) allAxis

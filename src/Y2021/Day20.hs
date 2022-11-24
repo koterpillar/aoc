@@ -1,6 +1,5 @@
 module Y2021.Day20 where
 
-import qualified Data.Map  as Map
 import qualified Data.Text as Text
 
 import           AOC
@@ -29,7 +28,7 @@ mkInstructions = mapFromList . zip [0 ..]
 
 instructionFor :: Instructions -> Int -> Bool
 instructionFor instructions n =
-  fromJustE ("no instructions for " <> show n) $ Map.lookup n instructions
+  fromJustE ("no instructions for " <> show n) $ mapLookup n instructions
 
 parse :: Parser Text (Instructions, Grid)
 parse =
@@ -39,7 +38,7 @@ parse =
 
 gridBit :: Position2 -> Grid -> Bit
 gridBit p g
-  | insideBounds (gridBounds g) p = boolToBit $ Map.member p (inside g)
+  | insideBounds (gridBounds g) p = boolToBit $ mapMember p (inside g)
   | otherwise = boolToBit $ outside g
 
 gridBounds :: Grid -> (Position2, Position2)

@@ -136,6 +136,6 @@ fromMatrixG = mapFromList . concat . zipWith makeLine [0 ..]
 
 toMatrixG :: Map Position2 a -> [[Maybe a]]
 toMatrixG m =
-  [[Map.lookup (Position2 x y) m | x <- [xmin .. xmax]] | y <- [ymin .. ymax]]
+  [[mapLookup (Position2 x y) m | x <- [xmin .. xmax]] | y <- [ymin .. ymax]]
   where
     (Position2 xmin ymin, Position2 xmax ymax) = boundsG m

@@ -1,7 +1,5 @@
 module Y2020.Day03 where
 
-import qualified Data.Map as Map
-
 import           AOC
 import           Grid
 import           Utils
@@ -9,7 +7,7 @@ import           Utils
 type Grid = Grid2 ()
 
 gridMember :: Grid -> Position2 -> Bool
-gridMember g (Position2 x y) = Map.member (Position2 (x `mod` width g) y) g
+gridMember g (Position2 x y) = mapMember (Position2 (x `mod` width g) y) g
 
 width :: Grid2 a -> Int
 width g = xmax + 1

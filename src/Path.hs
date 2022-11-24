@@ -14,8 +14,6 @@ import           Data.Hashable    (Hashable (..))
 import           Data.HashSet     (HashSet)
 import qualified Data.HashSet     as HashSet
 
-import qualified Data.Map         as Map
-
 import           Utils
 
 hashSetFromList :: (Eq a, Hashable a) => [a] -> HashSet a

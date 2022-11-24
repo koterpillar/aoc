@@ -59,7 +59,7 @@ roomX C = 7
 roomX D = 9
 
 posRoom :: Situation -> Amphi -> [Amphi]
-posRoom s a = fromMaybe [] $ Map.lookup a $ posRooms s
+posRoom s a = fromMaybe [] $ mapLookup a $ posRooms s
 
 posHallwayFree :: Situation -> Int -> Bool
 posHallwayFree s x = Map.notMember x $ posHallway s
@@ -70,7 +70,7 @@ moves s =
 
 moveFromHallway :: Situation -> Int -> Maybe Situation
 moveFromHallway s x = do
-  a <- Map.lookup x $ posHallway s
+  a <- mapLookup x $ posHallway s
   let targetX = roomX a
   let targetAs = posRoom s a
   guard $ all (== a) targetAs
@@ -151,8 +151,8 @@ energySpent s1 s2 =
   where
     ps1 = apositions s1
     ps2 = apositions s2
-    (a1, p1) = fromSingleE (show (s1, s2)) $ Set.toList $ Set.difference ps1 ps2
-    (a2, p2) = fromSingleE (show (s1, s2)) $ Set.toList $ Set.difference ps2 ps1
+    (a1, p1) = fromSingleE (show (s1, s2)) $ toList $ Set.difference ps1 ps2
+    (a2, p2) = fromSingleE (show (s1, s2)) $ toList $ Set.difference ps2 ps1
 
 fromSingleE :: Show a => String -> [a] -> a
 fromSingleE _ [a]  = a
@@ -211,7 +211,7 @@ mkSituation grid = Situation {..}
       mapFromList
         [ ( a
           , catMaybes
-              [ Map.lookup (Position2 (roomX a) y) grid
+              [ mapLookup (Position2 (roomX a) y) grid
               | y <- [roomHeadY .. roomHeadY + posRoomDepth]
               ])
         | a <- amphis

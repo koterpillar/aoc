@@ -8,15 +8,14 @@ import           Utils
 type Graph v = Map v (Set v)
 
 vicinity :: Ord v => Set v -> Graph v -> Set v
-vicinity vs graph =
-  vs <> mconcat (mapMaybe (`SMap.lookup` graph) $ Set.toList vs)
+vicinity vs graph = vs <> mconcat (mapMaybe (`mapLookup` graph) $ toList vs)
 
 reverseGraph :: Ord v => Graph v -> Graph v
 reverseGraph graph = SMap.fromListWith Set.union neighbors
   where
     neighbors = do
       (v, vs) <- SMap.toList graph
-      v' <- Set.toList vs
+      v' <- toList vs
       pure (v', Set.singleton v)
 
 reachableFrom :: Ord v => v -> Graph v -> Set v
@@ -34,6 +33,6 @@ connectedComponents graph = go (vertices graph)
     go candidates
       | Set.null candidates = []
       | otherwise =
-        let candidate = head $ Set.toList candidates
+        let candidate = head $ toList candidates
             component = reachableFrom candidate graph
          in component : go (candidates `Set.difference` component)

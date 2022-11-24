@@ -1,6 +1,5 @@
 module Y2020.Day04 where
 
-import qualified Data.Map  as Map
 import qualified Data.Text as Text
 
 import           AOC
@@ -17,7 +16,7 @@ parsePassport =
   pureP (Text.intercalate " ") &* wordsP &** (tsplitP ":" &* (idP &+ idP))
 
 isValid :: Passport -> Bool
-isValid p = all (`Map.member` p) requiredElems
+isValid p = all (`mapMember` p) requiredElems
 
 requiredElems = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"]
 

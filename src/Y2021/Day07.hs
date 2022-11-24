@@ -1,7 +1,5 @@
 module Y2021.Day07 where
 
-import qualified Data.Map as Map
-
 import           AOC
 import           Utils
 

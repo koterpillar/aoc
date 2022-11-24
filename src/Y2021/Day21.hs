@@ -107,7 +107,7 @@ gameStep g = Quantum.map (uncurry go) $ roll $ gameDice g
         player = gameCurrentPlayer g
         position =
           fromJustE ("no position for player " <> show player) $
-          Map.lookup player (gamePositions g)
+          mapLookup player (gamePositions g)
         position' = (position + movement) `mod1` 10
         gamePositions' = Map.insert player position' (gamePositions g)
         gameScore' = Map.adjust (+ position') player (gameScore g)
@@ -136,7 +136,7 @@ part1 game = loserScore * endTurn
   where
     (game', winner) = cToSingle $ gamePlay $ traceShowId $ startGame game
     [loser] = filter (/= winner) (gamePlayers game')
-    Just loserScore = Map.lookup loser (gameScore game')
+    Just loserScore = mapLookup loser (gameScore game')
     endTurn = gameTurn game' * 3
 
 part2 :: Positions -> Int

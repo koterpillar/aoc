@@ -1,6 +1,5 @@
 module Y2021.Day14 where
 
-import qualified Data.Map  as Map
 import qualified Data.Text as Text
 
 import           AOC
@@ -35,7 +34,7 @@ step instructions = mapFromListSum . concatMap go . mapToList
   where
     go (pair, count) = [(pair', count) | pair' <- go' pair]
     go' pair@(e1, e2) =
-      case Map.lookup pair instructions of
+      case mapLookup pair instructions of
         Nothing -> [pair]
         Just e  -> [(e1, e), (e, e2)]
 
@@ -49,7 +48,7 @@ countMap =
 solve steps (polymer, insertions) =
   diff $ iterateN steps (step insertions) (toPairs polymer)
   where
-    diff = (\counts -> last counts - head counts) . sort . Map.elems . countMap
+    diff = (\counts -> last counts - head counts) . sort . toList . countMap
 
 part1 = solve 10
 

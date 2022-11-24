@@ -28,7 +28,7 @@ step' d (g0, p@(Position2 xmax ymax)) = (foldl move g0 ps, p)
        in Position2 x'' y''
     move g p =
       let p' = advance p
-       in if Map.member p' g0
+       in if mapMember p' g0
             then g
             else g & Map.delete p & Map.insert p' d
 

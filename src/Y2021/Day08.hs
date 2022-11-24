@@ -2,7 +2,6 @@ module Y2021.Day08 where
 
 import           Data.Foldable
 
-import qualified Data.Map      as Map
 import qualified Data.Set      as Set
 import qualified Data.Text     as Text
 
@@ -29,7 +28,7 @@ data Reading =
   deriving (Ord, Eq, Show)
 
 guessNumbers :: Set Display -> Display -> Maybe Int
-guessNumbers allnumbers = flip Map.lookup result
+guessNumbers allnumbers = flip mapLookup result
   where
     findBySize n cs =
       case find (\x -> Set.size x == n) cs of
@@ -49,7 +48,7 @@ guessNumbers allnumbers = flip Map.lookup result
     happensIn' displays n =
       single ("occurs " <> show n <> " times") $ happenIn displays n
     happenIn displays n =
-      filter (\w -> countIf (Set.member w) (Set.toList displays) == n) wires
+      filter (\w -> countIf (Set.member w) (toList displays) == n) wires
     b = happensIn 6
     e = happensIn 4
     f = happensIn 9

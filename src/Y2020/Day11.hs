@@ -1,7 +1,5 @@
 module Y2020.Day11 where
 
-import qualified Data.Map as Map
-
 import           AOC
 import           Graph
 import           Grid
@@ -27,14 +25,14 @@ countOccupied :: [Seat] -> Int
 countOccupied = countIf (== Occupied)
 
 occupiedNeighbors :: Grid -> Position2 -> Int
-occupiedNeighbors g p = countOccupied $ mapMaybe (`Map.lookup` g) $ adjacent8 p
+occupiedNeighbors g p = countOccupied $ mapMaybe (`mapLookup` g) $ adjacent8 p
 
 occupiedNeighbors2 g p = countOccupied $ mapMaybe (viewRay p) allDir8
   where
     viewRay :: Position2 -> Direction8 -> Maybe Seat
     viewRay p d =
       let p' = walk d p
-       in case Map.lookup p' g of
+       in case mapLookup p' g of
             Just Floor -> viewRay p' d
             x          -> x
 
@@ -49,10 +47,10 @@ step occupiedNeighbors maxOccupied g =
 
 stabilizedSeats, stabilizedSeats2 :: Grid -> Int
 stabilizedSeats =
-  countOccupied . Map.elems . iterateSettle (step occupiedNeighbors 4)
+  countOccupied . toList . iterateSettle (step occupiedNeighbors 4)
 
 stabilizedSeats2 =
-  countOccupied . Map.elems . iterateSettle (step occupiedNeighbors2 5)
+  countOccupied . toList . iterateSettle (step occupiedNeighbors2 5)
 
 tasks =
   Tasks

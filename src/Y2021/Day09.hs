@@ -1,6 +1,5 @@
 module Y2021.Day09 where
 
-import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import           AOC
@@ -16,7 +15,7 @@ nearby grid pt =
   mapMaybe
     (\d ->
        let pt' = walk d pt
-        in (,) pt' <$> Map.lookup pt' grid)
+        in (,) pt' <$> mapLookup pt' grid)
     allDir4
 
 lowPoints :: Floor -> [FPoint]
@@ -39,7 +38,7 @@ basins grid = iterateSettle (map growBasin) initialBasins
     initialBasins = map Set.singleton $ lowPoints grid
     growBasin :: Basin -> Basin
     growBasin b =
-      Set.union b $ Set.fromList $ concatMap growBasinPoint $ Set.toList b
+      Set.union b $ Set.fromList $ concatMap growBasinPoint $ toList b
     growBasinPoint :: FPoint -> [FPoint]
     growBasinPoint (pt, d) =
       filter (\(_, d') -> d' > d && d' < 9) $ nearby grid pt

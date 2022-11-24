@@ -39,7 +39,7 @@ choiceP :: (Ord src, Show src) => [(src, dest)] -> Parser src dest
 choiceP choices =
   let cmap = mapFromList choices
    in Parser $ \src ->
-        case Map.lookup src cmap of
+        case mapLookup src cmap of
           Just dest -> Right dest
           Nothing ->
             Left $
@@ -173,7 +173,7 @@ filterP f =
 lookupP :: (Ord k, Show k) => k -> Parser (Map k v) v
 lookupP k =
   Parser $ \m ->
-    case Map.lookup k m of
+    case mapLookup k m of
       Nothing ->
         Left $ "lookupP: " ++ show k ++ " not found, got " ++ show (Map.keys m)
       Just v -> Right v

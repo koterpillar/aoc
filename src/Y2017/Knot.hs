@@ -17,7 +17,7 @@ data Knot =
 
 kAt :: Knot -> Int -> Int
 kAt k i =
-  let (Just v) = Map.lookup i (kItems k)
+  let (Just v) = mapLookup i (kItems k)
    in v
 
 kLength = length . kItems
@@ -81,7 +81,7 @@ kHash :: Text -> Knot -> Knot
 kHash str = kSteps $ strToLens str
 
 kDense :: Knot -> [Int]
-kDense = map (foldr1 xor) . chunksOf 16 . Map.elems . kItems
+kDense = map (foldr1 xor) . chunksOf 16 . toList . kItems
 
 kShowDense :: [Int] -> Text
 kShowDense =

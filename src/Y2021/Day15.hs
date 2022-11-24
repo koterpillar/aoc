@@ -1,6 +1,5 @@
 module Y2021.Day15 where
 
-import qualified Data.Map  as Map
 import qualified Data.Text as Text
 
 import           AOC
@@ -11,7 +10,7 @@ import           Utils
 type Grid = Grid2 Int
 
 pathCost :: Grid -> [Position2] -> Int
-pathCost grid path = sum (mapMaybe (`Map.lookup` grid) path)
+pathCost grid path = sum (mapMaybe (`mapLookup` grid) path)
 
 part1 grid =
   pathCost grid $
@@ -23,10 +22,10 @@ part1 grid =
       | p2 == startPosition = error "we can't go back to start position!"
       | otherwise =
         fromJustE ("destination " <> show p2 <> " not found in grid") $
-        Map.lookup p2 grid
+        mapLookup p2 grid
     heuristicDistance = manhattanDistance endPosition
     moves p =
-      hashSetFromList $ filter (`Map.member` grid) $ map (`walk` p) allDir4
+      hashSetFromList $ filter (`mapMember` grid) $ map (`walk` p) allDir4
 
 enlarge :: Int -> Grid -> Grid
 enlarge times grid = mapFromList $ concatMap copyP $ mapToList grid
