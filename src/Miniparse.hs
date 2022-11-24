@@ -75,14 +75,14 @@ tsplitP sep = pureP $ Text.splitOn sep
 tspanP :: (Char -> Bool) -> Parser Text (Text, Text)
 tspanP = pureP . Text.span
 
+readEitherErr :: Read a => String -> Either String a
+readEitherErr t =
+  case readEither t of
+    Left err -> Left $ "readP: " ++ err ++ "; input: " ++ show t
+    Right x  -> Right x
+
 readP :: Read a => Parser Text a
-readP =
-  stringP &*
-  Parser
-    (\t ->
-       case readEither t of
-         Left err -> Left $ "readP: " ++ err ++ "; input: " ++ show t
-         Right x  -> Right x)
+readP =  stringP &*  Parser readEitherErr
 
 integerP :: Parser Text Int
 integerP = readP
