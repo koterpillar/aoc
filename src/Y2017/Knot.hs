@@ -20,12 +20,12 @@ kAt k i =
   let (Just v) = Map.lookup i (kItems k)
    in v
 
-kLength = Map.size . kItems
+kLength = length . kItems
 
 mkKnot :: Int -> Knot
 mkKnot len =
   Knot
-    { kItems = Map.fromList $ zip [0 .. len - 1] [0 .. len - 1]
+    { kItems = mapFromList $ zip [0 .. len - 1] [0 .. len - 1]
     , kPos = 0
     , kSkipSize = 0
     }

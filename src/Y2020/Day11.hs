@@ -40,8 +40,7 @@ occupiedNeighbors2 g p = countOccupied $ mapMaybe (viewRay p) allDir8
 
 step :: (Grid -> Position2 -> Int) -> Int -> Grid -> Grid
 step occupiedNeighbors maxOccupied g =
-  Map.fromList $
-  map (\(p, v) -> (p, go v (occupiedNeighbors g p))) $ Map.toList g
+  mapFromList $ map (\(p, v) -> (p, go v (occupiedNeighbors g p))) $ mapToList g
   where
     go Empty 0 = Occupied
     go Occupied n

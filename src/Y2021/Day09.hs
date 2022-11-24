@@ -20,7 +20,7 @@ nearby grid pt =
     allDir4
 
 lowPoints :: Floor -> [FPoint]
-lowPoints grid = filter (uncurry lowest) $ Map.toList grid
+lowPoints grid = filter (uncurry lowest) $ mapToList grid
   where
     lowest pt depth = all ((> depth) . snd) (nearby grid pt)
 

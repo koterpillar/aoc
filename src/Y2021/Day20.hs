@@ -25,7 +25,7 @@ mkGrid inside = Grid {..}
     outside = False
 
 mkInstructions :: [Bool] -> Instructions
-mkInstructions = Map.fromList . zip [0 ..]
+mkInstructions = mapFromList . zip [0 ..]
 
 instructionFor :: Instructions -> Int -> Bool
 instructionFor instructions n =
@@ -55,14 +55,14 @@ gridDisplay (Grid inside outside) =
 
 gridCount :: Grid -> Int
 gridCount (Grid _ True)  = error "infinite"
-gridCount (Grid m False) = Map.size m
+gridCount (Grid m False) = length m
 
 step :: Instructions -> Grid -> Grid
 step instructions grid = ttraceF gridDisplay result
   where
     result = Grid inside' outside'
     inside' =
-      Map.fromList $ do
+      mapFromList $ do
         let (Position2 xmin ymin, Position2 xmax ymax) = gridBounds grid
         y <- [ymin - 3 .. ymax + 3]
         x <- [xmin - 3 .. xmax + 3]

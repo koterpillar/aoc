@@ -23,6 +23,8 @@ import           Data.Bifunctor (first)
 import           Prelude        hiding (all, filter, map, pure)
 import qualified Prelude
 
+import           Utils          (mapToList)
+
 class Collapse a where
   cinit :: a
   cappend :: a -> a -> a
@@ -35,10 +37,10 @@ newtype Quantum collapse a =
   deriving (Eq, Ord, Show)
 
 size :: Quantum collapse a -> Int
-size = Map.size . getQuantum
+size = length . getQuantum
 
 toList :: Quantum collapse a -> [(a, collapse)]
-toList = Map.toList . getQuantum
+toList = mapToList . getQuantum
 
 values :: Quantum collapse a -> [a]
 values = Map.keys . getQuantum

@@ -88,7 +88,7 @@ displayScene scale area@(Position2 xmin ymin, Position2 xmax ymax) v = display
       displayG $
       shrinkWithG scale pref $
       Map.mapKeys (\(Position2 x y) -> Position2 x (-y)) $
-      Map.fromList $ areaPoints ++ pathPoints
+      mapFromList $ areaPoints ++ pathPoints
     areaPoints =
       [(Position2 x y, '#') | x <- [xmin .. xmax], y <- [ymin .. ymax]]
     pathPoints = [(p, '*') | p <- projectilePath area v]

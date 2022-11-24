@@ -12,13 +12,13 @@ import           Utils
 type Grid = Grid2 (Int, Bool)
 
 mkGrid :: Grid2 Int -> Grid
-mkGrid = Map.map (, False)
+mkGrid = fmap (, False)
 
 step :: Grid -> Grid
 step = execState go
 
 countFlashes :: Grid -> Int
-countFlashes = Map.size . Map.filter snd
+countFlashes = length . Map.filter snd
 
 goP :: (Position2 -> State Grid ()) -> State Grid ()
 goP fn = do
@@ -63,7 +63,7 @@ part2 :: Grid -> Int
 part2 = go 0
   where
     go n grid
-      | countFlashes grid == Map.size grid = n
+      | countFlashes grid == length grid = n
       | otherwise = go (n + 1) (step grid)
 
 tasks =

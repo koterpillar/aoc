@@ -220,7 +220,7 @@ tasks =
     ]
 
 parse :: Parser Text Scene
-parse = Map.fromList <$> lineGroupsP &** parseReport
+parse = mapFromList <$> lineGroupsP &** parseReport
 
 parseReport :: Parser [Text] (Int, View)
 parseReport =

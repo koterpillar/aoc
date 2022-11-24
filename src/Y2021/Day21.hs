@@ -78,16 +78,15 @@ gamePlayers :: Game -> [Player]
 gamePlayers = Map.keys . gamePositions
 
 gameCurrentPlayer :: Game -> Player
-gameCurrentPlayer game =
-  (gameTurn game + 1) `mod1` Map.size (gamePositions game)
+gameCurrentPlayer game = (gameTurn game + 1) `mod1` length (gamePositions game)
 
 startGame :: Positions -> Game
 startGame positions = Game {..}
   where
-    gamePositions = Map.fromList $ zip [1 ..] positions
+    gamePositions = mapFromList $ zip [1 ..] positions
     gameDice = Deterministic 1
     gameTurn = 0
-    gameScore = Map.fromList $ zip [1 ..] $ replicate (length positions) 0
+    gameScore = mapFromList $ zip [1 ..] $ replicate (length positions) 0
     gameUntil = 1000
 
 startGameDirac :: Positions -> Game
@@ -114,7 +113,7 @@ gameStep g = Quantum.map (uncurry go) $ roll $ gameDice g
         gameScore' = Map.adjust (+ position') player (gameScore g)
 
 gameWin :: Game -> Maybe Player
-gameWin g = fmap fst $ find ((>= gameUntil g) . snd) $ Map.toList $ gameScore g
+gameWin g = fmap fst $ find ((>= gameUntil g) . snd) $ mapToList $ gameScore g
 
 gameIsWin :: Game -> Bool
 gameIsWin = isJust . gameWin

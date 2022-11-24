@@ -116,7 +116,7 @@ isGoal s@Situation {..} =
 targetEstimate :: Situation -> Int
 targetEstimate s@Situation {..} = sum estimateHallway + sum estimateRooms
   where
-    estimateHallway = map (uncurry estimateHallwayA) $ Map.toList posHallway
+    estimateHallway = map (uncurry estimateHallwayA) $ mapToList posHallway
     estimateHallwayA x a = moveEnergy a (Position2 x hallwayY) (target a)
     estimateRooms = concatMap estimateRoom amphis
     estimateRoom a' =
@@ -135,7 +135,7 @@ moveEnergy a (Position2 x1 y1) (Position2 x2 y2) =
 apositions :: Situation -> Set (Amphi, Position2)
 apositions s = Set.fromList (hallway ++ rooms)
   where
-    hallway = [(a, Position2 x hallwayY) | (x, a) <- Map.toList $ posHallway s]
+    hallway = [(a, Position2 x hallwayY) | (x, a) <- mapToList $ posHallway s]
     rooms = do
       a' <- amphis
       (a, y) <- posRoomYs s a'
@@ -204,11 +204,11 @@ parse =
 mkSituation :: Map Position2 Amphi -> Situation
 mkSituation grid = Situation {..}
   where
-    posHallway = Map.empty
+    posHallway = mempty
     posEnergySpent = 0
     posRoomDepth = 2
     posRooms =
-      Map.fromList
+      mapFromList
         [ ( a
           , catMaybes
               [ Map.lookup (Position2 (roomX a) y) grid

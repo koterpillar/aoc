@@ -20,7 +20,7 @@ type Insertions = Map Pair Element
 parse :: Parser Text (Polymer, Insertions)
 parse =
   linesP &* unconsP &*
-  (charactersP &= (Map.fromList <$> pureP tail &* traverseP parseInsertion))
+  (charactersP &= (mapFromList <$> pureP tail &* traverseP parseInsertion))
   where
     parseInsertion = tsplitP " -> " &* (charactersP &* pairP &+ charP)
 
@@ -31,7 +31,7 @@ toPairs polymer =
   mapFromListCount $ zipTail (nullElement : polymer ++ [nullElement])
 
 step :: Insertions -> PolymerMap -> PolymerMap
-step instructions = mapFromListSum . concatMap go . Map.toList
+step instructions = mapFromListSum . concatMap go . mapToList
   where
     go (pair, count) = [(pair', count) | pair' <- go' pair]
     go' pair@(e1, e2) =
@@ -41,10 +41,10 @@ step instructions = mapFromListSum . concatMap go . Map.toList
 
 countMap :: PolymerMap -> Map Char Int
 countMap =
-  Map.map (`div` 2) .
+  fmap (`div` 2) .
   mapFromListSum .
   filter (\(e, _) -> e /= nullElement) .
-  concatMap (\((e1, e2), c) -> [(e1, c), (e2, c)]) . Map.toList
+  concatMap (\((e1, e2), c) -> [(e1, c), (e2, c)]) . mapToList
 
 solve steps (polymer, insertions) =
   diff $ iterateN steps (step insertions) (toPairs polymer)
@@ -68,7 +68,7 @@ tasks =
         (\(p, i) -> iterateN 4 (step i) $ toPairs p)
     , Assert
         "countMap"
-        (Map.fromList [('A', 2), ('B', 2)])
+        (mapFromList [('A', 2), ('B', 2)])
         (countMap $ toPairs "ABAB")
     , Task part1 1588
     , Task part2 2188189693529

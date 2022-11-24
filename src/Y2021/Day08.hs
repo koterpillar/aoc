@@ -65,7 +65,7 @@ guessNumbers allnumbers = flip Map.lookup result
     n6 = Set.fromList [a, b, d, e, f, g]
     n9 = Set.fromList [a, b, c, d, f, g]
     result =
-      Map.fromList
+      mapFromList
         [ (n0, 0)
         , (n1, 1)
         , (n2, 2)

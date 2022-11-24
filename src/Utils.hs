@@ -130,11 +130,20 @@ maybeMaximum :: Ord a => [a] -> Maybe a
 maybeMaximum [] = Nothing
 maybeMaximum xs = Just $ maximum xs
 
+mapFromList :: Ord k => [(k, a)] -> Map k a
+mapFromList = Map.fromList
+
+mapFromListWith :: Ord k => (a -> a -> a) -> [(k, a)] -> Map k a
+mapFromListWith = Map.fromListWith
+
 mapFromListSum :: (Ord k, Num a) => [(k, a)] -> Map k a
 mapFromListSum = Map.fromListWith (+)
 
 mapFromListCount :: (Ord k, Num a) => [k] -> Map k a
 mapFromListCount = mapFromListSum . map (, 1)
+
+mapToList :: Map k a -> [(k, a)]
+mapToList = Map.toList
 
 countIf :: (a -> Bool) -> [a] -> Int
 countIf p = length . filter p

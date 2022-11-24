@@ -11,7 +11,7 @@ import           Utils
 type Grid = Grid2 Int
 
 pathCost :: Grid -> [Position2] -> Int
-pathCost grid path = sum [risk | Just risk <- map (`Map.lookup` grid) path]
+pathCost grid path = sum (mapMaybe (`Map.lookup` grid) path)
 
 part1 grid =
   pathCost grid $
@@ -29,7 +29,7 @@ part1 grid =
       hashSetFromList $ filter (`Map.member` grid) $ map (`walk` p) allDir4
 
 enlarge :: Int -> Grid -> Grid
-enlarge times grid = Map.fromList $ concatMap copyP $ Map.toList grid
+enlarge times grid = mapFromList $ concatMap copyP $ mapToList grid
   where
     (_, Position2 xmax ymax) = boundsG grid
     sx = xmax + 1

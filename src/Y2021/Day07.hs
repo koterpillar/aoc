@@ -9,7 +9,7 @@ type Crabs = [Int]
 
 -- | Group items in the list by their position
 groupPositions :: [Int] -> [Int]
-groupPositions = go 0 . Map.toList . mapFromListCount
+groupPositions = go 0 . mapToList . mapFromListCount
   where
     go _ [] = []
     go n rest@((n', x):xs)

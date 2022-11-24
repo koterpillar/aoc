@@ -11,7 +11,7 @@ pondP :: Parser Text Pond
 pondP = mapFromListCount <$> integersP ","
 
 pondStep :: Pond -> Pond
-pondStep = mapFromListSum . concatMap step' . Map.toList
+pondStep = mapFromListSum . concatMap step' . mapToList
   where
     step' (timer, count) = [(nt, count) | nt <- step timer]
     step 0 = [6, 8]

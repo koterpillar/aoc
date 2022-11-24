@@ -5,7 +5,7 @@ import qualified Data.Set        as Set
 
 import           Utils
 
-type Graph v = SMap.Map v (Set v)
+type Graph v = Map v (Set v)
 
 vicinity :: Ord v => Set v -> Graph v -> Set v
 vicinity vs graph =

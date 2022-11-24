@@ -33,14 +33,14 @@ applyFold = Map.mapKeys . applyFoldPoint
 parseInstructions :: Parser Text Instructions
 parseInstructions = lineGroupsP &* (parseDots &+ traverseP parseFold)
   where
-    parseDots = Map.fromList . flip zip (repeat ()) <$> traverseP parseDot
+    parseDots = mapFromList . flip zip (repeat ()) <$> traverseP parseDot
     parseDot = tsplitP "," &* pairPWith Position2 integerP integerP
     parseFold =
       pureP (Text.drop 11) &* tsplitP "=" &*
       pairPWith ($) (choiceP [("x", FoldX), ("y", FoldY)]) integerP
 
 part1 :: Instructions -> Int
-part1 (p, fs) = Map.size $ applyFold (head fs) p
+part1 (p, fs) = length $ applyFold (head fs) p
 
 part2 :: Instructions -> ()
 part2 (p, fs) = ttrace (displayG $ foldl (flip applyFold) p fs) ()

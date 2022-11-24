@@ -13,7 +13,7 @@ parsePassports = lineGroupsP &** parsePassport
 
 parsePassport :: Parser [Text] Passport
 parsePassport =
-  Map.fromList <$>
+  mapFromList <$>
   pureP (Text.intercalate " ") &* wordsP &** (tsplitP ":" &* (idP &+ idP))
 
 isValid :: Passport -> Bool

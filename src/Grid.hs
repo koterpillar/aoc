@@ -40,7 +40,7 @@ pointBounds ps = (Position2 xmin ymin, Position2 xmax ymax)
     ymax = maximum $ map pY ps
 
 shrinkWithG :: Int -> (a -> a -> a) -> Grid2 a -> Grid2 a
-shrinkWithG scale fn = Map.fromListWith fn . map (first scalePoint) . Map.toList
+shrinkWithG scale fn = mapFromListWith fn . map (first scalePoint) . mapToList
   where
     scalePoint (Position2 x y) = Position2 (x `div` scale) (y `div` scale)
 
@@ -129,7 +129,7 @@ instance Walkable2 Direction8 where
   walkN n SE = walkN n S . walkN n E
 
 fromMatrixG :: [[a]] -> Grid2 a
-fromMatrixG = Map.fromList . concat . zipWith makeLine [0 ..]
+fromMatrixG = mapFromList . concat . zipWith makeLine [0 ..]
   where
     makeLine y = zipWith (makePoint y) [0 ..]
     makePoint y x v = (Position2 x y, v)

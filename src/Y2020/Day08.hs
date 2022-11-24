@@ -24,7 +24,7 @@ parseInstruction =
 type Program = Map Int Instruction
 
 parseProgram :: Parser Text Program
-parseProgram = Map.fromList . zip [0 ..] <$> linesP &** parseInstruction
+parseProgram = mapFromList . zip [0 ..] <$> linesP &** parseInstruction
 
 data CPU =
   CPU

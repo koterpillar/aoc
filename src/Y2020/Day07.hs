@@ -31,10 +31,10 @@ parseRule = tsplitP " contain " &* (parseBag &+ parseInners)
 type Rules = Map Bag (Set (Int, Bag))
 
 parseRules :: Parser Text Rules
-parseRules = Map.fromList <$> linesP &** parseRule
+parseRules = mapFromList <$> linesP &** parseRule
 
 mkGraph :: Rules -> Graph Bag
-mkGraph = Map.map $ Set.map snd
+mkGraph = fmap $ Set.map snd
 
 shinyGold :: Bag
 shinyGold = "shiny gold"

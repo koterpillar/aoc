@@ -89,7 +89,7 @@ instance Show value => Show (DecisionTree value) where
     "|" <> tail (show axis) <> "=" <> show c <> "|" <> show no <> "}"
 
 dtCount :: (Eq value, Show value) => value -> DecisionTree value -> Int
-dtCount v = dtCountIn v Map.empty
+dtCount v = dtCountIn v mempty
 
 dtCountIn ::
      (Eq value, Show value) => value -> Cuboid -> DecisionTree value -> Int
@@ -132,7 +132,7 @@ dtSet v cs prim = cToTree v cs prim
 
 part1cuboid :: Cuboid
 part1cuboid =
-  Map.fromList [(axis, Range (Just (-50)) (Just 51)) | axis <- allAxis]
+  mapFromList [(axis, Range (Just (-50)) (Just 51)) | axis <- allAxis]
 
 initial :: DecisionTree Bit
 initial = Value O
@@ -173,7 +173,7 @@ example0 =
   , (I, mkc r4)
   ]
   where
-    mkc r = Map.fromList [(a, r) | a <- allAxis]
+    mkc r = mapFromList [(a, r) | a <- allAxis]
     mkr a b = fromJustE "mkr" $ mkRange a (b + 1)
     r1 = mkr 10 12
     r2 = mkr 11 13
@@ -196,5 +196,4 @@ cuboidP =
   pureP mkCuboid
 
 mkCuboid :: [(Axis, (Int, Int))] -> Cuboid
-mkCuboid =
-  Map.fromList . map (second $ \(a, b) -> Range (Just a) (Just (b + 1)))
+mkCuboid = mapFromList . map (second $ \(a, b) -> Range (Just a) (Just (b + 1)))

@@ -37,7 +37,7 @@ justParse parser src =
 
 choiceP :: (Ord src, Show src) => [(src, dest)] -> Parser src dest
 choiceP choices =
-  let cmap = Map.fromList choices
+  let cmap = mapFromList choices
    in Parser $ \src ->
         case Map.lookup src cmap of
           Just dest -> Right dest
@@ -107,7 +107,7 @@ digitGridP :: Parser Text (Grid2 Int)
 digitGridP = fromMatrixG <$> linesP &** digitsP
 
 dotGridP :: Parser Text (Grid2 ())
-dotGridP = Map.map (const ()) . Map.filter id . fromMatrixG <$> linesP &** dotsP
+dotGridP = void . Map.filter id . fromMatrixG <$> linesP &** dotsP
 
 dotP :: Parser Char Bool
 dotP = choiceEBP ".#"

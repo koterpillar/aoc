@@ -14,7 +14,7 @@ step g = g & step' E & step' S
 step' :: Direction4 -> Grid -> Grid
 step' d (g0, p@(Position2 xmax ymax)) = (foldl move g0 ps, p)
   where
-    ps = [p | (p, c) <- Map.toList g0, c == d]
+    ps = [p | (p, c) <- mapToList g0, c == d]
     advance p =
       let Position2 x' y' = walk d p
           x'' =
@@ -58,7 +58,7 @@ mkGrid g = (g, b)
 
 parse :: Parser Text Grid
 parse =
-  mkGrid . Map.map fromJust . Map.filter isJust . fromMatrixG <$>
+  mkGrid . fmap fromJust . Map.filter isJust . fromMatrixG <$>
   linesP &** (charactersP &** cucumberP)
 
 cucumberP :: Parser Char (Maybe Direction4)
