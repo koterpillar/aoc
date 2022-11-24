@@ -50,10 +50,10 @@ step occupiedNeighbors maxOccupied g =
 
 stabilizedSeats, stabilizedSeats2 :: Grid -> Int
 stabilizedSeats =
-  countOccupied . Map.elems . fixPoint (step occupiedNeighbors 4)
+  countOccupied . Map.elems . iterateSettle (step occupiedNeighbors 4)
 
 stabilizedSeats2 =
-  countOccupied . Map.elems . fixPoint (step occupiedNeighbors2 5)
+  countOccupied . Map.elems . iterateSettle (step occupiedNeighbors2 5)
 
 tasks =
   Tasks
