@@ -1,6 +1,5 @@
 module Y2020.Day08 where
 
-import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
@@ -37,7 +36,7 @@ mkCPU :: CPU
 mkCPU = CPU {cPC = 0, cAcc = 0, cVisited = mempty}
 
 markVisited :: CPU -> CPU
-markVisited cpu = cpu {cVisited = Set.insert (cPC cpu) (cVisited cpu)}
+markVisited cpu = cpu {cVisited = setInsert (cPC cpu) (cVisited cpu)}
 
 data Error
   = PastTheEnd
@@ -56,7 +55,7 @@ getInstruction program cpu =
     Just i  -> i
 
 looped :: CPU -> Bool
-looped cpu = Set.member (cPC cpu) (cVisited cpu)
+looped cpu = setMember (cPC cpu) (cVisited cpu)
 
 isOOB :: Program -> CPU -> Bool
 isOOB program CPU {..} = cPC == length program

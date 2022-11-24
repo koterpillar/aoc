@@ -3,7 +3,6 @@ module Y2021.Day11 where
 import           Control.Monad.State
 
 import qualified Data.Map            as Map
-import qualified Data.Set            as Set
 
 import           AOC
 import           Grid

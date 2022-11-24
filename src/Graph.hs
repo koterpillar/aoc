@@ -1,7 +1,6 @@
 module Graph where
 
 import qualified Data.Map.Strict as SMap
-import qualified Data.Set        as Set
 
 import           Utils
 
@@ -25,7 +24,7 @@ vertices :: Graph v -> Set v
 vertices = SMap.keysSet
 
 unreachableFrom :: Ord v => v -> Graph v -> Set v
-unreachableFrom v graph = vertices graph `Set.difference` reachableFrom v graph
+unreachableFrom v graph = vertices graph `setDifference` reachableFrom v graph
 
 connectedComponents :: Ord v => Graph v -> [Set v]
 connectedComponents graph = go (vertices graph)
@@ -35,4 +34,4 @@ connectedComponents graph = go (vertices graph)
       | otherwise =
         let candidate = head $ toList candidates
             component = reachableFrom candidate graph
-         in component : go (candidates `Set.difference` component)
+         in component : go (candidates `setDifference` component)

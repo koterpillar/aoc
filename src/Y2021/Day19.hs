@@ -5,8 +5,6 @@ module Y2021.Day19 where
 import           Control.Monad.State
 import           Control.Monad.Writer
 
-import qualified Data.Set             as Set
-
 import           Linear.Matrix
 import           Linear.V4
 import           Linear.Vector        hiding (basis)
@@ -133,10 +131,10 @@ unify' anchorsNeeded as bs =
         ]
       error "unify translation back failed"
     let as' = setFromList $ map b2a $ b : br
-    let matched = Set.intersection as as'
+    let matched = setIntersection as as'
     let anchorsGot = length matched
     guard $ anchorsGot >= anchorsNeeded
-    let result = as <> Set.map b2a bs
+    let result = as <> setMap b2a bs
     traceMM
       [ "success"
       , "matched = " <> show anchorsGot
@@ -207,7 +205,7 @@ tasks =
               ]
        in Assert
             "unify 1"
-            (Just (mkPosition (-10) 0 0, Set.insert (mkPosition 10 20 30) canon)) $
+            (Just (mkPosition (-10) 0 0, setInsert (mkPosition 10 20 30) canon)) $
           first transformOrigin <$> unify' 4 canon candidate
     , AssertExample "unify 0 and 1" True $
       (\(v1:v2:_) -> isJust $ unify v1 v2) . toList

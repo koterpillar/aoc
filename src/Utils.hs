@@ -159,8 +159,20 @@ set1 = Set.singleton
 setFromList :: Ord a => [a] -> Set a
 setFromList = Set.fromList
 
+setMember :: Ord a => a -> Set a -> Bool
+setMember = Set.member
+
+setInsert :: Ord a => a -> Set a -> Set a
+setInsert = Set.insert
+
+setMap :: Ord b => (a -> b) -> Set a -> Set b
+setMap = Set.map
+
 setDifference :: Ord a => Set a -> Set a -> Set a
 setDifference = Set.difference
+
+setIntersection :: Ord a => Set a -> Set a -> Set a
+setIntersection = Set.intersection
 
 countIf :: (a -> Bool) -> [a] -> Int
 countIf p = length . filter p

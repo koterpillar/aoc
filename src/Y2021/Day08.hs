@@ -2,7 +2,6 @@ module Y2021.Day08 where
 
 import           Data.Foldable
 
-import qualified Data.Set      as Set
 import qualified Data.Text     as Text
 
 import           AOC
@@ -48,7 +47,7 @@ guessNumbers allnumbers = flip mapLookup result
     happensIn' displays n =
       single ("occurs " <> show n <> " times") $ happenIn displays n
     happenIn displays n =
-      filter (\w -> countIf (Set.member w) (toList displays) == n) wires
+      filter (\w -> countIf (setMember w) (toList displays) == n) wires
     b = happensIn 6
     e = happensIn 4
     f = happensIn 9

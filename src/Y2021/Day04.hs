@@ -1,6 +1,5 @@
 module Y2021.Day04 where
 
-import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
@@ -24,10 +23,10 @@ bWin drawn board =
   or $ do
     line <- bLines
     let values = mapMaybe (`mapLookup` board) line
-    pure $ all (`Set.member` drawn) values
+    pure $ all (`setMember` drawn) values
 
 bScore :: Set Int -> Board -> Int
-bScore drawn = sum . filter (`Set.notMember` drawn) . toList
+bScore drawn = sum . filter (not . (`setMember` drawn)) . toList
 
 data Play =
   Play
@@ -65,7 +64,7 @@ pStep play@Play {..} =
     nextNumber:remainingNumbers ->
       Just $
       play
-        { pPlayedNumbers = Set.insert nextNumber pPlayedNumbers
+        { pPlayedNumbers = setInsert nextNumber pPlayedNumbers
         , pLastNumber = Just nextNumber
         , pNumbers = remainingNumbers
         , pBoards = filter (not . bWin pPlayedNumbers) pBoards

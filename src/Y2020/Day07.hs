@@ -1,6 +1,5 @@
 module Y2020.Day07 where
 
-import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
@@ -33,7 +32,7 @@ parseRules :: Parser Text Rules
 parseRules = mapFromList <$> linesP &** parseRule
 
 mkGraph :: Rules -> Graph Bag
-mkGraph = fmap $ Set.map snd
+mkGraph = fmap $ setMap snd
 
 shinyGold :: Bag
 shinyGold = "shiny gold"

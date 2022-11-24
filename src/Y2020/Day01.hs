@@ -1,7 +1,5 @@
 module Y2020.Day01 where
 
-import qualified Data.Set as Set
-
 import           AOC
 import           Path
 import           Utils
@@ -15,7 +13,7 @@ findSum count total candidates =
     prependNumber :: Set Int -> HashSet (Set Int)
     prependNumber existing =
       hashSetFromList
-        [Set.insert x existing | x <- candidates, x `Set.notMember` existing]
+        [setInsert x existing | x <- candidates, not (setMember x existing)]
     distance = const $ const 1
     toGoal :: Set Int -> Int
     toGoal numbers
