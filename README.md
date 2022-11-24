@@ -1,5 +1,10 @@
 # Advent of Code
 
+## Credentials
+
+Log in to [AOC](https://adventofcode.com/), open browser inspector, Storage,
+Cookies and copy the _value_ of `session` cookie to `.session-cookie`.
+
 ## Running
 
 ```shell
