@@ -19,7 +19,7 @@ type Rule = (Bag, Set (Int, Bag))
 
 parseInners :: Parser Text (Set (Int, Bag))
 parseInners =
-  Set.fromList <$>
+  setFromList <$>
   pureP (Text.replace "." "") &* tsplitP ", " &*
   pureP (filter (/= "no other bags")) &**
   parseInner

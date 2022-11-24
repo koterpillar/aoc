@@ -1,7 +1,5 @@
 module Y2021.Day09 where
 
-import qualified Data.Set as Set
-
 import           AOC
 import           Grid
 import           Utils
@@ -35,9 +33,9 @@ basins :: Floor -> [Basin]
 basins grid = iterateSettle (map growBasin) initialBasins
   where
     initialBasins :: [Basin]
-    initialBasins = map Set.singleton $ lowPoints grid
+    initialBasins = map set1 $ lowPoints grid
     growBasin :: Basin -> Basin
-    growBasin b = b <> Set.fromList (concatMap growBasinPoint b)
+    growBasin b = b <> setFromList (concatMap growBasinPoint b)
     growBasinPoint :: FPoint -> [FPoint]
     growBasinPoint (pt, d) =
       filter (\(_, d') -> d' > d && d' < 9) $ nearby grid pt

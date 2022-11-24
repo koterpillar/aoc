@@ -16,10 +16,10 @@ reverseGraph graph = SMap.fromListWith mappend neighbors
     neighbors = do
       (v, vs) <- SMap.toList graph
       v' <- toList vs
-      pure (v', Set.singleton v)
+      pure (v', set1 v)
 
 reachableFrom :: Ord v => v -> Graph v -> Set v
-reachableFrom v graph = iterateSettle (`vicinity` graph) (Set.singleton v)
+reachableFrom v graph = iterateSettle (`vicinity` graph) (set1 v)
 
 vertices :: Graph v -> Set v
 vertices = SMap.keysSet

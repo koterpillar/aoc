@@ -1,7 +1,6 @@
 module Y2021.Day12 where
 
 import qualified Data.Map  as Map
-import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
@@ -30,7 +29,7 @@ type Caves = Map Cave (Set Cave)
 addLink :: Cave -> Cave -> Caves -> Caves
 addLink c1 c2 = go c1 c2 . go c2 c1
   where
-    go ca cb = Map.insertWith mappend ca (Set.singleton cb)
+    go ca cb = Map.insertWith mappend ca (set1 cb)
 
 parseCaves :: Parser Text Caves
 parseCaves =

@@ -2,8 +2,6 @@ module Y2017.Day14 where
 
 import qualified Data.Map.Strict as Map
 
-import qualified Data.Set        as Set
-
 import           Numeric
 
 import qualified Data.Text       as Text
@@ -42,6 +40,6 @@ mkGraph ps = mapFromList neighbors
     neighbors = do
       p1 <- Map.keys ps
       let p2s = filter (`mapMember` ps) (adjacent4 p1)
-      pure (p1, Set.fromList p2s)
+      pure (p1, setFromList p2s)
 
 tasks = Tasks 2017 14 (Inline "flqrgnkx") (pureP grid) [Task length 8108]

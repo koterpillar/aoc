@@ -1,7 +1,6 @@
 module Y2021.Day23 where
 
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 
 import           AOC
 import           Grid
@@ -133,7 +132,7 @@ moveEnergy a (Position2 x1 y1) (Position2 x2 y2) =
   aEnergy a * (abs (x2 - x1) + abs (y2 - y1))
 
 apositions :: Situation -> Set (Amphi, Position2)
-apositions s = Set.fromList (hallway ++ rooms)
+apositions s = setFromList (hallway ++ rooms)
   where
     hallway = [(a, Position2 x hallwayY) | (x, a) <- mapToList $ posHallway s]
     rooms = do
@@ -151,8 +150,8 @@ energySpent s1 s2 =
   where
     ps1 = apositions s1
     ps2 = apositions s2
-    (a1, p1) = fromSingleE (show (s1, s2)) $ toList $ Set.difference ps1 ps2
-    (a2, p2) = fromSingleE (show (s1, s2)) $ toList $ Set.difference ps2 ps1
+    (a1, p1) = fromSingleE (show (s1, s2)) $ toList $ setDifference ps1 ps2
+    (a2, p2) = fromSingleE (show (s1, s2)) $ toList $ setDifference ps2 ps1
 
 fromSingleE :: Show a => String -> [a] -> a
 fromSingleE _ [a]  = a

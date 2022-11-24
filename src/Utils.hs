@@ -66,6 +66,7 @@ import qualified Data.Map                  as Map
 import           Data.Maybe
 
 import           Data.Set                  (Set)
+import qualified Data.Set                  as Set
 
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
@@ -151,6 +152,15 @@ mapMember = Map.member
 
 mapLookup :: Ord k => k -> Map k a -> Maybe a
 mapLookup = Map.lookup
+
+set1 :: a -> Set a
+set1 = Set.singleton
+
+setFromList :: Ord a => [a] -> Set a
+setFromList = Set.fromList
+
+setDifference :: Ord a => Set a -> Set a -> Set a
+setDifference = Set.difference
 
 countIf :: (a -> Bool) -> [a] -> Int
 countIf p = length . filter p

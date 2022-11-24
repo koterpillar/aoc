@@ -95,4 +95,4 @@ tasks =
     ]
   where
     board = fromMatrixG [[1, 2], [3, 1]]
-    drawn = Set.fromList [1, 2]
+    drawn = setFromList [1, 2]

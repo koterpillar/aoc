@@ -43,7 +43,7 @@ guessNumbers allnumbers = flip mapLookup result
       case toList s of
         [x]   -> x
         other -> error $ "Cannot choose " <> msg <> " from " <> show other
-    a = single "a" $ Set.difference n7 n1
+    a = single "a" $ setDifference n7 n1
     happensIn = happensIn' allnumbers
     happensIn' displays n =
       single ("occurs " <> show n <> " times") $ happenIn displays n
@@ -52,17 +52,17 @@ guessNumbers allnumbers = flip mapLookup result
     b = happensIn 6
     e = happensIn 4
     f = happensIn 9
-    c = single "c" $ Set.difference n1 (Set.singleton f)
-    d = single "d" $ Set.difference n4 $ mappend n1 $ Set.singleton b
+    c = single "c" $ setDifference n1 (set1 f)
+    d = single "d" $ setDifference n4 $ n1 <> set1 b
     g =
       single "g" $
-      Set.difference (Set.fromList wires) (Set.fromList [a, b, c, d, e, f])
-    n0 = Set.fromList [a, b, c, e, f, g]
-    n2 = Set.fromList [a, c, d, e, g]
-    n3 = Set.fromList [a, c, d, f, g]
-    n5 = Set.fromList [a, b, d, f, g]
-    n6 = Set.fromList [a, b, d, e, f, g]
-    n9 = Set.fromList [a, b, c, d, f, g]
+      setDifference (setFromList wires) (setFromList [a, b, c, d, e, f])
+    n0 = setFromList [a, b, c, e, f, g]
+    n2 = setFromList [a, c, d, e, g]
+    n3 = setFromList [a, c, d, f, g]
+    n5 = setFromList [a, b, d, f, g]
+    n6 = setFromList [a, b, d, e, f, g]
+    n9 = setFromList [a, b, c, d, f, g]
     result =
       mapFromList
         [ (n0, 0)
@@ -88,14 +88,14 @@ wireP :: Parser Char Wire
 wireP = choiceEBP ['a' .. 'g']
 
 displayP :: Parser Text Display
-displayP = Set.fromList <$> charactersP &** wireP
+displayP = setFromList <$> charactersP &** wireP
 
 displaysP :: Parser Text [Display]
 displaysP = wordsP &** displayP
 
 readingP :: Parser Text Reading
 readingP =
-  tsplitP "|" &* pairPWith Reading (Set.fromList <$> displaysP) displaysP
+  tsplitP "|" &* pairPWith Reading (setFromList <$> displaysP) displaysP
 
 readingsP :: Parser Text [Reading]
 readingsP = pureP (Text.replace "|\n" "|") &* linesP &** readingP

@@ -132,7 +132,7 @@ unify' anchorsNeeded as bs =
         , "r = " <> show r
         ]
       error "unify translation back failed"
-    let as' = Set.fromList $ map b2a $ b : br
+    let as' = setFromList $ map b2a $ b : br
     let matched = Set.intersection as as'
     let anchorsGot = length matched
     guard $ anchorsGot >= anchorsNeeded
@@ -182,7 +182,7 @@ part2 scene =
 
 testBasis :: View
 testBasis =
-  Set.fromList
+  setFromList
     [mkPosition 0 0 0, mkPosition 1 0 0, mkPosition 0 2 0, mkPosition 0 0 3]
 
 tasks =
@@ -198,7 +198,7 @@ tasks =
       length $ sort $ map (multiplyPT $ mkPosition 1 2 3) rotationsT
     , let canon = testBasis
           candidate =
-            Set.fromList
+            setFromList
               [ mkPosition 0 11 0
               , mkPosition 0 10 2
               , mkPosition 0 10 0
@@ -222,7 +222,7 @@ parse = mapFromList <$> lineGroupsP &** parseReport
 
 parseReport :: Parser [Text] (Int, View)
 parseReport =
-  unconsP &* (parseScanner &= (Set.fromList <$> traverseP parsePosition3))
+  unconsP &* (parseScanner &= (setFromList <$> traverseP parsePosition3))
 
 parseScanner :: Parser Text Int
 parseScanner = wordsP &* pureP (!! 2) &* integerP
