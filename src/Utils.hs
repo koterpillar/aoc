@@ -82,7 +82,7 @@ iterateN :: Int -> (a -> a) -> a -> a
 iterateN 0 _ v = v
 iterateN n fn v =
   let !u = iterateN (n - 1) fn v
-   in progress 1000 n $ fn u
+   in progress 1000000 n $ fn u
 
 iterateWhile :: (a -> Bool) -> (a -> a) -> a -> [a]
 iterateWhile continue fn v
