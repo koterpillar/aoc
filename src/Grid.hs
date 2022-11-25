@@ -17,6 +17,25 @@ data Position2 =
 instance Hashable Position2 where
   hashWithSalt s (Position2 x y) = hashWithSalt s (x, y)
 
+pointM :: Int -> Position2 -> Position2
+pointM m (Position2 x y) = Position2 (m * x) (m * y)
+
+pointPlus :: Position2 -> Position2 -> Position2
+pointPlus (Position2 x1 y1) (Position2 x2 y2) = Position2 (x1 + x2) (y1 + y2)
+
+pointMinus :: Position2 -> Position2 -> Position2
+pointMinus (Position2 x1 y1) (Position2 x2 y2) = Position2 (x1 - x2) (y1 - y2)
+
+pointApplyRelative ::
+     Position2 -> (Position2 -> Position2) -> Position2 -> Position2
+pointApplyRelative origin fn p = fn (p `pointMinus` origin) `pointPlus` origin
+
+pointRotateLeft :: Position2 -> Position2
+pointRotateLeft (Position2 x y) = Position2 y (-x)
+
+pointRotateRight :: Position2 -> Position2
+pointRotateRight (Position2 x y) = Position2 (-y) x
+
 manhattanDistance :: Position2 -> Position2 -> Int
 manhattanDistance (Position2 x1 y1) (Position2 x2 y2) =
   abs (x2 - x1) + abs (y2 - y1)
