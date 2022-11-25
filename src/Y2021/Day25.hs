@@ -30,7 +30,7 @@ step' d (g0, p@(Position2 xmax ymax)) = (foldl move g0 ps, p)
       let p' = advance p
        in if mapMember p' g0
             then g
-            else g & Map.delete p & Map.insert p' d
+            else g & Map.delete p & mapInsert p' d
 
 instance GridItem Direction4 where
   showInGrid E = '>'

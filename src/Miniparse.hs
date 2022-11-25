@@ -51,6 +51,14 @@ choiceEBP ::
      (Ord src, Show src, Bounded dest, Enum dest) => [src] -> Parser src dest
 choiceEBP = choiceP . (`zip` boundedAll)
 
+requireP :: (Show a, Eq a) => a -> Parser a ()
+requireP expected =
+  Parser $ \case
+    actual
+      | actual == expected -> Right ()
+      | otherwise ->
+        Left $ "Expected " ++ show expected ++ ", got " ++ show actual
+
 linesP :: Parser Text [Text]
 linesP = pureP Text.lines
 
@@ -82,7 +90,7 @@ readEitherErr t =
     Right x  -> Right x
 
 readP :: Read a => Parser Text a
-readP =  stringP &*  Parser readEitherErr
+readP = stringP &* Parser readEitherErr
 
 integerP :: Parser Text Int
 integerP = readP
@@ -152,6 +160,9 @@ pa &=> f =
 pa &+ pb = pairP &* (pa &= pb)
 
 infixl 6 &+
+
+(&|) :: Parser a b -> Parser a b -> Parser a b
+pa &| pb = Parser $ \a -> runParse pa a <|> runParse pb a
 
 singleP :: Show a => Parser [a] a
 singleP =

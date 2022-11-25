@@ -32,6 +32,8 @@ module Y${YEAR}.Day${DAY0} where
 import           AOC
 import           Utils
 
+part1 = error . show
+
 tasks =
   Tasks
     ${YEAR}

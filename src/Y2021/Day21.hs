@@ -109,7 +109,7 @@ gameStep g = Quantum.map (uncurry go) $ roll $ gameDice g
           fromJustE ("no position for player " <> show player) $
           mapLookup player (gamePositions g)
         position' = (position + movement) `mod1` 10
-        gamePositions' = Map.insert player position' (gamePositions g)
+        gamePositions' = mapInsert player position' (gamePositions g)
         gameScore' = Map.adjust (+ position') player (gameScore g)
 
 gameWin :: Game -> Maybe Player

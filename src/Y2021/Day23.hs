@@ -94,7 +94,7 @@ moveFromRoom s a' = do
   let energy = aEnergy a * abs (targetX - x) * abs (y - hallwayY)
   pure
     s
-      { posHallway = Map.insert targetX a $ posHallway s
+      { posHallway = mapInsert targetX a $ posHallway s
       , posRooms = Map.adjust tail a' $ posRooms s
       }
 

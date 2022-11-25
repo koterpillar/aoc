@@ -153,6 +153,12 @@ mapMember = Map.member
 mapLookup :: Ord k => k -> Map k a -> Maybe a
 mapLookup = Map.lookup
 
+mapInsert :: Ord k => k -> a -> Map k a -> Map k a
+mapInsert = Map.insert
+
+map1 :: Ord k => k -> a -> Map k a
+map1 = Map.singleton
+
 set1 :: a -> Set a
 set1 = Set.singleton
 

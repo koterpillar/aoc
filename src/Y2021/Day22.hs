@@ -4,8 +4,6 @@ module Y2021.Day22 where
 
 import           Control.Monad (foldM)
 
-import qualified Data.Map      as Map
-
 import           AOC
 import           Bit
 import           Utils
@@ -108,7 +106,7 @@ dtCountIn v cs t@(Branch axis c yes no) = sum $ catMaybes [yes', no']
            "current range: " <>
            show r <> " split at: " <> show c <> " result: " <> show yn) $
       splitRangeAt c r
-    csWith r' = Map.insert axis r' cs
+    csWith r' = mapInsert axis r' cs
     yes' = dtCountIn v <$> fmap csWith ryes <*> pure yes
     no' = dtCountIn v <$> fmap csWith rno <*> pure no
 
@@ -125,7 +123,7 @@ dtSet v cs (Branch axis c yes no) = Branch axis c yes' no'
   where
     r = cRange axis cs
     (rYes, rNo) = splitRangeAt c r
-    csWith r = Map.insert axis r cs
+    csWith r = mapInsert axis r cs
     yes' = foldr (dtSet v . csWith) yes rYes
     no' = foldr (dtSet v . csWith) no rNo
 dtSet v cs prim = cToTree v cs prim

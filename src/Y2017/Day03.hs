@@ -1,7 +1,5 @@
 module Y2017.Day03 where
 
-import qualified Data.Map as Map
-
 import           AOC
 import           Grid
 import           Utils
@@ -9,7 +7,7 @@ import           Utils
 start = Position2 0 0
 
 manhattanSpiral :: [(Position2, Grid2 Int)]
-manhattanSpiral = manhattanSpiral' E (Map.singleton start 1) start
+manhattanSpiral = manhattanSpiral' E (map1 start 1) start
 
 manhattanSpiral' ::
      Direction4 -> Grid2 Int -> Position2 -> [(Position2, Grid2 Int)]
@@ -18,7 +16,7 @@ manhattanSpiral' curdir taken curpos =
   where
     nextpos = walk curdir curpos
     wantdir = turnLeft curdir
-    nexttaken = Map.insert nextpos (adjacentValues nextpos taken) taken
+    nexttaken = mapInsert nextpos (adjacentValues nextpos taken) taken
     nextwant = walk wantdir nextpos
     nextdir =
       if mapMember nextwant taken

@@ -29,7 +29,7 @@ modifyP fn p = do
   r <- gets $ mapLookup p
   forM_ r $ \rr -> do
     rr' <- fn rr
-    modify $ Map.insert p rr'
+    modify $ mapInsert p rr'
 
 incrP :: Position2 -> State Grid ()
 incrP p = do
@@ -37,7 +37,7 @@ incrP p = do
   forM_ r $ \(v, f) -> do
     let v' = v + 1
     let f' = v' > 9
-    modify $ Map.insert p (v', f')
+    modify $ mapInsert p (v', f')
     when (f' /= f) $ traverse_ (incrP . flip walk p) allDir8
 
 go :: State Grid ()

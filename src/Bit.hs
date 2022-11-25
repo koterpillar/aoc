@@ -23,3 +23,14 @@ bitsValue = foldl bitMult 0
   where
     bitMult n O = n * 2
     bitMult n I = n * 2 + 1
+
+toBitString :: Int -> BitString
+toBitString i
+  | i < 0 = error "toBitString: negative number"
+  | i == 0 = []
+  | otherwise =
+    toBitString (i `div` 2) ++
+    [ if even i
+        then O
+        else I
+    ]
