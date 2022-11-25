@@ -29,6 +29,7 @@ dependencies:
 - split
 - text
 - time
+- vector
 - unordered-containers
 
 default-extensions:

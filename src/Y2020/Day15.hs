@@ -1,45 +1,57 @@
 module Y2020.Day15 where
 
+import           Control.Monad
+import           Control.Monad.ST
+import           Data.STRef
+import           Data.Vector.Unboxed.Mutable (MVector)
+import qualified Data.Vector.Unboxed.Mutable as MVector
+
 import           AOC
 import           Utils
 
-data State =
+data State s =
   State
-    { sTurns    :: !Int
-    , sRecent   :: !(Map Int Int)
-    , sLastSaid :: !(Maybe Int)
-    }
-  deriving (Show)
-
-say :: Int -> State -> State
-say n s =
-  s
-    { sTurns = sTurns s + 1
-    , sRecent =
-        case sLastSaid s of
-          Nothing -> sRecent s
-          Just p  -> mapInsert p (sTurns s) (sRecent s)
-    , sLastSaid = Just n
+    { sTurns    :: STRef s Int
+    , sRecent   :: (MVector s Int)
+    , sLastSaid :: STRef s Int
     }
 
-nextNumber :: State -> Int
-nextNumber State {..} =
-  case sLastSaid of
-    Nothing -> error "nextNumber: no last said"
-    Just n ->
-      case mapLookup n sRecent of
-        Nothing -> 0
-        Just p  -> sTurns - p
+say :: State s -> Int -> ST s ()
+say State {..} n = do
+  ls <- readSTRef sLastSaid
+  t <- readSTRef sTurns
+  MVector.write sRecent ls t
+  modifySTRef sTurns succ
+  writeSTRef sLastSaid n
 
-emptyState :: State
-emptyState = State {sTurns = 0, sRecent = mempty, sLastSaid = Nothing}
+nextNumber :: State s -> ST s Int
+nextNumber State {..} = do
+  ls <- readSTRef sLastSaid
+  t <- readSTRef sTurns
+  r <- MVector.read sRecent ls
+  pure $
+    if r == 0
+      then 0
+      else t - r
 
-turn :: State -> State
-turn s = say (nextNumber s) s
+firstState :: Int -> Int -> ST s (State s)
+firstState max n = do
+  sRecent <- MVector.new max
+  sTurns <- newSTRef 1
+  sLastSaid <- newSTRef n
+  pure $ State {..}
 
-part1 n input = fromJust $ sLastSaid $ iterateN (n - length input) turn start
-  where
-    start = foldl' (flip say) emptyState input
+turn :: State s -> ST s ()
+turn s = nextNumber s >>= say s
+
+part1 n input =
+  runST $ do
+    let (i1:irest) = input
+    s <- firstState n i1
+    traverse_ (say s) irest
+    let turns = n - length input
+    replicateM_ turns (turn s)
+    readSTRef (sLastSaid s)
 
 tasks =
   Tasks

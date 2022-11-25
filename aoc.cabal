@@ -108,6 +108,7 @@ library
     , text
     , time
     , unordered-containers
+    , vector
   default-language: Haskell2010
 
 executable main
@@ -144,4 +145,5 @@ executable main
     , text
     , time
     , unordered-containers
+    , vector
   default-language: Haskell2010
