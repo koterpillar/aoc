@@ -2,8 +2,10 @@
 
 set -euo pipefail
 
+DAYS=$(find src -name 'Day*.hs' -print | sort)
+
 {
     echo "module AllTasks where"
-    ls src/Y*/Day*.hs | sed 's!src/!import qualified !g;s!/!.!;s!.hs!!'
-    ls src/Y*/Day*.hs | sed '1 s!src/!allTasks = [ !;s!src/!           , !g;s!/!.!;s!.hs!.tasks!;$ s!$! ]!'
+    echo "$DAYS" | sed 's!src/!import qualified !g;s!/!.!;s!.hs!!'
+    echo "$DAYS" | sed '1 s!src/!allTasks = [ !;s!src/!           , !g;s!/!.!;s!.hs!.tasks!;$ s!$! ]!'
 } >> "$3"
