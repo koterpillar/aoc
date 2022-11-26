@@ -44,4 +44,6 @@ tasks =
     ]
 EOF
 
+git add "$FILE"
+
 echo "Created $FILE."
