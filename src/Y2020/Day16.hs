@@ -1,21 +1,27 @@
 module Y2020.Day16 where
 
-import qualified Data.Map  as Map
-import qualified Data.Text as Text
+import           Data.IntSet (IntSet)
+import qualified Data.IntSet as IntSet
+import qualified Data.Map    as Map
+import qualified Data.Text   as Text
 
 import           AOC
 import           Path
 import           Utils
 
 newtype Rule =
-  Rule [(Int, Int)]
+  Rule
+    { unRule :: [(Int, Int)]
+    }
   deriving (Show)
 
 ruleP :: Parser Text Rule
 ruleP = Rule <$> tsplitP " or " &** (tsplitP "-" &* (integerP &+ integerP))
 
 newtype Ticket =
-  Ticket [Int]
+  Ticket
+    { unTicket :: [Int]
+    }
   deriving (Show)
 
 ticketP :: Parser Text Ticket
@@ -51,21 +57,13 @@ nValidTickets n = filter (null . invalid1 n) (nTickets n)
 data Search =
   Search
     { sFound      :: Map Text Int
-    , sRemNames   :: [Text]
-    , sRemIndices :: Set Int
+    , sRemRules   :: Map Text IntSet
+    , sRemIndices :: Map Int IntSet
     }
   deriving (Ord, Eq, Show)
 
 instance Hashable Search where
   hashWithSalt x (Search a b c) = hashWithSalt x (a, b, c)
-
-valid2 :: Map Text Rule -> Map Text Int -> Bool
-valid2 rules = all (uncurry v) . mapToList
-  where
-    v field value =
-      case Map.lookup field rules of
-        Nothing   -> True
-        Just rule -> valid rule value
 
 match :: Notes -> Map Text Int
 match n =
@@ -80,20 +78,25 @@ match n =
     (null . sRemIndices)
     start
   where
-    vt = nValidTickets n
-    allValid assignment = all (valid2 (nFields n) . decode assignment) vt
-    moves = hashSetFromList . filter (allValid . sFound) . moves'
-    moves' Search {..} =
-      let (name:names) = sRemNames
-       in [ Search
-            (mapInsert name i sFound)
-            names
-            (setDifference sRemIndices $ set1 i)
-          | i <- toList sRemIndices
-          ]
-    start =
-      let fs = nFields n
-       in Search mempty (Map.keys fs) (setFromList [0 .. length fs - 1])
+    start = Search Map.empty (ruleSets n) (ticketSets n)
+    moves Search {..} =
+      hashSetFromList $ do
+        (r, range) <- Map.toList sRemRules
+        (i, values) <- Map.toList sRemIndices
+        guard $ IntSet.isSubsetOf values range
+        let sFound' = Map.insert r i sFound
+        pure $
+          Search sFound' (Map.delete r sRemRules) (Map.delete i sRemIndices)
+
+ticketSets :: Notes -> Map Int IntSet
+ticketSets =
+  Map.fromList .
+  zip [0 ..] . map IntSet.fromList . transpose . map unTicket . nValidTickets
+
+ruleSets :: Notes -> Map Text IntSet
+ruleSets =
+  Map.map (mconcat . map (IntSet.fromList . uncurry enumFromTo) . unRule) .
+  nFields
 
 part2 n =
   product $
