@@ -29,10 +29,10 @@ type SP a = StateParser [Token] a
 
 runSP = justParse . stateP
 
-arg :: SP Int -> SP Int
-arg ev =
+arg :: Priority -> SP Int
+arg prio =
   unconsSP_ >>= \case
-    TLParen -> ev <* ensureUnconsSP_ TRParen
+    TLParen -> evaluate prio <* ensureUnconsSP_ TRParen
     TNum v  -> pure v
     a       -> failSP $ "arg: " ++ show a
 
@@ -40,18 +40,56 @@ opApply :: Op -> Int -> Int -> Int
 opApply OPlus = (+)
 opApply OMult = (*)
 
-evaluate1 :: SP Int
-evaluate1 = go 0 OPlus
+type Priority = Op -> Int
+
+priority1 :: Priority
+priority1 = const 1
+
+priority2 :: Priority
+priority2 OPlus = 2
+priority2 OMult = 1
+
+evaluate :: Priority -> SP Int
+evaluate prio = go []
   where
-    go a op = do
-      b <- arg evaluate1
-      let c = opApply op a b
+    go stk = do
+      a <- arg prio
       unconsSP >>= \case
-        Nothing        -> pure c
-        Just (TOp op2) -> go c op2
-        Just TRParen   -> putBackSP TRParen *> pure c
-        Just a         -> failSP $ "evaluate1: " ++ show a
+        Nothing       -> pure $ unwindAll stk a
+        Just TRParen  -> putBackSP TRParen *> pure (unwindAll stk a)
+        Just (TOp op) -> go $ unwind prio stk a op
+        Just a        -> failSP $ "evaluate: " ++ show a
 
-part1 = sum . map (runSP evaluate1)
+unwindAll :: [(Int, Op)] -> Int -> Int
+unwindAll [] a            = a
+unwindAll ((a, o):rest) b = unwindAll rest $ opApply o a b
 
-tasks = Tasks 2020 18 (InlineCode 4) (linesP &** parseExpr) [Task part1 12240]
+unwind :: Priority -> [(Int, Op)] -> Int -> Op -> [(Int, Op)]
+unwind _ [] a o = [(a, o)]
+unwind prio cur@((a, o1):rest) b o2
+  | prio o2 > prio o1 = (b, o2) : cur
+  | otherwise = unwind prio rest (opApply o1 a b) o2
+
+part1 = sum . map (runSP $ evaluate priority1)
+
+part2 = sum . map (runSP $ evaluate priority2)
+
+normalPriority :: Priority
+normalPriority OPlus = 1
+normalPriority OMult = 2
+
+normalEvaluate = evaluate normalPriority
+
+tasks =
+  Tasks
+    2020
+    18
+    (InlineCode 4)
+    (linesP &** parseExpr)
+    [ Assert
+        "normalEvaluate"
+        (1 * 2 + 3 * 4)
+        (runSP normalEvaluate $ justParse parseExpr "1 * 2 + 3 * 4")
+    , Task part1 12240
+    , Task part2 669060
+    ]
