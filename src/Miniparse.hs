@@ -170,6 +170,12 @@ singleP =
     [x]   -> Right x
     other -> Left $ "singleP: expected 1 element, got " ++ show other
 
+headTailP :: Show a => Parser [a] (a, [a])
+headTailP =
+  Parser $ \case
+    (x:xs) -> Right (x, xs)
+    []     -> Left "headTailP: expected non-empty list"
+
 pairP :: Show a => Parser [a] (a, a)
 pairP =
   Parser $ \case
