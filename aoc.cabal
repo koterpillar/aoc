@@ -27,6 +27,7 @@ library
       AllTasks
       AOC
       Bit
+      Evaluator
       Graph
       Grid
       Miniparse
