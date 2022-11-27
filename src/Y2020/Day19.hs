@@ -41,12 +41,29 @@ matcher rules idx = go (getRule rules idx)
     go (RRecurse [r1])     = goSeq r1
     go (RRecurse [r1, r2]) = goSeq r1 <|> goSeq r2
     go x                   = error $ show x
-    goSeq []     = pure ()
-    goSeq (i:is) = matcher rules i >> goSeq is
+    goSeq = traverse_ $ matcher rules
 
-matches :: Rules -> Int -> Message -> Bool
-matches rules idx = isRight . runParse (stateP $ matcher rules idx)
+matches :: Rules -> Message -> Bool
+matches rules = isRight . runParse (stateP $ matcher rules 0)
 
-part1 (rs, msgs) = countIf (matches rs 0) msgs
+countValid (rs, msgs) = countIf (matches rs) msgs
 
-tasks = Tasks 2020 19 (CodeBlock 2) parser [Task part1 2]
+fixups =
+  mapFromList
+    [(8, RRecurse [[42], [42, 8]]), (11, RRecurse [[42, 31], [42, 11, 31]])]
+
+countValidFixups (rs, msgs) = countValid (fixups <> rs, msgs)
+
+tasks =
+  Tasks
+    2020
+    19
+    (CodeBlock 2)
+    parser
+    [ Task countValid 2
+    , AssertExample
+        "message 3 matches"
+        True
+        (flip matches "babbbbaabbbbbabbbbbbaabaaabaaa" . fst)
+    , TaskScraper (CodeBlock 4) countValidFixups 12
+    ]
