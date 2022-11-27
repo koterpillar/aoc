@@ -1,5 +1,7 @@
 module Y2020.Day19 where
 
+import qualified Data.Map  as Map
+import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
@@ -52,18 +54,50 @@ fixups =
   mapFromList
     [(8, RRecurse [[42], [42, 8]]), (11, RRecurse [[42, 31], [42, 11, 31]])]
 
-countValidFixups (rs, msgs) = countValid (fixups <> rs, msgs)
+doFixups rs = fixups <> rs
+
+countValidFixups (rs, msgs) = countValid (doFixups rs, msgs)
 
 tasks =
   Tasks
     2020
     19
-    (CodeBlock 2)
+    (CodeBlock 4)
     parser
-    [ Task countValid 2
+    [ Task countValid 3
     , AssertExample
         "message 3 matches"
         True
-        (flip matches "babbbbaabbbbbabbbbbbaabaaabaaa" . fst)
-    , TaskScraper (CodeBlock 4) countValidFixups 12
+        (flip matches "babbbbaabbbbbabbbbbbaabaaabaaa" . doFixups . fst)
+    , Task countValidFixups 12
     ]
+
+data Rule2
+  = R2Char Char
+  | R2Alt [Rule2]
+  | R2Seq [Rule2]
+  deriving (Eq, Show)
+
+to2 :: Rules -> Rule2
+to2 rules = go Set.empty 0
+  where
+    go :: Set Int -> Int -> Rule2
+    go seen i
+      | i `Set.member` seen = error $ "loop detected: " ++ show (seen, i)
+      | otherwise =
+        case r of
+          RChar c    -> R2Char c
+          RRecurse r -> R2Alt $ map (R2Seq . map (go seen')) r
+      where
+        r = fromJust $ Map.lookup i rules
+        seen' = Set.insert i seen
+
+simplify :: Rule2 -> Rule2
+simplify (R2Seq [r]) = r
+simplify (R2Alt [r]) = r
+simplify (R2Alt rs)  = R2Alt (map simplify rs)
+simplify (R2Seq rs)  = R2Seq (map simplify rs)
+simplify r           = r
+
+convert :: Rules -> Rule2
+convert = iterateSettle simplify . to2
