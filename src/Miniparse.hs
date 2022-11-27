@@ -185,12 +185,12 @@ pairP =
 pairPWith :: Show a => (b -> c -> d) -> Parser a b -> Parser a c -> Parser [a] d
 pairPWith f pb pc = uncurry f <$> pb &+ pc
 
-filterP :: (a -> Bool) -> Parser a a
+filterP :: Show a => (a -> Bool) -> Parser a a
 filterP f =
   Parser $ \a ->
     if f a
       then Right a
-      else Left "filterP: failed"
+      else Left $ "filterP: failed, got " ++ show a
 
 lookupP :: (Ord k, Show k) => k -> Parser (Map k v) v
 lookupP k =
@@ -238,6 +238,9 @@ failSP = lift . Left
 
 readSP :: Read a => String -> StateParser src a
 readSP = lift . readEither
+
+unstateSP :: Monoid src => Parser src dest -> StateParser src dest
+unstateSP p = StateT $ fmap (, mempty) . runParse p
 
 naturalSP :: StateParser String Int
 naturalSP = go >>= readSP

@@ -23,7 +23,7 @@ requiredElems = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"]
 fieldParser :: Text -> Parser Text a -> Parser Passport ()
 fieldParser k fp = lookupP k &* fp &* constP ()
 
-rangeP :: Ord k => k -> k -> Parser k k
+rangeP :: (Ord k, Show k) => k -> k -> Parser k k
 rangeP lo hi = filterP $ inRange lo hi
 
 yearParser :: Int -> Int -> Parser Text Int
