@@ -1,8 +1,10 @@
 module Y2020.Day19 where
 
-import qualified Data.Map  as Map
-import qualified Data.Set  as Set
-import qualified Data.Text as Text
+import           Control.Monad.State
+
+import qualified Data.Map            as Map
+import qualified Data.Set            as Set
+import qualified Data.Text           as Text
 
 import           AOC
 import           Utils
@@ -11,7 +13,7 @@ data Rule
   = RChar Char
   | RRecurse [[Int]]
   | RMany Int
-  | RManyNested Int Int
+  | RBalanced Int Int
   deriving (Eq, Show)
 
 ruleP :: Parser Text Rule
@@ -44,7 +46,7 @@ matcher rules idx = go (getRule rules idx)
     go (RChar c) = unconsSP_ >>= guard . (== c)
     go (RRecurse rs) = foldr1 (<|>) $ map goSeq rs
     go (RMany i) = void $ many (matcher rules i)
-    go (RManyNested a b) = do
+    go (RBalanced a b) = do
       as <- length <$> many (matcher rules a)
       replicateM_ as (matcher rules b)
     goSeq = traverse_ $ matcher rules
@@ -52,103 +54,84 @@ matcher rules idx = go (getRule rules idx)
 matches :: Rules -> Message -> Bool
 matches rules = isRight . runParse (stateP $ matcher rules 0)
 
-allMatching :: Rules -> Int -> Set Message
-allMatching rules idx = go (getRule rules idx)
+data Rule2
+  = R2Set (Set String)
+  | R2Many Rule2
+  | R2Balanced Rule2 Rule2
+  | R2Seq Rule2 Rule2
+  deriving (Eq, Show)
+
+mkr2set :: Set String -> Rule2
+mkr2set alts =
+  let ls = Set.map length alts
+   in if Set.size ls == 1
+        then R2Set alts
+        else error $ "mkr2set: lengths differ: " ++ show alts
+
+r2unset :: Rule2 -> Set String
+r2unset (R2Set s) = s
+r2unset r         = error $ "expected R2Set, found: " ++ show r
+
+setConcat :: (Ord el, Monoid el) => Set el -> Set el -> Set el
+setConcat a b = Set.map (uncurry mappend) $ Set.cartesianProduct a b
+
+convert :: Rules -> Rule2
+convert rules = go Set.empty 0
   where
-    go (RChar c)     = Set.singleton [c]
-    go (RRecurse rs) = mconcat $ map goSeq rs
-    go x             = error $ show x
-    goSeq =
-      foldr1 (\a b -> Set.map (uncurry (++)) $ Set.cartesianProduct a b) .
-      map (allMatching rules)
+    go seen idx
+      | idx `Set.member` seen = error $ "loop detected: " ++ show idx
+      | otherwise =
+        case getRule rules idx of
+          RChar c -> mkr2set $ Set.singleton [c]
+          RRecurse rs ->
+            case map (map (go seen')) rs of
+              [[a@R2Balanced {}, b@R2Many {}]] -> R2Seq a b
+              [[a@R2Many {}, b@R2Balanced {}]] -> R2Seq a b
+              rsets ->
+                mkr2set $
+                Set.unions $ map (foldr1 setConcat . map r2unset) rsets
+          RMany i -> R2Many $ go seen' i
+          RBalanced a b -> R2Balanced (go seen' a) (go seen' b)
+      where
+        seen' = Set.insert idx seen
+
+skip :: Rule2
+skip = R2Set $ Set.singleton "skip"
+
+structure :: Rule2 -> Rule2
+structure (R2Set _)        = skip
+structure (R2Seq a b)      = R2Seq (structure a) (structure b)
+structure (R2Balanced a b) = R2Balanced (structure a) (structure b)
+structure (R2Many a)       = R2Many (structure a)
+
+matcher2 :: Rule2 -> StateParser Message ()
+matcher2 (R2Set alts) =
+  StateT $ \s ->
+    case find (`isPrefixOf` s) alts of
+      Just m  -> Right ((), drop (length m) s)
+      Nothing -> Left "no match for alts"
+matcher2 (R2Many r) = void $ many (matcher2 r)
+matcher2 (R2Balanced a b) = do
+  as <- length <$> many (matcher2 a)
+  replicateM_ as (matcher2 b)
+matcher2 (R2Seq a b) = matcher2 a >> matcher2 b
+
+matches2 :: Rule2 -> Message -> Bool
+matches2 rules = isRight . runParse (stateP $ matcher2 rules)
 
 countValid :: Input -> Int
 countValid (rs, msgs) = countIf (matches rs) msgs
 
 fixups :: Rules
-fixups = mapFromList [(8, RMany 42), (11, RManyNested 42 31)]
-
-recursionIsEasy :: Input -> Set Message
-recursionIsEasy (rules, _) = a `Set.intersection` b
-  where
-    a = allMatching rules 31
-    b = allMatching rules 42
-
--- 42 is this
-easySet42 :: Set Message
-easySet42 =
-  Set.fromList
-    [ "aaaaa"
-    , "aaaab"
-    , "aaaba"
-    , "aaabb"
-    , "aabbb"
-    , "ababa"
-    , "abbbb"
-    , "baaaa"
-    , "baabb"
-    , "babbb"
-    , "bbaaa"
-    , "bbaab"
-    , "bbabb"
-    , "bbbab"
-    , "bbbba"
-    , "bbbbb"
-    ]
-
--- 31 is this
-easySet31 :: Set Message
-easySet31 =
-  Set.fromList
-    [ "aabaa"
-    , "aabab"
-    , "aabba"
-    , "abaaa"
-    , "abaab"
-    , "ababb"
-    , "abbaa"
-    , "abbab"
-    , "abbba"
-    , "baaab"
-    , "baaba"
-    , "babaa"
-    , "babab"
-    , "babba"
-    , "bbaba"
-    , "bbbaa"
-    ]
+fixups = mapFromList [(8, RMany 42), (11, RBalanced 42 31)]
 
 doFixups :: Rules -> Rules
 doFixups rs = fixups <> rs
 
-countValidFixups :: Input -> Int
-countValidFixups (rs, msgs) = countValid (doFixups rs, msgs)
+countValid2 :: (Rules -> Rules) -> Input -> Int
+countValid2 rulemod (rs, msgs) = countIf (matches2 $ convert $ rulemod rs) msgs
 
-startRule :: Input -> Rule
-startRule = fromJust . Map.lookup 0 . fst
-
-cheatingValidFixupsMatches ::
-     Set String -> Set String -> StateParser [String] (Int, Int)
-cheatingValidFixupsMatches a b = do
-  as <- length <$> many (oneOfSP a)
-  bs <- length <$> many (oneOfSP b)
-  pure (as, bs)
-
-cheatingValid :: Set String -> Set String -> StateParser [String] ()
-cheatingValid a b =
-  cheatingValidFixupsMatches a b >>= \(as, bs) -> guard $ as > bs && bs > 0
-
-oneOfSP :: Ord a => Set a -> StateParser [a] a
-oneOfSP as = do
-  a <- unconsSP_
-  guard $ Set.member a as
-  pure a
-
-chunksRun :: StateParser [String] a -> String -> Either String a
-chunksRun p = runParse (stateP p) . chunksOf 5
-
-testMessage = "babbbbaabbbbbabbbbbbaabaaabaaa"
-
+testMessages :: [Message]
 testMessages =
   [ "bbabbbbaabaabba"
   , "babbbbaabbbbbabbbbbbaabaaabaaa"
@@ -164,13 +147,8 @@ testMessages =
   , "aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba"
   ]
 
-testMessage2 = "aaaab" ++ "baaaa" ++ "bbaaa"
-
-cheatRun :: Input -> Int
-cheatRun (rs, msgs) =
-  countIf (isRight . chunksRun (cheatingValid (setFor 42) (setFor 31))) msgs
-  where
-    setFor = allMatching rs
+testMessage :: Message
+testMessage = testMessages !! 1
 
 tasks =
   Tasks
@@ -179,17 +157,10 @@ tasks =
     (CodeBlock 4)
     parser
     [ Task countValid 3
-    , AssertExample "all matching 31" easySet31 (flip allMatching 31 . fst)
-    , AssertExample "all matching 42" easySet42 (flip allMatching 42 . fst)
-    , Task recursionIsEasy Set.empty
-    , Task startRule (RRecurse [[8, 11]])
-    , Assert
-        "message 3 parts expected"
-        (Right (4, 2))
-        (chunksRun (cheatingValidFixupsMatches easySet42 easySet31) testMessage)
-    , Assert
-        "another message parts expected"
-        (Right (3, 0))
-        (chunksRun (cheatingValidFixupsMatches easySet42 easySet31) testMessage2)
-    , Task cheatRun 12
+    , Task (structure . convert . fst) skip
+    , Task
+        (structure . convert . doFixups . fst)
+        (R2Seq (R2Many skip) (R2Balanced skip skip))
+    , Task (countValid2 id) 3
+    , Task (countValid2 doFixups) 12
     ]
