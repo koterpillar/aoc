@@ -30,11 +30,14 @@ module Utils
   , on
   , ord
   , readEither
+  , replicateM
+  , replicateM_
   , second
   , splitOn
   , toList
   , traverse_
   , unless
+  , void
   , when
   ) where
 
