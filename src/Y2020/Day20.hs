@@ -17,7 +17,7 @@ data Tile =
   deriving (Show)
 
 parseTiles :: Parser Text [Tile]
-parseTiles = lineGroupsP &** parseTile
+parseTiles = lineGroupsP &* pureP (filter $ not . null) &** parseTile
 
 parseTile :: Parser [Text] Tile
 parseTile =

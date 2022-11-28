@@ -81,7 +81,7 @@ unconsP :: Parser [a] (a, [a])
 unconsP =
   Parser $ \case
     (x:xs) -> Right (x, xs)
-    []     -> Left "unexpected empty lines"
+    []     -> Left "unconsP: unexpected empty list"
 
 tsplitP :: Text -> Parser Text [Text]
 tsplitP sep = pureP $ Text.splitOn sep
