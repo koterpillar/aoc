@@ -127,6 +127,51 @@ countValidFixups (rs, msgs) = countValid (doFixups rs, msgs)
 startRule :: Input -> Rule
 startRule = fromJust . Map.lookup 0 . fst
 
+cheatingValidFixupsMatches ::
+     Set String -> Set String -> StateParser [String] (Int, Int)
+cheatingValidFixupsMatches a b = do
+  as <- length <$> many (oneOfSP a)
+  bs <- length <$> many (oneOfSP b)
+  pure (as, bs)
+
+cheatingValid :: Set String -> Set String -> StateParser [String] ()
+cheatingValid a b =
+  cheatingValidFixupsMatches a b >>= \(as, bs) -> guard $ as > bs && bs > 0
+
+oneOfSP :: Ord a => Set a -> StateParser [a] a
+oneOfSP as = do
+  a <- unconsSP_
+  guard $ Set.member a as
+  pure a
+
+chunksRun :: StateParser [String] a -> String -> Either String a
+chunksRun p = runParse (stateP p) . chunksOf 5
+
+testMessage = "babbbbaabbbbbabbbbbbaabaaabaaa"
+
+testMessages =
+  [ "bbabbbbaabaabba"
+  , "babbbbaabbbbbabbbbbbaabaaabaaa"
+  , "aaabbbbbbaaaabaababaabababbabaaabbababababaaa"
+  , "bbbbbbbaaaabbbbaaabbabaaa"
+  , "bbbababbbbaaaaaaaabbababaaababaabab"
+  , "ababaaaaaabaaab"
+  , "ababaaaaabbbaba"
+  , "baabbaaaabbaaaababbaababb"
+  , "abbbbabbbbaaaababbbbbbaaaababb"
+  , "aaaaabbaabaaaaababaa"
+  , "aaaabbaabbaaaaaaabbbabbbaaabbaabaaa"
+  , "aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba"
+  ]
+
+testMessage2 = "aaaab" ++ "baaaa" ++ "bbaaa"
+
+cheatRun :: Input -> Int
+cheatRun (rs, msgs) =
+  countIf (isRight . chunksRun (cheatingValid (setFor 42) (setFor 31))) msgs
+  where
+    setFor = allMatching rs
+
 tasks =
   Tasks
     2020
@@ -138,9 +183,13 @@ tasks =
     , AssertExample "all matching 42" easySet42 (flip allMatching 42 . fst)
     , Task recursionIsEasy Set.empty
     , Task startRule (RRecurse [[8, 11]])
-    , AssertExample
-        "message 3 matches"
-        True
-        (flip matches "babbbbaabbbbbabbbbbbaabaaabaaa" . doFixups . fst)
-    , Task countValidFixups 12
+    , Assert
+        "message 3 parts expected"
+        (Right (4, 2))
+        (chunksRun (cheatingValidFixupsMatches easySet42 easySet31) testMessage)
+    , Assert
+        "another message parts expected"
+        (Right (3, 0))
+        (chunksRun (cheatingValidFixupsMatches easySet42 easySet31) testMessage2)
+    , Task cheatRun 12
     ]
