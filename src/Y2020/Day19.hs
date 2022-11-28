@@ -58,7 +58,7 @@ data Rule2
   = R2Set Int (Set String)
   | R2Many Rule2
   | R2Balanced Rule2 Rule2
-  | R2Seq Rule2 Rule2
+  | R2Magic Rule2 Rule2
   deriving (Eq, Show)
 
 mkr2set :: Set String -> Rule2
@@ -84,8 +84,8 @@ convert rules = go Set.empty 0
           RChar c -> mkr2set $ Set.singleton [c]
           RRecurse rs ->
             case map (map (go seen')) rs of
-              [[a@R2Balanced {}, b@R2Many {}]] -> R2Seq a b
-              [[a@R2Many {}, b@R2Balanced {}]] -> R2Seq a b
+              [[R2Many a, R2Balanced a' b]]
+                | a == a' -> R2Magic a b
               rsets ->
                 mkr2set $
                 Set.unions $ map (foldr1 setConcat . map r2unset) rsets
@@ -96,7 +96,7 @@ convert rules = go Set.empty 0
 
 structure :: Rule2 -> Rule2
 structure (R2Set l _)      = r2dummy l
-structure (R2Seq a b)      = R2Seq (structure a) (structure b)
+structure (R2Magic a b)    = R2Magic (structure a) (structure b)
 structure (R2Balanced a b) = R2Balanced (structure a) (structure b)
 structure (R2Many a)       = R2Many (structure a)
 
@@ -110,14 +110,22 @@ matcher2 (R2Set l alts) =
      in if Set.member h alts
           then Right ((), t)
           else Left "no match for R2Set"
-matcher2 (R2Many r) = void $ many (matcher2 r)
-matcher2 (R2Balanced a b) = do
-  as <- length <$> many (matcher2 a)
-  replicateM_ as (matcher2 b)
-matcher2 (R2Seq a b) = matcher2 a >> matcher2 b
+matcher2 (R2Many r) = error "R2Many should be replaced with R2Magic"
+matcher2 (R2Balanced a b) = error "R2Balanced should be replaced with R2Magic"
+matcher2 (R2Magic a b) = do
+  la <- length <$> many (matcher2 a)
+  lb <- length <$> many (matcher2 b)
+  guard $ la > lb
+  guard $ lb > 0
 
-matches2 :: Rule2 -> Message -> Bool
-matches2 rules = isRight . runParse (stateP $ matcher2 rules)
+runMatcher2 :: Rules -> Message -> Either String ()
+runMatcher2 rules = runParse (stateP $ matcher2 (convert rules))
+
+matches2' :: Rule2 -> Message -> Bool
+matches2' rules = isRight . runParse (stateP $ matcher2 rules)
+
+matches2 :: Rules -> Message -> Bool
+matches2 rs = matches2' (convert rs)
 
 countValid :: Input -> Int
 countValid (rs, msgs) = countIf (matches rs) msgs
@@ -129,10 +137,10 @@ doFixups :: Rules -> Rules
 doFixups rs = fixups <> rs
 
 countValid2 :: (Rules -> Rules) -> Input -> Int
-countValid2 rulemod (rs, msgs) = countIf (matches2 $ convert $ rulemod rs) msgs
+countValid2 rulemod (rs, msgs) = countIf (matches2 $ rulemod rs) msgs
 
-testMessages :: [Message]
-testMessages =
+testGoodMessages :: [Message]
+testGoodMessages =
   [ "bbabbbbaabaabba"
   , "babbbbaabbbbbabbbbbbaabaaabaaa"
   , "aaabbbbbbaaaabaababaabababbabaaabbababababaaa"
@@ -147,9 +155,6 @@ testMessages =
   , "aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba"
   ]
 
-testMessage :: Message
-testMessage = testMessages !! 1
-
 tasks :: Tasks
 tasks =
   Tasks
@@ -161,7 +166,10 @@ tasks =
     , Task (structure . convert . fst) (r2dummy 15)
     , Task
         (structure . convert . doFixups . fst)
-        (R2Seq (R2Many (r2dummy 5)) (R2Balanced (r2dummy 5) (r2dummy 5)))
+        (R2Magic (r2dummy 5) (r2dummy 5))
     , Task (countValid2 id) 3
+    , Task
+        (\(rs, msgs) -> filter (matches2 (doFixups rs)) msgs)
+        testGoodMessages
     , Task (countValid2 doFixups) 12
     ]
