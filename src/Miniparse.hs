@@ -1,5 +1,11 @@
-module Miniparse where
+module Miniparse
+  ( module Miniparse
+  , optional
+  , some
+  , many
+  ) where
 
+import           Control.Applicative
 import           Control.Monad.State
 
 import qualified Data.Map            as Map
