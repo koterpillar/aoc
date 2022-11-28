@@ -55,7 +55,7 @@ matches :: Rules -> Message -> Bool
 matches rules = isRight . runParse (stateP $ matcher rules 0)
 
 data Rule2
-  = R2Set (Set String)
+  = R2Set Int (Set String)
   | R2Many Rule2
   | R2Balanced Rule2 Rule2
   | R2Seq Rule2 Rule2
@@ -63,14 +63,13 @@ data Rule2
 
 mkr2set :: Set String -> Rule2
 mkr2set alts =
-  let ls = Set.map length alts
-   in if Set.size ls == 1
-        then R2Set alts
-        else error $ "mkr2set: lengths differ: " ++ show alts
+  case Set.toList $ Set.map length alts of
+    [l] -> R2Set l alts
+    ls  -> error $ "mkr2set: lengths differ: " ++ show alts
 
 r2unset :: Rule2 -> Set String
-r2unset (R2Set s) = s
-r2unset r         = error $ "expected R2Set, found: " ++ show r
+r2unset (R2Set _ s) = s
+r2unset r           = error $ "expected R2Set, found: " ++ show r
 
 setConcat :: (Ord el, Monoid el) => Set el -> Set el -> Set el
 setConcat a b = Set.map (uncurry mappend) $ Set.cartesianProduct a b
@@ -95,21 +94,22 @@ convert rules = go Set.empty 0
       where
         seen' = Set.insert idx seen
 
-skip :: Rule2
-skip = R2Set $ Set.singleton "skip"
-
 structure :: Rule2 -> Rule2
-structure (R2Set _)        = skip
+structure (R2Set l _)      = r2dummy l
 structure (R2Seq a b)      = R2Seq (structure a) (structure b)
 structure (R2Balanced a b) = R2Balanced (structure a) (structure b)
 structure (R2Many a)       = R2Many (structure a)
 
+r2dummy :: Int -> Rule2
+r2dummy l = mkr2set $ Set.singleton $ replicate l 'x'
+
 matcher2 :: Rule2 -> StateParser Message ()
-matcher2 (R2Set alts) =
+matcher2 (R2Set l alts) =
   StateT $ \s ->
-    case find (`isPrefixOf` s) alts of
-      Just m  -> Right ((), drop (length m) s)
-      Nothing -> Left "no match for alts"
+    let (h, t) = splitAt l s
+     in if Set.member h alts
+          then Right ((), t)
+          else Left "no match for R2Set"
 matcher2 (R2Many r) = void $ many (matcher2 r)
 matcher2 (R2Balanced a b) = do
   as <- length <$> many (matcher2 a)
@@ -150,6 +150,7 @@ testMessages =
 testMessage :: Message
 testMessage = testMessages !! 1
 
+tasks :: Tasks
 tasks =
   Tasks
     2020
@@ -157,10 +158,10 @@ tasks =
     (CodeBlock 4)
     parser
     [ Task countValid 3
-    , Task (structure . convert . fst) skip
+    , Task (structure . convert . fst) (r2dummy 15)
     , Task
         (structure . convert . doFixups . fst)
-        (R2Seq (R2Many skip) (R2Balanced skip skip))
+        (R2Seq (R2Many (r2dummy 5)) (R2Balanced (r2dummy 5) (r2dummy 5)))
     , Task (countValid2 id) 3
     , Task (countValid2 doFixups) 12
     ]
