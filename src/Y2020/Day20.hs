@@ -1,7 +1,9 @@
 module Y2020.Day20 where
 
-import qualified Data.Map  as Map
-import qualified Data.Text as Text
+import           Control.Monad.State
+
+import qualified Data.Map            as Map
+import qualified Data.Text           as Text
 
 import           AOC
 import           Grid
@@ -29,9 +31,9 @@ parseTile =
 
 type Edge = [Bool]
 
-flips :: Grid -> [Grid]
-flips g =
-  [ Map.mapKeys (a . b . c) g
+flips :: Tile -> [Tile]
+flips (Tile i g) =
+  [ Tile i $ Map.mapKeys (a . b . c) g
   | a <- [id, flipX]
   , b <- [id, flipY]
   , c <- [id, flipXY]
@@ -42,8 +44,8 @@ flips g =
     flipXY (Position2 x y) = Position2 y x
     (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
 
-edge :: Direction4 -> Grid -> Edge
-edge d g = [Map.member p g | p <- points d]
+edge :: Direction4 -> Tile -> Edge
+edge d Tile {tgrid = g} = [Map.member p g | p <- points d]
   where
     (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
     points E = [Position2 xmax y | y <- [ymin .. ymax]]
@@ -51,15 +53,29 @@ edge d g = [Map.member p g | p <- points d]
     points W = [Position2 xmin y | y <- [ymin .. ymax]]
     points S = [Position2 x ymax | x <- [xmin .. xmax]]
 
+data GridLink =
+  GridLink
+    { tlT :: Tile
+    , tlE :: Map Direction4 Edge
+    }
+  deriving (Show)
+
+tlN :: GridLink -> Edge
+tlN GridLink {..} = tlE Map.! N
+
 -- Oops, we'll have 8 edges because of flips, but can't use them all at once!
-edges :: Grid -> [Edge]
-edges = map (edge N) . flips
+-- Thankfully the edges are all unique even with rotations.
+links :: Tile -> [GridLink]
+links = map go . flips
+  where
+    go t = GridLink t (Map.fromList [(d, edge d t) | d <- allDir4])
+
+edges :: Tile -> [Edge]
+edges = map tlN . links
 
 allEdges :: [Tile] -> Map Edge [Int]
 allEdges tiles =
-  Map.fromListWith
-    (++)
-    [(edge, [tid]) | Tile {..} <- tiles, edge <- edges tgrid]
+  Map.fromListWith (++) [(edge, [tid t]) | t <- tiles, edge <- edges t]
 
 cornerIds :: [Tile] -> Int
 cornerIds tiles = product corners
@@ -69,6 +85,13 @@ cornerIds tiles = product corners
     unmatchedWithCount =
       traceShowId $ mapFromListCount $ join $ Map.elems unmatched
     corners = Map.keys $ Map.filter (== 4) unmatchedWithCount -- 4 because of flips
+
+type GridLinks = Map Edge [GridLink]
+
+gridLinks :: [Tile] -> GridLinks
+gridLinks = Map.fromListWith (++) . map mkKey . concatMap links
+  where
+    mkKey gl = (tlN gl, [gl])
 
 merge :: [Tile] -> Grid
 merge = error "not implemented"
