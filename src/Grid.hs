@@ -78,6 +78,9 @@ instance GridItem Int where
     | i > 10 = '+'
     | otherwise = chr (ord '0' + i)
 
+showInGridMaybe :: GridItem a => Maybe a -> Char
+showInGridMaybe = maybe middleDot showInGrid
+
 displayG :: GridItem a => Grid2 a -> Text
 displayG = displayG' showInGrid
 
