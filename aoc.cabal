@@ -93,6 +93,7 @@ library
       LambdaCase
       MultiParamTypeClasses
       OverloadedStrings
+      RankNTypes
       RecordWildCards
       TupleSections
       TypeApplications
@@ -129,6 +130,7 @@ executable main
       LambdaCase
       MultiParamTypeClasses
       OverloadedStrings
+      RankNTypes
       RecordWildCards
       TupleSections
       TypeApplications

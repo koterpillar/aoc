@@ -39,6 +39,7 @@ default-extensions:
   - LambdaCase
   - MultiParamTypeClasses
   - OverloadedStrings
+  - RankNTypes
   - RecordWildCards
   - TupleSections
   - TypeApplications
