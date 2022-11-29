@@ -1,4 +1,6 @@
-module Y2020.Day20 where
+module Y2020.Day20
+  ( tasks
+  ) where
 
 import           Control.Monad.State
 
@@ -123,7 +125,6 @@ findLink :: Direction4 -> GridLink -> State GridLinks (Maybe GridLink)
 findLink d gl = do
   let e = glD (reverse4 d) gl
   let k = (d, e)
-  traceShowM k
   ls <- gets (fromMaybe [] . Map.lookup k)
   case ls of
     []  -> pure Nothing
@@ -197,9 +198,8 @@ findAllStrips s1 = do
 
 findAll :: Int -> State GridLinks [[GridLink]]
 findAll cid = do
-  l1 <- findNW cid
-  strip1 <- findStrip l1
-  (strip1 :) <$> findAllStrips strip1
+  strip1 <- findFirstStrip cid
+  findAllStrips strip1
 
 merge1 :: [Tile] -> [[Tile]]
 merge1 ts = map (map glT) $ evalState (findAll corner1) links
@@ -219,14 +219,20 @@ mergeIds = map (map tid) . merge1
 merge :: [Tile] -> Grid
 merge = joinTiles . map (map shrink) . merge1
 
+fixupExample = transpose . reverse . map reverse
+
 exampleMergedIds :: [[Int]]
 exampleMergedIds = [[1951, 2311, 3079], [2729, 1427, 2473], [2971, 1489, 1171]]
 
 exampleMerged :: Text
-exampleMerged =
+exampleMerged = exampleMerged' id
+
+exampleMerged' :: (forall a. [[a]] -> [[a]]) -> Text
+exampleMerged' f =
   Text.replace "." (Text.singleton middleDot) $
-  Text.unlines
-    [ ".#.#..#.##...#.##..#####"
+  Text.unlines $
+  map Text.pack $
+  f [ ".#.#..#.##...#.##..#####"
     , "###....#.#....#..#......"
     , "##.##.###.#.#..######..."
     , "###.#####...#.#####.#..#"
@@ -260,6 +266,6 @@ tasks =
     (CodeBlock 0)
     parseTiles
     [ Task (product . findCorners) 20899048083289
-    , Task mergeIds exampleMergedIds
-    , Task (displayG . merge) exampleMerged
+    , Task mergeIds (fixupExample exampleMergedIds)
+    , Task (displayG . merge) (exampleMerged' fixupExample)
     ]
