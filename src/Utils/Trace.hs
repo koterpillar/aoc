@@ -23,3 +23,6 @@ ttrace = trace . Text.unpack
 
 ttraceF :: (a -> Text) -> a -> a
 ttraceF f a = ttrace (f a) a
+
+ttraceM :: Monad m => Text -> m ()
+ttraceM = traceM . Text.unpack
