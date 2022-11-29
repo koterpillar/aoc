@@ -81,8 +81,12 @@ instance GridItem Int where
 displayG :: GridItem a => Grid2 a -> Text
 displayG = displayG' showInGrid
 
+middleDot :: Char
+middleDot = '·'
+
 displayG' :: (a -> Char) -> Grid2 a -> Text
-displayG' fn = Text.unlines . map (Text.pack . map (maybe '·' fn)) . toMatrixG
+displayG' fn =
+  Text.unlines . map (Text.pack . map (maybe middleDot fn)) . toMatrixG
 
 data Direction4
   = E
