@@ -12,14 +12,11 @@ parseCodes = linesP &** pureP seatCode
 
 seatCode :: Text -> Int
 seatCode =
-  readBin .
+  treadBin .
   treplace "F" "0" . treplace "B" "1" . treplace "L" "0" . treplace "R" "1"
 
-readBin :: Text -> Int
-readBin =
-  fst .
-  head .
-  readInt 2 (`elem` ("01" :: String)) (\c -> ord c - ord '0') . Text.unpack
+treadBin :: Text -> Int
+treadBin = fst . head . readBin . Text.unpack
 
 missing :: [Int] -> Int
 missing = go . sort

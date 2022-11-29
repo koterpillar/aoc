@@ -12,14 +12,14 @@ import           Grid
 import           Utils
 import           Y2017.Knot
 
-showBin :: Int -> Text
-showBin n = Text.pack $ showIntAtBase 2 (head . show) n ""
+tshowBin :: Int -> Text
+tshowBin n = Text.pack $ showBin n ""
 
 knotHashBin :: Text -> Text
 knotHashBin = Text.concatMap hexToBin . knotHash
 
 hexToBin :: Char -> Text
-hexToBin = Text.justifyRight 4 '0' . showBin . fst . head . readHex . (: [])
+hexToBin = Text.justifyRight 4 '0' . tshowBin . fst . head . readHex . (: [])
 
 type Grid = Grid2 ()
 
