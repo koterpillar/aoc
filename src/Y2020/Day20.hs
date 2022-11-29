@@ -2,7 +2,7 @@ module Y2020.Day20 where
 
 import           Control.Monad.State
 
-import qualified Data.Map            as Map
+import qualified Data.Map.Strict     as Map
 import qualified Data.Text           as Text
 
 import           AOC
@@ -77,6 +77,9 @@ data GridLink =
 glD :: Direction4 -> GridLink -> Edge
 glD d GridLink {..} = glE Map.! d
 
+glId :: GridLink -> Int
+glId = tid . glT
+
 -- Oops, we'll have 8 edges because of flips, but can't use them all at once!
 -- Thankfully the edges are all unique even with rotations.
 links :: Tile -> [GridLink]
@@ -97,10 +100,19 @@ findCorners tiles = Map.keys $ Map.filter (== 4) unmatchedWithCount -- 4 because
     hasCid cid Tile {..} = cid == tid
     ae = allEdges tiles
     unmatched = Map.filter ((== 1) . length) ae
-    unmatchedWithCount =
-      traceShowId $ mapFromListCount $ join $ Map.elems unmatched
+    unmatchedWithCount = mapFromListCount $ join $ Map.elems unmatched
 
 type GridLinks = Map (Direction4, Edge) [GridLink]
+
+showGL :: GridLinks -> Text
+showGL gls =
+  Text.unlines
+    [ Text.unwords [tshow d, tshow e, tshow (map glId gs)]
+    | ((d, e), gs) <- Map.toList gls
+    ]
+
+showGLd :: Direction4 -> GridLinks -> Text
+showGLd d' = showGL . Map.filterWithKey (\(d, _) _ -> d == d')
 
 gridLinks :: [Tile] -> GridLinks
 gridLinks ts = Map.fromListWith (++) $ concatMap mkKey $ concatMap links ts
@@ -110,22 +122,24 @@ gridLinks ts = Map.fromListWith (++) $ concatMap mkKey $ concatMap links ts
 findLink :: Direction4 -> Edge -> State GridLinks (Maybe GridLink)
 findLink d e = do
   let k = (d, e)
+  traceShowM k
+  gets (showGLd d) >>= ttraceM
   ls <- gets (fromMaybe [] . Map.lookup k)
   case ls of
     []  -> pure Nothing
-    [l] -> modify (Map.delete k) >> pure (Just l)
+    [l] -> deleteTile l >> pure (Just l)
     ls  -> error $ "Multiple grids found: " ++ unwords (map show ls)
 
 findUnmatched :: Int -> Direction4 -> State GridLinks (Set GridLink)
 findUnmatched cid d =
   gets $
   setFromList .
-  filter (\l -> tid (glT l) == cid) .
+  filter (\l -> glId l == cid) .
   concatMap snd . filter (\((k, _), v) -> k == d && length v == 1) . Map.toList
 
-deleteTile :: Tile -> State GridLinks ()
-deleteTile (Tile i _) =
-  modify $ Map.mapMaybe $ removeEmpty . filter ((/= i) . tid . glT)
+deleteTile :: GridLink -> State GridLinks ()
+deleteTile (GridLink (Tile i _) _) =
+  modify $ Map.mapMaybe $ removeEmpty . filter ((/= i) . glId)
   where
     removeEmpty [] = Nothing
     removeEmpty ls = Just ls
@@ -137,14 +151,14 @@ findNW cid = do
   l <-
     case toList $ setIntersection n w of
       [l, l']
-        | tid (glT l) == tid (glT l') -> pure l -- found two because they are transposed
+        | glId l == glId l' -> pure l -- found two because they are transposed
       ls -> error $ "findNW: multiple links found: " ++ show ls
-  deleteTile (glT l)
+  deleteTile l
   pure l
 
 findAllInDirection :: Direction4 -> GridLink -> State GridLinks [GridLink]
 findAllInDirection d l = do
-  next <- findLink d (glD d l)
+  next <- findLink (reverse4 d) (glD d l)
   case next of
     Nothing -> pure []
     Just l' -> do
@@ -158,8 +172,7 @@ merge1 ts = evalState findFirst links
     links = gridLinks ts
     findFirst = do
       s <- get
-      nw <- findNW corner1
-      traceShowM nw
+      nw <- traceShowId <$> findNW corner1
       t2 <- findAllInDirection S nw
       pure [map glT (nw : t2)] -- FIXME: continue search
 
