@@ -16,7 +16,10 @@ data Tile =
     { tid   :: Int
     , tgrid :: Grid
     }
-  deriving (Show)
+  deriving (Eq, Ord)
+
+instance Show Tile where
+  show Tile {..} = "Tile " ++ show tid ++ ":\n" ++ Text.unpack (displayG tgrid)
 
 parseTiles :: Parser Text [Tile]
 parseTiles = lineGroupsP &* pureP (filter $ not . null) &** parseTile
@@ -29,7 +32,18 @@ parseTile =
    pureP Text.unlines &*
    dotGridP)
 
-type Edge = [Bool]
+newtype Edge =
+  Edge [Bool]
+  deriving (Eq, Ord)
+
+instance Show Edge where
+  show (Edge bs) =
+    map
+      (showInGridMaybe . \b ->
+         if b
+           then Just ()
+           else Nothing)
+      bs
 
 flips :: Tile -> [Tile]
 flips (Tile i g) =
@@ -45,7 +59,7 @@ flips (Tile i g) =
     (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
 
 edge :: Direction4 -> Tile -> Edge
-edge d Tile {tgrid = g} = [Map.member p g | p <- points d]
+edge d Tile {tgrid = g} = Edge [Map.member p g | p <- points d]
   where
     (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
     points E = [Position2 xmax y | y <- [ymin .. ymax]]
@@ -55,13 +69,13 @@ edge d Tile {tgrid = g} = [Map.member p g | p <- points d]
 
 data GridLink =
   GridLink
-    { tlT :: Tile
-    , tlE :: Map Direction4 Edge
+    { glT :: Tile
+    , glE :: Map Direction4 Edge
     }
-  deriving (Show)
+  deriving (Eq, Ord, Show)
 
-tlN :: GridLink -> Edge
-tlN GridLink {..} = tlE Map.! N
+glD :: Direction4 -> GridLink -> Edge
+glD d GridLink {..} = glE Map.! d
 
 -- Oops, we'll have 8 edges because of flips, but can't use them all at once!
 -- Thankfully the edges are all unique even with rotations.
@@ -71,30 +85,98 @@ links = map go . flips
     go t = GridLink t (Map.fromList [(d, edge d t) | d <- allDir4])
 
 edges :: Tile -> [Edge]
-edges = map tlN . links
+edges = map (glD N) . links
 
 allEdges :: [Tile] -> Map Edge [Int]
 allEdges tiles =
   Map.fromListWith (++) [(edge, [tid t]) | t <- tiles, edge <- edges t]
 
-cornerIds :: [Tile] -> Int
-cornerIds tiles = product corners
+findCorners :: [Tile] -> [Int]
+findCorners tiles = Map.keys $ Map.filter (== 4) unmatchedWithCount -- 4 because of flips
   where
+    hasCid cid Tile {..} = cid == tid
     ae = allEdges tiles
     unmatched = Map.filter ((== 1) . length) ae
     unmatchedWithCount =
       traceShowId $ mapFromListCount $ join $ Map.elems unmatched
-    corners = Map.keys $ Map.filter (== 4) unmatchedWithCount -- 4 because of flips
 
-type GridLinks = Map Edge [GridLink]
+type GridLinks = Map (Direction4, Edge) [GridLink]
 
 gridLinks :: [Tile] -> GridLinks
-gridLinks = Map.fromListWith (++) . map mkKey . concatMap links
+gridLinks ts = Map.fromListWith (++) $ concatMap mkKey $ concatMap links ts
   where
-    mkKey gl = (tlN gl, [gl])
+    mkKey gl = [((d, glD d gl), [gl]) | d <- allDir4]
+
+findLink :: Direction4 -> Edge -> State GridLinks (Maybe GridLink)
+findLink d e = do
+  let k = (d, e)
+  ls <- gets (fromMaybe [] . Map.lookup k)
+  case ls of
+    []  -> pure Nothing
+    [l] -> modify (Map.delete k) >> pure (Just l)
+    ls  -> error $ "Multiple grids found: " ++ unwords (map show ls)
+
+findUnmatched :: Int -> Direction4 -> State GridLinks (Set GridLink)
+findUnmatched cid d =
+  gets $
+  setFromList .
+  filter (\l -> tid (glT l) == cid) .
+  concatMap snd . filter (\((k, _), v) -> k == d && length v == 1) . Map.toList
+
+deleteTile :: Tile -> State GridLinks ()
+deleteTile (Tile i _) =
+  modify $ Map.mapMaybe $ removeEmpty . filter ((/= i) . tid . glT)
+  where
+    removeEmpty [] = Nothing
+    removeEmpty ls = Just ls
+
+findNW :: Int -> State GridLinks GridLink
+findNW cid = do
+  n <- findUnmatched cid N
+  w <- findUnmatched cid W
+  l <-
+    case toList $ setIntersection n w of
+      [l, l']
+        | tid (glT l) == tid (glT l') -> pure l -- found two because they are transposed
+      ls -> error $ "findNW: multiple links found: " ++ show ls
+  deleteTile (glT l)
+  pure l
+
+findAllInDirection :: Direction4 -> GridLink -> State GridLinks [GridLink]
+findAllInDirection d l = do
+  next <- findLink d (glD d l)
+  case next of
+    Nothing -> pure []
+    Just l' -> do
+      rest <- findAllInDirection d l'
+      pure (l' : rest)
+
+merge1 :: [Tile] -> [[Tile]]
+merge1 ts = evalState findFirst links
+  where
+    corner1 = headE "corner1: no corners" $ findCorners ts
+    links = gridLinks ts
+    findFirst = do
+      s <- get
+      nw <- findNW corner1
+      traceShowM nw
+      t2 <- findAllInDirection S nw
+      pure [map glT (nw : t2)] -- FIXME: continue search
+
+shrink :: Tile -> Tile
+shrink = error "shrink: not implemented"
+
+joinTiles :: [[Tile]] -> Grid
+joinTiles = error "joinTiles: not implemented" . map (map tgrid)
+
+mergeIds :: [Tile] -> [[Int]]
+mergeIds = map (map tid) . merge1
 
 merge :: [Tile] -> Grid
-merge = error "not implemented"
+merge = joinTiles . map (map shrink) . merge1
+
+exampleMergedIds :: [[Int]]
+exampleMergedIds = [[1951, 2311, 3079], [2729, 1427, 2473], [2971, 1489, 1171]]
 
 exampleMerged :: Text
 exampleMerged =
@@ -133,4 +215,7 @@ tasks =
     20
     (CodeBlock 0)
     parseTiles
-    [Task cornerIds 20899048083289, Task (displayG . merge) exampleMerged]
+    [ Task (product . findCorners) 20899048083289
+    , Task mergeIds exampleMergedIds
+    , Task (displayG . merge) exampleMerged
+    ]
