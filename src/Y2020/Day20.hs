@@ -119,15 +119,15 @@ gridLinks ts = Map.fromListWith (++) $ concatMap mkKey $ concatMap links ts
   where
     mkKey gl = [((d, glD d gl), [gl]) | d <- allDir4]
 
-findLink :: Direction4 -> Edge -> State GridLinks (Maybe GridLink)
-findLink d e = do
+findLink :: Direction4 -> GridLink -> State GridLinks (Maybe GridLink)
+findLink d gl = do
+  let e = glD (reverse4 d) gl
   let k = (d, e)
   traceShowM k
-  gets (showGLd d) >>= ttraceM
   ls <- gets (fromMaybe [] . Map.lookup k)
   case ls of
     []  -> pure Nothing
-    [l] -> deleteTile l >> pure (Just l)
+    [l] -> Just <$> deleteTile l
     ls  -> error $ "Multiple grids found: " ++ unwords (map show ls)
 
 findUnmatched :: Int -> Direction4 -> State GridLinks (Set GridLink)
@@ -137,9 +137,10 @@ findUnmatched cid d =
   filter (\l -> glId l == cid) .
   concatMap snd . filter (\((k, _), v) -> k == d && length v == 1) . Map.toList
 
-deleteTile :: GridLink -> State GridLinks ()
-deleteTile (GridLink (Tile i _) _) =
+deleteTile :: GridLink -> State GridLinks GridLink
+deleteTile l@(GridLink (Tile i _) _) = do
   modify $ Map.mapMaybe $ removeEmpty . filter ((/= i) . glId)
+  pure l
   where
     removeEmpty [] = Nothing
     removeEmpty ls = Just ls
@@ -154,27 +155,57 @@ findNW cid = do
         | glId l == glId l' -> pure l -- found two because they are transposed
       ls -> error $ "findNW: multiple links found: " ++ show ls
   deleteTile l
-  pure l
 
-findAllInDirection :: Direction4 -> GridLink -> State GridLinks [GridLink]
-findAllInDirection d l = do
-  next <- findLink (reverse4 d) (glD d l)
+findStrip :: GridLink -> State GridLinks [GridLink]
+findStrip l = do
+  next <- findLink N l
   case next of
     Nothing -> pure []
     Just l' -> do
-      rest <- findAllInDirection d l'
+      rest <- findStrip l'
       pure (l' : rest)
 
+findFirstStrip :: Int -> State GridLinks [GridLink]
+findFirstStrip cid = do
+  l1 <- findNW cid
+  strip1 <- findStrip l1
+  pure (l1 : strip1)
+
+findNextNW :: [GridLink] -> State GridLinks (Maybe GridLink)
+findNextNW [] = error "findNextNW: empty list"
+findNextNW (l:_) = do
+  next <- findLink W l
+  case next of
+    Nothing -> pure Nothing
+    Just l' -> do
+      deleteTile l'
+      pure (Just l')
+
+findNextStrip :: [GridLink] -> State GridLinks (Maybe [GridLink])
+findNextStrip ls = do
+  nw <- findNextNW ls
+  case nw of
+    Just l  -> Just . (l :) <$> findStrip l
+    Nothing -> pure Nothing
+
+findAllStrips :: [GridLink] -> State GridLinks [[GridLink]]
+findAllStrips s1 = do
+  s2' <- findNextStrip s1
+  case s2' of
+    Nothing -> pure [s1]
+    Just s2 -> (s1 :) <$> findAllStrips s2
+
+findAll :: Int -> State GridLinks [[GridLink]]
+findAll cid = do
+  l1 <- findNW cid
+  strip1 <- findStrip l1
+  (strip1 :) <$> findAllStrips strip1
+
 merge1 :: [Tile] -> [[Tile]]
-merge1 ts = evalState findFirst links
+merge1 ts = map (map glT) $ evalState (findAll corner1) links
   where
     corner1 = headE "corner1: no corners" $ findCorners ts
     links = gridLinks ts
-    findFirst = do
-      s <- get
-      nw <- traceShowId <$> findNW corner1
-      t2 <- findAllInDirection S nw
-      pure [map glT (nw : t2)] -- FIXME: continue search
 
 shrink :: Tile -> Tile
 shrink = error "shrink: not implemented"
