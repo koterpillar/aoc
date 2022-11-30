@@ -35,6 +35,8 @@ library
       Quantum
       Search
       Utils
+      Utils.Map
+      Utils.Set
       Utils.Trace
       Y2017.Day01
       Y2017.Day02

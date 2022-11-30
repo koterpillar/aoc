@@ -7,6 +7,8 @@ module Utils
   , module Data.Maybe
   , module Data.List
   , module Data.Tuple
+  , module Utils.Map
+  , module Utils.Set
   , module Utils.Trace
   , Map
   , Set
@@ -82,6 +84,8 @@ import           Data.Tuple
 
 import           Text.Read
 
+import           Utils.Map
+import           Utils.Set
 import           Utils.Trace
 
 iterateN :: Int -> (a -> a) -> a -> a
@@ -137,60 +141,6 @@ maybeMinimum xs = Just $ minimum xs
 maybeMaximum :: Ord a => [a] -> Maybe a
 maybeMaximum [] = Nothing
 maybeMaximum xs = Just $ maximum xs
-
-mapFromList :: Ord k => [(k, a)] -> Map k a
-mapFromList = Map.fromList
-
-mapFromListWith :: Ord k => (a -> a -> a) -> [(k, a)] -> Map k a
-mapFromListWith = Map.fromListWith
-
-mapFromListSum :: (Ord k, Num a) => [(k, a)] -> Map k a
-mapFromListSum = Map.fromListWith (+)
-
-mapFromListCount :: (Ord k, Num a) => [k] -> Map k a
-mapFromListCount = mapFromListSum . map (, 1)
-
-mapToList :: Map k a -> [(k, a)]
-mapToList = Map.toList
-
-mapMember :: Ord k => k -> Map k a -> Bool
-mapMember = Map.member
-
-mapLookup :: Ord k => k -> Map k a -> Maybe a
-mapLookup = Map.lookup
-
-mapInsert :: Ord k => k -> a -> Map k a -> Map k a
-mapInsert = Map.insert
-
-map1 :: Ord k => k -> a -> Map k a
-map1 = Map.singleton
-
-mapElemsSet :: Ord a => Map k a -> Set a
-mapElemsSet = Set.fromList . Map.elems
-
-set1 :: a -> Set a
-set1 = Set.singleton
-
-setFromList :: Ord a => [a] -> Set a
-setFromList = Set.fromList
-
-setMember :: Ord a => a -> Set a -> Bool
-setMember = Set.member
-
-setInsert :: Ord a => a -> Set a -> Set a
-setInsert = Set.insert
-
-setMap :: Ord b => (a -> b) -> Set a -> Set b
-setMap = Set.map
-
-setMapMaybe :: Ord b => (a -> Maybe b) -> Set a -> Set b
-setMapMaybe fn = Set.fromList . mapMaybe fn . Set.toList
-
-setDifference :: Ord a => Set a -> Set a -> Set a
-setDifference = Set.difference
-
-setIntersection :: Ord a => Set a -> Set a -> Set a
-setIntersection = Set.intersection
 
 countIf :: (a -> Bool) -> [a] -> Int
 countIf p = length . filter p
