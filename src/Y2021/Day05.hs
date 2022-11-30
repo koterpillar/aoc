@@ -52,12 +52,8 @@ tasks =
     5
     (CodeBlock 0)
     (linesP &** ventLineP)
-    [ Assert
-        "On point"
-        True
-        $vlOn
-        (Position2 2 4)
-        (Position2 2 5, Position2 2 3)
+    [ Assert "On point" True $
+      vlOn (Position2 2 4) (Position2 2 5, Position2 2 3)
     , Task part1 5
     , Task part2 12
     ]
