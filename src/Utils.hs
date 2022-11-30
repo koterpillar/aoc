@@ -165,6 +165,9 @@ mapInsert = Map.insert
 map1 :: Ord k => k -> a -> Map k a
 map1 = Map.singleton
 
+mapElemsSet :: Ord a => Map k a -> Set a
+mapElemsSet = Set.fromList . Map.elems
+
 set1 :: a -> Set a
 set1 = Set.singleton
 
