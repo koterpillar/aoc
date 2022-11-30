@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric  #-}
 
-module Y2020.Day21 where
+module Y2020.Day21 (tasks) where
 
 import qualified Data.Map     as Map
 import qualified Data.Set     as Set
@@ -39,6 +39,9 @@ data Search =
     }
   deriving (Eq, Ord, Generic, Hashable, Show)
 
+sStart :: Input -> Search
+sStart = Search Map.empty
+
 picks :: (Ord a, Ord b) => [a] -> Set b -> [Map a b]
 picks [] bs = [Map.empty]
 picks (a:ar) bs = do
@@ -46,31 +49,36 @@ picks (a:ar) bs = do
   let br = Set.delete b bs
   Map.insert a b <$> picks ar br
 
-moves :: Search -> [Search]
-moves (Search _ []) = []
-moves (Search a2i ((is, as):rest)) = do
-  let knownIs = Set.fromList $ mapMaybe (`Map.lookup` a2i) (Set.toList as)
-  let unknownIs = Set.difference is knownIs
-  let unknownAs = Set.difference as (Set.fromList $ Map.keys a2i)
-  m <- picks (Set.toList unknownAs) unknownIs
-  pure $ Search (Map.union m a2i) rest
+moves :: Search -> Maybe [Search]
+moves (Search _ []) = Nothing
+moves (Search a2i ((is, as):rest)) =
+  Just $ do
+    for_ (Map.toList a2i) $ \(a, i) ->
+      when (a `Set.member` as) $ guard $ i `Set.member` is
+    let knownIs = setMapMaybe (`Map.lookup` a2i) as
+    let unknownIs = Set.difference is knownIs
+    let unknownAs = Set.difference as (Map.keysSet a2i)
+    m <- picks (Set.toList unknownAs) unknownIs
+    pure $ Search (Map.union m a2i) rest
 
-solve :: Input -> Solution
-solve foods =
-  sSolution $
-  lastE "solve: empty route" $
-  fromJustE "solve: no solution" $
-  dfs (hashSetFromList . moves) distanceToGoal start
+solveAll :: Input -> [Solution]
+solveAll = go . sStart
   where
-    distanceToGoal = length . sRemF
-    start = Search Map.empty foods
+    go s =
+      case moves s of
+        Nothing -> [sSolution s]
+        Just ss -> concatMap go ss
+
+safeIs :: Input -> [Solution] -> Set I
+safeIs foods a2is = Set.difference is $ Set.unions $ map mapElemsSet a2is
+  where
+    is = Set.unions $ map fst foods
 
 part1 :: Input -> Int
 part1 foods = sum $ map (countIf isSafe . Set.toList . fst) foods
   where
-    a2i = solve foods
+    a2is = map traceShowId $ solveAll foods
     is = Set.unions $ map fst foods
-    safeIs = Set.difference is $ Set.fromList $ Map.elems a2i
-    isSafe i = Set.member i safeIs
+    isSafe i = Set.member i $ safeIs foods a2is
 
 tasks = Tasks 2020 21 (CodeBlock 0) (linesP &** parseFood) [Task part1 5]
