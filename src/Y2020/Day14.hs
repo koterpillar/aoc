@@ -39,7 +39,7 @@ parseInstruction = tsplitP " = " &* pairP &* (parseSetMask &| parseSetMem)
     parseSetMask = SetMask . snd <$> (requireP "mask" &= parseBitMask)
     parseSetMem =
       uncurry SetMem <$>
-      (pureP (treplace "mem[" "" . treplace "]" "") &* integerP &= integerP)
+      (pureP (terase "mem[" . terase "]") &* integerP &= integerP)
 
 data CPU =
   CPU

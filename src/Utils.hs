@@ -201,6 +201,9 @@ tshow = Text.pack . show
 treplace :: Text -> Text -> Text -> Text
 treplace = Text.replace
 
+terase :: Text -> Text -> Text
+terase piece = Text.replace piece ""
+
 tlength :: Text -> Int
 tlength = Text.length
 
