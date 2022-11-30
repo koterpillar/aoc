@@ -1,12 +1,11 @@
 module Y2020.Day16 where
 
-import           Data.IntSet (IntSet)
-import qualified Data.IntSet as IntSet
-import qualified Data.Map    as Map
-import qualified Data.Text   as Text
+import qualified Data.Map  as Map
+import qualified Data.Set  as Set
+import qualified Data.Text as Text
 
 import           AOC
-import           Path
+import           Search
 import           Utils
 
 newtype Rule =
@@ -54,60 +53,29 @@ part1 n = sum $ concatMap (invalid1 n) (nTickets n)
 nValidTickets :: Notes -> [Ticket]
 nValidTickets n = filter (null . invalid1 n) $ nTickets n
 
-data Search =
-  Search
-    { sFound   :: Map Text Int
-    , sRemPoss :: Map Text IntSet
-    }
-  deriving (Ord, Eq, Show)
-
-instance Hashable Search where
-  hashWithSalt x (Search a b) = hashWithSalt x (a, b)
-
-pick :: Ord k => Map k IntSet -> ((k, IntSet), Map k IntSet)
-pick m = ((k, vs), Map.delete k m)
-  where
-    (k, vs) = minimumBy (compare `on` (IntSet.size . snd)) $ Map.toList m
-
-match :: Notes -> Map Text Int
-match n =
-  sFound $
-  traceShowId $
-  lastE "empty route found" $
-  fromJustE "no route found" $ dfs moves (length . sRemPoss) start
-  where
-    start = Search mempty $ traceShowId $ rulesPossibilities n
-    moves Search {..} =
-      hashSetFromList $ do
-        let ((r, poss), rp1) = pick sRemPoss
-        i <- IntSet.toList poss
-        let rp2 = Map.map (IntSet.delete i) rp1
-        guard $ all (not . IntSet.null) rp2
-        pure $ Search (Map.insert r i sFound) rp2
-
-ticketSets :: Notes -> Map Int IntSet
+ticketSets :: Notes -> Map Int (Set Int)
 ticketSets =
   Map.fromList .
-  zip [0 ..] . map IntSet.fromList . transpose . map unTicket . nValidTickets
+  zip [0 ..] . map Set.fromList . transpose . map unTicket . nValidTickets
 
-ruleSets :: Notes -> Map Text IntSet
+ruleSets :: Notes -> Map Text (Set Int)
 ruleSets =
-  Map.map (mconcat . map (IntSet.fromList . uncurry enumFromTo) . unRule) .
-  nFields
+  Map.map (mconcat . map (Set.fromList . uncurry enumFromTo) . unRule) . nFields
 
-rulePossibilities :: Map Int IntSet -> IntSet -> IntSet
+rulePossibilities :: Map Int (Set Int) -> Set Int -> Set Int
 rulePossibilities tsets range =
-  IntSet.fromList $
+  Set.fromList $
   map fst $
-  filter (\(idx, values) -> IntSet.isSubsetOf values range) $ Map.toList tsets
+  filter (\(idx, values) -> Set.isSubsetOf values range) $ Map.toList tsets
 
-rulesPossibilities :: Notes -> Map Text IntSet
+rulesPossibilities :: Notes -> Map Text (Set Int)
 rulesPossibilities n = Map.map (rulePossibilities (ticketSets n)) (ruleSets n)
 
 part2 n =
   product $
   Map.filterWithKey (\t _ -> Text.isPrefixOf "departure" t) $
-  (\assignment -> decode assignment (nOwnTicket n)) $ match n
+  (\assignment -> decode assignment (nOwnTicket n)) $
+  decideMapping $ rulesPossibilities n
 
 decode :: Map Text Int -> Ticket -> Map Text Int
 decode assignment (Ticket fs) = Map.mapWithKey (\t i -> fs !! i) assignment

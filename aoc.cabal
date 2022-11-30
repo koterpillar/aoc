@@ -33,6 +33,7 @@ library
       Miniparse
       Path
       Quantum
+      Search
       Utils
       Utils.Trace
       Y2017.Day01
