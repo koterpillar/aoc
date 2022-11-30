@@ -1,7 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric  #-}
 
-module Y2020.Day21 (tasks) where
+module Y2020.Day21
+  ( tasks
+  ) where
 
 import qualified Data.Map     as Map
 import qualified Data.Set     as Set
@@ -10,6 +12,7 @@ import           GHC.Generics (Generic)
 
 import           AOC
 import           Path
+import           Search
 import           Utils
 
 newtype A =
@@ -32,16 +35,6 @@ type Input = [Food]
 
 type Solution = Map A I
 
-data Search =
-  Search
-    { sSolution :: Solution
-    , sRemF     :: [Food]
-    }
-  deriving (Eq, Ord, Generic, Hashable, Show)
-
-sStart :: Input -> Search
-sStart = Search Map.empty
-
 picks :: (Ord a, Ord b) => [a] -> Set b -> [Map a b]
 picks [] bs = [Map.empty]
 picks (a:ar) bs = do
@@ -49,25 +42,18 @@ picks (a:ar) bs = do
   let br = Set.delete b bs
   Map.insert a b <$> picks ar br
 
-moves :: Search -> Maybe [Search]
-moves (Search _ []) = Nothing
-moves (Search a2i ((is, as):rest)) =
-  Just $ do
-    for_ (Map.toList a2i) $ \(a, i) ->
-      when (a `Set.member` as) $ guard $ i `Set.member` is
-    let knownIs = setMapMaybe (`Map.lookup` a2i) as
-    let unknownIs = Set.difference is knownIs
-    let unknownAs = Set.difference as (Map.keysSet a2i)
-    m <- picks (Set.toList unknownAs) unknownIs
-    pure $ Search (Map.union m a2i) rest
+type Possibilities = Map A (Set I)
+
+possibilities :: Input -> Possibilities
+possibilities = foldr1 go . map (uncurry mk)
+  where
+    mk :: Set I -> Set A -> Possibilities
+    mk is as = Map.fromList [(a, is) | a <- Set.toList as]
+    go :: Possibilities -> Possibilities -> Possibilities
+    go = Map.unionWith Set.intersection
 
 solveAll :: Input -> [Solution]
-solveAll = go . sStart
-  where
-    go s =
-      case moves s of
-        Nothing -> [sSolution s]
-        Just ss -> concatMap go ss
+solveAll = decideMappingAll . possibilities
 
 safeIs :: Input -> [Solution] -> Set I
 safeIs foods a2is = Set.difference is $ Set.unions $ map mapElemsSet a2is
