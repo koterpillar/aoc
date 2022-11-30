@@ -35,40 +35,42 @@ type Solution = Map A I
 data Search =
   Search
     { sSolution :: Solution
-    , sRemA     :: Set A
-    , sRemI     :: Set I
+    , sRemF     :: [Food]
     }
   deriving (Eq, Ord, Generic, Hashable, Show)
 
-picks :: Search -> [Search]
-picks Search {..} = do
-  let (i, ri) = Set.deleteFindMin sRemI
-  a <- Set.toList sRemA
-  pure $ Search (Map.insert a i sSolution) (Set.delete a sRemA) ri
+picks :: (Ord a, Ord b) => [a] -> Set b -> [Map a b]
+picks [] bs = [Map.empty]
+picks (a:ar) bs = do
+  b <- Set.toList bs
+  let br = Set.delete b bs
+  Map.insert a b <$> picks ar br
 
-valid1 :: Solution -> Food -> Bool
-valid1 a2i (is, as) =
-  all (`Set.member` is) $ mapMaybe (`Map.lookup` a2i) $ Set.toList as
-
-valid :: Foldable t => Solution -> t Food -> Bool
-valid solution = all $ valid1 solution
+moves :: Search -> [Search]
+moves (Search _ []) = []
+moves (Search a2i ((is, as):rest)) = do
+  let knownIs = Set.fromList $ mapMaybe (`Map.lookup` a2i) (Set.toList as)
+  let unknownIs = Set.difference is knownIs
+  let unknownAs = Set.difference as (Set.fromList $ Map.keys a2i)
+  m <- picks (Set.toList unknownAs) unknownIs
+  pure $ Search (Map.union m a2i) rest
 
 solve :: Input -> Solution
 solve foods =
   sSolution $
   lastE "solve: empty route" $
-  fromJustE "solve: no solution" $ dfs moves distanceToGoal start
+  fromJustE "solve: no solution" $
+  dfs (hashSetFromList . moves) distanceToGoal start
   where
-    distanceToGoal = length . sRemA . traceShowId
-    start =
-      Search Map.empty (Set.unions $ map snd foods) (Set.unions $ map fst foods)
-    moves = hashSetFromList . filter ((`valid` foods) . sSolution) . picks
+    distanceToGoal = length . sRemF
+    start = Search Map.empty foods
 
 part1 :: Input -> Int
-part1 foods = length noAllergens
+part1 foods = sum $ map (countIf isSafe . Set.toList . fst) foods
   where
     a2i = solve foods
     is = Set.unions $ map fst foods
-    noAllergens = Set.difference is $ Set.fromList $ Map.elems a2i
+    safeIs = Set.difference is $ Set.fromList $ Map.elems a2i
+    isSafe i = Set.member i safeIs
 
 tasks = Tasks 2020 21 (CodeBlock 0) (linesP &** parseFood) [Task part1 5]
