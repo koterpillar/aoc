@@ -1,5 +1,7 @@
 module Y2020.Day22 where
 
+import           Control.Monad.State
+
 import           AOC
 import           Utils
 
@@ -31,4 +33,42 @@ play game =
     Left result -> result
     Right game' -> play game'
 
-tasks = Tasks 2020 22 (CodeBlock 0) gameP [Task (score . play) 306]
+type Game2 = (Set Game, Game)
+
+type Result2 = Either Hand Hand
+
+move2 :: Game2 -> Either Result2 Game2
+move2 (seen, g)
+  | setMember g seen = Left $ Left $ fst g
+  | otherwise =
+    case g of
+      ([], h2) -> Left $ Right h2
+      (h1, []) -> Left $ Left h1
+      (c1:h1, c2:h2)
+        | length h1 >= c1 && length h2 >= c2 ->
+          case play2 (take c1 h1, take c2 h2) of
+            Left _  -> toP1
+            Right _ -> toP2
+        | c1 > c2 -> toP1
+        | otherwise -> toP2
+        where toP1 = Right (setInsert g seen, (h1 ++ [c1, c2], h2))
+              toP2 = Right (setInsert g seen, (h1, h2 ++ [c2, c1]))
+
+play2 :: Game -> Result2
+play2 game = go (mempty, game)
+  where
+    go game2 =
+      case move2 game2 of
+        Left result  -> result
+        Right game2' -> go game2'
+
+winHand :: Result2 -> Hand
+winHand = either id id
+
+tasks =
+  Tasks
+    2020
+    22
+    (CodeBlock 0)
+    gameP
+    [Task (score . play) 306, Task (score . winHand . play2) 291]
