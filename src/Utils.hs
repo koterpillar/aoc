@@ -180,6 +180,9 @@ setInsert = Set.insert
 setMap :: Ord b => (a -> b) -> Set a -> Set b
 setMap = Set.map
 
+setMapMaybe :: Ord b => (a -> Maybe b) -> Set a -> Set b
+setMapMaybe fn = Set.fromList . mapMaybe fn . Set.toList
+
 setDifference :: Ord a => Set a -> Set a -> Set a
 setDifference = Set.difference
 
