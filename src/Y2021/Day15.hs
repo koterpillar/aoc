@@ -20,9 +20,7 @@ part1 grid =
     isGoal = (== endPosition)
     distance p1 p2
       | p2 == startPosition = error "we can't go back to start position!"
-      | otherwise =
-        fromJustE ("destination " <> show p2 <> " not found in grid") $
-        mapLookup p2 grid
+      | otherwise = mapLookupE "destination" p2 grid
     heuristicDistance = manhattanDistance endPosition
     moves p = filter (`mapMember` grid) $ map (`walk` p) allDir4
 
