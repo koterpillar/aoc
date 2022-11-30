@@ -10,10 +10,9 @@ findSum count total candidates =
   fromJustE "no numbers add to requested" $
   aStar prependNumber distance toGoal isGoal mempty
   where
-    prependNumber :: Set Int -> HashSet (Set Int)
+    prependNumber :: Set Int -> [Set Int]
     prependNumber existing =
-      hashSetFromList
-        [setInsert x existing | x <- candidates, not (setMember x existing)]
+      [setInsert x existing | x <- candidates, not (setMember x existing)]
     distance = const $ const 1
     toGoal :: Set Int -> Int
     toGoal numbers

@@ -24,8 +24,7 @@ part1 grid =
         fromJustE ("destination " <> show p2 <> " not found in grid") $
         mapLookup p2 grid
     heuristicDistance = manhattanDistance endPosition
-    moves p =
-      hashSetFromList $ filter (`mapMember` grid) $ map (`walk` p) allDir4
+    moves p = filter (`mapMember` grid) $ map (`walk` p) allDir4
 
 enlarge :: Int -> Grid -> Grid
 enlarge times grid = mapFromList $ concatMap copyP $ mapToList grid

@@ -158,7 +158,7 @@ fromSingleE _ [a]  = a
 fromSingleE msg as = error $ "fromSingleE: " <> show as <> ": " <> msg
 
 solve :: Situation -> Maybe [Situation]
-solve = aStar (hashSetFromList . moves) energySpent targetEstimate isGoal
+solve = aStar moves energySpent targetEstimate isGoal
 
 totalEnergySpent :: [Situation] -> Int
 totalEnergySpent = sum . zipWithTail energySpent

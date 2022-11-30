@@ -33,7 +33,7 @@ decideMapping =
   sFound .
   lastE "empty route found" .
   fromJustE "no route found" .
-  dfs (hashSetFromList . moves') (length . sPossible) . sStart
+  aStarDepthGoal moves' (length . sPossible) . sStart
 
 decideMappingAll ::
      (Ord k, Hashable k, Ord v, Hashable v) => Map k (Set v) -> [Map k v]

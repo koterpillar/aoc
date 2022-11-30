@@ -2,12 +2,11 @@
 
 module Path
   ( module Path
-  , module Data.Graph.AStar
   , HashSet
   , Hashable(..)
   ) where
 
-import           Data.Graph.AStar
+import qualified Data.Graph.AStar as AStar
 
 import           Data.Hashable    (Hashable (..))
 
@@ -37,12 +36,31 @@ moveTree generate apply = mtc
         children = map go childNodes
         go (move, childNode) = (move, mtc childNode)
 
-dfs ::
+aStar ::
      (Hashable a, Ord a, Ord c, Num c)
-  => (a -> HashSet a)
+  => (a -> [a])
+  -> (a -> a -> c)
+  -> (a -> c)
+  -> (a -> Bool)
+  -> a
+  -> Maybe [a]
+aStar moves = AStar.aStar (hashSetFromList . moves)
+
+aStarDepth ::
+     (Hashable a, Ord a, Ord c, Num c)
+  => (a -> [a])
+  -> (a -> c)
+  -> (a -> Bool)
+  -> a
+  -> Maybe [a]
+aStarDepth moves = aStar moves (const $ const 1)
+
+aStarDepthGoal ::
+     (Hashable a, Ord a, Ord c, Num c)
+  => (a -> [a])
   -> (a -> c)
   -> a
   -> Maybe [a]
-dfs moves distanceToGoal = aStar moves (const $ const 1) distanceToGoal isGoal
+aStarDepthGoal moves distanceToGoal = aStarDepth moves distanceToGoal isGoal
   where
     isGoal = (== 0) . distanceToGoal
