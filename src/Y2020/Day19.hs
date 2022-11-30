@@ -35,10 +35,7 @@ parser :: Parser Text Input
 parser = lineGroupsP &* (rulesP &+ traverseP stringP)
 
 getRule :: Rules -> Int -> Rule
-getRule rules idx =
-  case mapLookup idx rules of
-    Just r  -> r
-    Nothing -> error $ "rule not found: " ++ show idx
+getRule rules idx = mapLookupE "rule" idx rules
 
 matcher :: Rules -> Int -> StateParser Message ()
 matcher rules idx = go (getRule rules idx)

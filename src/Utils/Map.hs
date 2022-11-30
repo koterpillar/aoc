@@ -1,10 +1,16 @@
 module Utils.Map where
 
-import           Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.Map   (Map)
+import qualified Data.Map   as Map
 
-import           Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Maybe
+
+import           Data.Set   (Set)
+import qualified Data.Set   as Set
+
+mapLookupE :: (Ord k, Show k) => String -> k -> Map k a -> a
+mapLookupE msg k m =
+  fromMaybe (error $ "mapLookupE: " ++ msg ++ ": " ++ show k) $ Map.lookup k m
 
 mapFromList :: Ord k => [(k, a)] -> Map k a
 mapFromList = Map.fromList

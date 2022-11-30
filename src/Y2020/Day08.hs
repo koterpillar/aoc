@@ -46,10 +46,7 @@ execute (Acc n) cpu = (markVisited cpu) {cPC = cPC cpu + 1, cAcc = cAcc cpu + n}
 execute (Jmp n) cpu = (markVisited cpu) {cPC = cPC cpu + n}
 
 getInstruction :: Program -> CPU -> Instruction
-getInstruction program cpu =
-  case mapLookup (cPC cpu) program of
-    Nothing -> error $ "No instruction at address " ++ show (cPC cpu)
-    Just i  -> i
+getInstruction program cpu = mapLookupE "instruction" (cPC cpu) program
 
 looped :: CPU -> Bool
 looped cpu = setMember (cPC cpu) (cVisited cpu)

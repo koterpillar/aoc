@@ -153,10 +153,6 @@ energySpent s1 s2 =
     (a1, p1) = fromSingleE (show (s1, s2)) $ toList $ setDifference ps1 ps2
     (a2, p2) = fromSingleE (show (s1, s2)) $ toList $ setDifference ps2 ps1
 
-fromSingleE :: Show a => String -> [a] -> a
-fromSingleE _ [a]  = a
-fromSingleE msg as = error $ "fromSingleE: " <> show as <> ": " <> msg
-
 solve :: Situation -> Maybe [Situation]
 solve = aStar moves energySpent targetEstimate isGoal
 

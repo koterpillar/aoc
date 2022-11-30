@@ -46,9 +46,8 @@ findCost rules = pred $ findCost' rules shinyGold
 findCost' :: Rules -> Bag -> Int
 findCost' rules =
   memoFix $ \memoFind bag ->
-    case mapLookup bag rules of
-      Nothing     -> error $ "no rule for " ++ show bag
-      Just inners -> 1 + sum [n * memoFind inner | (n, inner) <- toList inners]
+    let inners = mapLookupE "rule" bag rules
+     in 1 + sum [n * memoFind inner | (n, inner) <- toList inners]
 
 tasks =
   Tasks
