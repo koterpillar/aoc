@@ -7,6 +7,7 @@ module Y2020.Day21
 
 import qualified Data.Map     as Map
 import qualified Data.Set     as Set
+import qualified Data.Text    as Text
 
 import           GHC.Generics (Generic)
 
@@ -16,11 +17,15 @@ import           Search
 import           Utils
 
 newtype A =
-  A Text
+  A
+    { getA :: Text
+    }
   deriving (Eq, Ord, Generic, Hashable, Show)
 
 newtype I =
-  I Text
+  I
+    { getI :: Text
+    }
   deriving (Eq, Ord, Generic, Hashable, Show)
 
 type Food = (Set I, Set A)
@@ -67,4 +72,16 @@ part1 foods = sum $ map (countIf isSafe . Set.toList . fst) foods
     is = Set.unions $ map fst foods
     isSafe i = Set.member i $ safeIs foods a2is
 
-tasks = Tasks 2020 21 (CodeBlock 0) (linesP &** parseFood) [Task part1 5]
+part2 :: Input -> Text
+part2 foods =
+  case solveAll foods of
+    [solution] -> Text.intercalate "," $ map getI $ Map.elems solution
+    ms         -> error $ "multiple solutions: " ++ show ms
+
+tasks =
+  Tasks
+    2020
+    21
+    (CodeBlock 0)
+    (linesP &** parseFood)
+    [Task part1 5, Task part2 "mxmxvkd,sqjhc,fvjkl"]
