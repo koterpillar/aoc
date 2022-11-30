@@ -50,9 +50,12 @@ instance Show Edge where
            else Nothing)
       bs
 
-flips :: Tile -> [Tile]
-flips (Tile i g) =
-  [ Tile i $ Map.mapKeys (a . b . c) g
+flipsT :: Tile -> [Tile]
+flipsT (Tile i g) = Tile i <$> flips g
+
+flips :: Grid -> [Grid]
+flips g =
+  [ Map.mapKeys (a . b . c) g
   | a <- [id, flipX]
   , b <- [id, flipY]
   , c <- [id, flipXY]
@@ -88,7 +91,7 @@ glId = tid . glT
 -- Oops, we'll have 8 edges because of flips, but can't use them all at once!
 -- Thankfully the edges are all unique even with rotations.
 links :: Tile -> [GridLink]
-links = map go . flips
+links = map go . flipsT
   where
     go t = GridLink t (Map.fromList [(d, edge d t) | d <- allDir4])
 
@@ -232,9 +235,11 @@ merge = joinTiles . mapmap (tgrid . shrink) . merge1
 fixupExample :: [[a]] -> [[a]]
 fixupExample = transpose . reverse . map reverse
 
+fixupGrid :: (forall a. [[a]] -> [[a]]) -> Grid -> Grid
+fixupGrid fn = Map.mapMaybe id . fromMatrixG . fn . toMatrixG
+
 fixupExampleGrid :: Grid -> Grid
-fixupExampleGrid =
-  Map.mapMaybe id . fromMatrixG . transpose . fixupExample . toMatrixG
+fixupExampleGrid = fixupGrid $ transpose . fixupExample
 
 exampleMergedIds :: [[Int]]
 exampleMergedIds = [[1951, 2311, 3079], [2729, 1427, 2473], [2971, 1489, 1171]]
@@ -286,23 +291,26 @@ monster =
   Text.unlines
     ["                  # ", "#    ##    ##    ###", " #  #  #  #  #  #   "]
 
+shiftG :: Position2 -> Grid -> Grid
+shiftG d = Map.mapKeys (pointPlus d)
+
 hasAll :: Grid -> Grid -> Bool
 hasAll pattern space = all (`Map.member` space) $ Map.keys pattern
 
 monsterOrigins :: Grid -> [Position2]
-monsterOrigins g = filter (\d -> hasAll (shift d) g) deltas
+monsterOrigins g = filter (\d -> hasAll (shiftG d monster) g) deltas
   where
-    shift d = Map.mapKeys (pointPlus d) monster
-    monsterOrigin = fst $ Map.findMin $ dsp "monster  " monster
-    deltas = [pointMinus monsterOrigin d | d <- Map.keys $ dsp "original " g]
-    dsp desc =
-      traceF $
-      (\x -> desc ++ " " ++ x) .
-      unwords .
-      map (\(Position2 x y) -> "P " ++ show x ++ " " ++ show y) . Map.keys
+    monsterOrigin = fst $ Map.findMin monster
+    deltas = [pointMinus d monsterOrigin | d <- Map.keys g]
 
 countMonsters :: Grid -> Int
 countMonsters = length . monsterOrigins
+
+subtractMonsters :: Grid -> Int
+subtractMonsters g = Map.size g - countMonsters g * Map.size monster
+
+subtractMonstersFlips :: Grid -> Int
+subtractMonstersFlips = minimum . map subtractMonsters . flips
 
 tasks :: Tasks
 tasks =
@@ -316,5 +324,17 @@ tasks =
     , Task (fixupExample . mergeIds) exampleMergedIds
     , Task (displayG . fixupExampleGrid . merge) exampleMerged
     , Assert "monster counts itself" [Position2 0 0] (monsterOrigins monster)
-    , Task (countMonsters . fixupExampleGrid . merge) 2
+    , Assert
+        "monster counts itself plus dot"
+        [Position2 0 0]
+        (monsterOrigins $ Map.insert (Position2 100 100) () monster)
+    , Assert
+        "monster counts itself shifted"
+        [Position2 2 2]
+        (monsterOrigins (shiftG (Position2 2 2) monster))
+    , Task (countMonsters . fixupGrid fixupExample . merge) 2
+    , Task
+        (setFromList . map countMonsters . flips . merge)
+        (setFromList [0, 2])
+    , Task (subtractMonstersFlips . merge) 273
     ]
