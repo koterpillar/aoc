@@ -279,6 +279,31 @@ findTileSize ts = pmax `pointMinus` pmin
   where
     (pmin, pmax) = boundsG $ tgrid $ headE "findTileSize: empty list" ts
 
+monster :: Grid
+monster =
+  justParse dotGridP $
+  Text.replace " " "." $
+  Text.unlines
+    ["                  # ", "#    ##    ##    ###", " #  #  #  #  #  #   "]
+
+hasAll :: Grid -> Grid -> Bool
+hasAll pattern space = all (`Map.member` space) $ Map.keys pattern
+
+monsterOrigins :: Grid -> [Position2]
+monsterOrigins g = filter (\d -> hasAll (shift d) g) deltas
+  where
+    shift d = Map.mapKeys (pointPlus d) monster
+    monsterOrigin = fst $ Map.findMin $ dsp "monster  " monster
+    deltas = [pointMinus monsterOrigin d | d <- Map.keys $ dsp "original " g]
+    dsp desc =
+      traceF $
+      (\x -> desc ++ " " ++ x) .
+      unwords .
+      map (\(Position2 x y) -> "P " ++ show x ++ " " ++ show y) . Map.keys
+
+countMonsters :: Grid -> Int
+countMonsters = length . monsterOrigins
+
 tasks :: Tasks
 tasks =
   Tasks
@@ -290,4 +315,6 @@ tasks =
     , Task findTileSize tileSize
     , Task (fixupExample . mergeIds) exampleMergedIds
     , Task (displayG . fixupExampleGrid . merge) exampleMerged
+    , Assert "monster counts itself" [Position2 0 0] (monsterOrigins monster)
+    , Task (countMonsters . fixupExampleGrid . merge) 2
     ]
