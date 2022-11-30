@@ -74,8 +74,7 @@ match n =
   sFound $
   traceShowId $
   lastE "empty route found" $
-  fromJustE "no route found" $
-  aStar moves (const $ const 1) (length . sRemPoss) (null . sRemPoss) start
+  fromJustE "no route found" $ dfs moves (length . sRemPoss) start
   where
     start = Search mempty $ traceShowId $ rulesPossibilities n
     moves Search {..} =

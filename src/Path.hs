@@ -36,3 +36,13 @@ moveTree generate apply = mtc
           catMaybes [(move, ) <$> apply move start | move <- generate start]
         children = map go childNodes
         go (move, childNode) = (move, mtc childNode)
+
+dfs ::
+     (Hashable a, Ord a, Ord c, Num c)
+  => (a -> HashSet a)
+  -> (a -> c)
+  -> a
+  -> Maybe [a]
+dfs moves distanceToGoal = aStar moves (const $ const 1) distanceToGoal isGoal
+  where
+    isGoal = (== 0) . distanceToGoal
