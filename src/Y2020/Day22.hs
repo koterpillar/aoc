@@ -28,10 +28,7 @@ move (c1:h1, c2:h2)
   | otherwise = Right (h1, h2 ++ [c2, c1])
 
 play :: Game -> Hand
-play game =
-  case move game of
-    Left result -> result
-    Right game' -> play game'
+play = iterateEither move
 
 type Game2 = (Set Game, Game)
 
@@ -55,12 +52,7 @@ move2 (seen, g)
               toP2 = Right (setInsert g seen, (h1, h2 ++ [c2, c1]))
 
 play2 :: Game -> Result2
-play2 game = go (mempty, game)
-  where
-    go game2 =
-      case move2 game2 of
-        Left result  -> result
-        Right game2' -> go game2'
+play2 game = iterateEither move2 (mempty, game)
 
 winHand :: Result2 -> Hand
 winHand = either id id

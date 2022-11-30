@@ -109,6 +109,12 @@ iterateSettle fn v =
   where
     v' = fn v
 
+iterateEither :: (a -> Either b a) -> a -> b
+iterateEither fn v =
+  case fn v of
+    Left b  -> b
+    Right v -> iterateEither fn v
+
 dupe :: a -> (a, a)
 dupe a = (a, a)
 
