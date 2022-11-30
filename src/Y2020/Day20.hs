@@ -11,6 +11,9 @@ import           AOC
 import           Grid
 import           Utils
 
+mapmap :: (a -> b) -> [[a]] -> [[b]]
+mapmap = map . map
+
 type Grid = Grid2 ()
 
 data Tile =
@@ -202,37 +205,47 @@ findAll cid = do
   findAllStrips strip1
 
 merge1 :: [Tile] -> [[Tile]]
-merge1 ts = map (map glT) $ evalState (findAll corner1) links
+merge1 ts = mapmap glT $ evalState (findAll corner1) links
   where
     corner1 = headE "corner1: no corners" $ findCorners ts
     links = gridLinks ts
 
 shrink :: Tile -> Tile
-shrink = error "shrink: not implemented"
+shrink (Tile i g) = Tile i $ Map.filterWithKey (\p _ -> inner p) g
+  where
+    inner (Position2 x y) = x > xmin && x < xmax && y > ymin && y < ymax
+    (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
 
-joinTiles :: [[Tile]] -> Grid
-joinTiles = error "joinTiles: not implemented" . map (map tgrid)
+joinTiles :: [[Grid]] -> Grid
+joinTiles gss =
+  Map.unions [shift x y g | (x, gs) <- zip stops gss, (y, g) <- zip stops gs]
+  where
+    stops = [0,8 ..]
+    shift x y = Map.mapKeys (pointPlus (Position2 x y))
 
 mergeIds :: [Tile] -> [[Int]]
-mergeIds = map (map tid) . merge1
+mergeIds = mapmap tid . merge1
 
 merge :: [Tile] -> Grid
-merge = joinTiles . map (map shrink) . merge1
+merge = joinTiles . mapmap (tgrid . shrink) . merge1
 
+fixupExample :: [[a]] -> [[a]]
 fixupExample = transpose . reverse . map reverse
+
+fixupExampleGrid :: Grid -> Grid
+fixupExampleGrid =
+  Map.mapMaybe id . fromMatrixG . transpose . fixupExample . toMatrixG
 
 exampleMergedIds :: [[Int]]
 exampleMergedIds = [[1951, 2311, 3079], [2729, 1427, 2473], [2971, 1489, 1171]]
 
 exampleMerged :: Text
-exampleMerged = exampleMerged' id
-
-exampleMerged' :: (forall a. [[a]] -> [[a]]) -> Text
-exampleMerged' f =
+exampleMerged =
   Text.replace "." (Text.singleton middleDot) $
   Text.unlines $
-  map Text.pack $
-  f [ ".#.#..#.##...#.##..#####"
+  map
+    Text.pack
+    [ ".#.#..#.##...#.##..#####"
     , "###....#.#....#..#......"
     , "##.##.###.#.#..######..."
     , "###.#####...#.#####.#..#"
@@ -258,6 +271,14 @@ exampleMerged' f =
     , "...###...##...#...#..###"
     ]
 
+tileSize :: Position2
+tileSize = Position2 9 9
+
+findTileSize :: [Tile] -> Position2
+findTileSize ts = pmax `pointMinus` pmin
+  where
+    (pmin, pmax) = boundsG $ tgrid $ headE "findTileSize: empty list" ts
+
 tasks :: Tasks
 tasks =
   Tasks
@@ -266,6 +287,7 @@ tasks =
     (CodeBlock 0)
     parseTiles
     [ Task (product . findCorners) 20899048083289
-    , Task mergeIds (fixupExample exampleMergedIds)
-    , Task (displayG . merge) (exampleMerged' fixupExample)
+    , Task findTileSize tileSize
+    , Task (fixupExample . mergeIds) exampleMergedIds
+    , Task (displayG . fixupExampleGrid . merge) exampleMerged
     ]
