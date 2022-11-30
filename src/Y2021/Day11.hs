@@ -27,14 +27,14 @@ goP fn = do
 modifyP :: ((Int, Bool) -> State Grid (Int, Bool)) -> Position2 -> State Grid ()
 modifyP fn p = do
   r <- gets $ mapLookup p
-  forM_ r $ \rr -> do
+  for_ r $ \rr -> do
     rr' <- fn rr
     modify $ mapInsert p rr'
 
 incrP :: Position2 -> State Grid ()
 incrP p = do
   r <- gets $ mapLookup p
-  forM_ r $ \(v, f) -> do
+  for_ r $ \(v, f) -> do
     let v' = v + 1
     let f' = v' > 9
     modify $ mapInsert p (v', f')

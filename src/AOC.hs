@@ -180,7 +180,7 @@ taskTimeout = 40
 processTasks :: Tasks -> IO ()
 processTasks (Tasks year day scraper parser tasks) = do
   Text.putStrLn $ "Year " <> tshow year <> ", day " <> tshow day
-  forM_ tasks $ \task -> do
+  for_ tasks $ \task -> do
     result <-
       timeout (taskTimeout * 1000000) $ processTask year day scraper parser task
     when (isNothing result) $

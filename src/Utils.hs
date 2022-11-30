@@ -21,7 +21,8 @@ module Utils
   , chunksOf
   , guard
   , first
-  , forM_
+  , for
+  , for_
   , isDigit
   , isLower
   , isUpper
@@ -53,7 +54,7 @@ import           Data.Containers.ListUtils (nubInt, nubOrd)
 import           Data.Either
 import           Data.Either.Extra
 
-import           Data.Foldable             (toList, traverse_)
+import           Data.Foldable             (for_, toList, traverse_)
 
 import           Data.Functor              (($>))
 
@@ -74,6 +75,8 @@ import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
 import qualified Data.Text.IO              as Text
+
+import           Data.Traversable          (for)
 
 import           Data.Tuple
 
