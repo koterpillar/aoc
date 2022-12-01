@@ -30,6 +30,8 @@ module Utils
   , isUpper
   , join
   , liftA2
+  , maximumOn
+  , minimumOn
   , on
   , ord
   , readEither
@@ -64,7 +66,7 @@ import           Data.Function             (on, (&))
 import           Data.Function.Memoize
 
 import           Data.List
-import           Data.List.Split           (chunksOf, splitOn)
+import           Data.List.Extra
 
 import           Data.Map                  (Map)
 import qualified Data.Map                  as Map
