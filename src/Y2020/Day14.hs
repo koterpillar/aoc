@@ -3,6 +3,7 @@ module Y2020.Day14 where
 import           Control.Monad (zipWithM)
 
 import           Data.Bits
+import           Data.Char
 
 import           AOC
 import           Bit
@@ -34,12 +35,13 @@ data Instruction
   deriving (Show)
 
 parseInstruction :: Parser Text Instruction
-parseInstruction = tsplitP " = " &* pairP &* (parseSetMask &| parseSetMem)
+parseInstruction = tspanP isAlpha &* (idP &=> parseCase)
   where
-    parseSetMask = SetMask . snd <$> requireP "mask" &= parseBitMask
-    parseSetMem =
+    parseCase "mask" = SetMask <$> pureP (terase " = ") &* parseBitMask
+    parseCase "mem" =
       uncurry SetMem <$>
-      (pureP (terase "mem[" . terase "]") &* integerP) &= integerP
+      pureP (terase "[") &* tsplitP "] = " &* pairP &* integerP &= integerP
+    parseCase instr = failP $ "Invalid start: " ++ show instr
 
 data CPU =
   CPU

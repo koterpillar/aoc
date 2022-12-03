@@ -248,7 +248,7 @@ srcP =
       else SrcValue <$> runParse integerP t
 
 instructionP :: Parser Text Instruction
-instructionP = wordsP &* unconsP &* (idP &=> instructionChoice) &* pureP snd
+instructionP = wordsP &* unconsP &* (idP &=> instructionChoice)
   where
     instructionChoice "inp" = Inp <$> (singleP &* registerP)
     instructionChoice "add" = pairPWith Add registerP srcP

@@ -155,12 +155,11 @@ Parser pa &= Parser pb = Parser (\(a, b) -> liftA2 (,) (pa a) (pb b))
 
 infixl 8 &=
 
-(&=>) :: Parser a a' -> (a' -> Parser b b') -> Parser (a, b) (a', b')
+(&=>) :: Parser a c -> (c -> Parser b d) -> Parser (a, b) d
 pa &=> f =
   Parser $ \(a, b) -> do
-    a' <- runParse pa a
-    b' <- runParse (f a') b
-    pure (a', b')
+    c <- runParse pa a
+    runParse (f c) b
 
 (&+) :: Show a => Parser a b -> Parser a c -> Parser [a] (b, c)
 pa &+ pb = pairP &* (pa &= pb)
