@@ -117,7 +117,7 @@ tasks =
     2021
     18
     (CodeBlock 7)
-    (linesP &** (stringP &* stateP parseS))
+    (linesP &** stringP &* stateP parseS)
     [ Assert "split 9" Nothing (snsplit $ PNumber 9)
     , Assert "split 11" (Just $ parse "[5,6]") (snsplit $ PNumber 11)
     , Assert "split 12" (Just $ parse "[6,6]") (snsplit $ PNumber 12)

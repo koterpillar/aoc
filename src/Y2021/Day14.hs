@@ -18,10 +18,10 @@ type Insertions = Map Pair Element
 
 parse :: Parser Text (Polymer, Insertions)
 parse =
-  linesP &* unconsP &*
-  (charactersP &= (mapFromList <$> pureP tail &* traverseP parseInsertion))
+  linesP &* unconsP &* charactersP &=
+  (mapFromList <$> pureP tail &* traverseP parseInsertion)
   where
-    parseInsertion = tsplitP " -> " &* (charactersP &* pairP &+ charP)
+    parseInsertion = tsplitP " -> " &* (charactersP &* pairP) &+ charP
 
 type PolymerMap = Map Pair Int
 

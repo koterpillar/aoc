@@ -59,7 +59,7 @@ mkGrid g = (g, b)
 parse :: Parser Text Grid
 parse =
   mkGrid . fmap fromJust . Map.filter isJust . fromMatrixG <$>
-  linesP &** (charactersP &** cucumberP)
+  linesP &** charactersP &** cucumberP
 
 cucumberP :: Parser Char (Maybe Direction4)
 cucumberP = choiceP [('>', Just E), ('v', Just S), ('.', Nothing)]

@@ -18,7 +18,7 @@ score = sum . zipWith (*) [1 ..] . reverse
 type Game = (Hand, Hand)
 
 gameP :: Parser Text Game
-gameP = lineGroupsP &* (handP &+ handP)
+gameP = lineGroupsP &* handP &+ handP
 
 move :: Game -> Either Hand Game
 move ([], h) = Left h

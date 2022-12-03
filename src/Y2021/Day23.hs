@@ -194,7 +194,7 @@ tasks =
 parse :: Parser Text Situation
 parse =
   mkSituation . Map.mapMaybe id . fromMatrixG <$>
-  linesP &** (charactersP &** parseChar)
+  linesP &** charactersP &** parseChar
 
 mkSituation :: Map Position2 Amphi -> Situation
 mkSituation grid = Situation {..}

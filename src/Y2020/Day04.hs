@@ -12,8 +12,7 @@ parsePassports = lineGroupsP &** parsePassport
 
 parsePassport :: Parser [Text] Passport
 parsePassport =
-  mapFromList <$>
-  pureP (Text.intercalate " ") &* wordsP &** (tsplitP ":" &* (idP &+ idP))
+  mapFromList <$> pureP Text.unwords &* wordsP &** tsplitP ":" &* pairP
 
 isValid :: Passport -> Bool
 isValid p = all (`mapMember` p) requiredElems
@@ -38,7 +37,7 @@ eyr = fieldParser "eyr" $ yearParser 2020 2030
 
 hgt =
   fieldParser "hgt" $
-  tspanP isDigit &* (integerP &= idP) &* filterP (uncurry valid . swap)
+  tspanP isDigit &* integerP &= idP &* filterP (uncurry valid . swap)
   where
     valid "cm" = inRange 150 193
     valid "in" = inRange 59 76

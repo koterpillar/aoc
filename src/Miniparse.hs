@@ -140,7 +140,7 @@ bitsP = charactersP &** choiceEBP ['0', '1']
 (&*) :: Parser a b -> Parser b c -> Parser a c
 Parser p1 &* Parser p2 = Parser $ p1 >=> p2
 
-infixl 7 &*
+infixr 7 &*
 
 traverseP :: Parser a b -> Parser [a] [b]
 traverseP (Parser p) = Parser $ traverse p
@@ -148,12 +148,12 @@ traverseP (Parser p) = Parser $ traverse p
 (&**) :: Parser a [b] -> Parser b c -> Parser a [c]
 p1 &** p2 = p1 &* traverseP p2
 
-infixl 7 &**
+infixr 7 &**
 
 (&=) :: Parser a a' -> Parser b b' -> Parser (a, b) (a', b')
 Parser pa &= Parser pb = Parser (\(a, b) -> liftA2 (,) (pa a) (pb b))
 
-infixl 6 &=
+infixl 8 &=
 
 (&=>) :: Parser a a' -> (a' -> Parser b b') -> Parser (a, b) (a', b')
 pa &=> f =
@@ -165,7 +165,7 @@ pa &=> f =
 (&+) :: Show a => Parser a b -> Parser a c -> Parser [a] (b, c)
 pa &+ pb = pairP &* (pa &= pb)
 
-infixl 6 &+
+infixl 8 &+
 
 (&|) :: Parser a b -> Parser a b -> Parser a b
 pa &| pb = Parser $ \a -> runParse pa a <|> runParse pb a
@@ -175,12 +175,6 @@ singleP =
   Parser $ \case
     [x]   -> Right x
     other -> Left $ "singleP: expected 1 element, got " ++ show other
-
-headTailP :: Show a => Parser [a] (a, [a])
-headTailP =
-  Parser $ \case
-    (x:xs) -> Right (x, xs)
-    []     -> Left "headTailP: expected non-empty list"
 
 pairP :: Show a => Parser [a] (a, a)
 pairP =

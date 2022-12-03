@@ -36,7 +36,7 @@ modifyShape x Paper    = (x, findWS x 3)
 modifyShape x Scissors = (x, findWS x 6)
 
 parser :: Parser Text [(RPS, RPS)]
-parser = linesP &** (wordsP &* (rpsP &+ rpsP))
+parser = linesP &** wordsP &* rpsP &+ rpsP
 
 part1 = sum . map (uncurry score)
 

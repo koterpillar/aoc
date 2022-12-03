@@ -220,14 +220,14 @@ parse = mapFromList <$> lineGroupsP &** parseReport
 
 parseReport :: Parser [Text] (Int, View)
 parseReport =
-  unconsP &* (parseScanner &= (setFromList <$> traverseP parsePosition3))
+  unconsP &* parseScanner &= (setFromList <$> traverseP parsePosition3)
 
 parseScanner :: Parser Text Int
 parseScanner = wordsP &* pureP (!! 2) &* integerP
 
 parsePosition3 :: Parser Text Position3
 parsePosition3 =
-  tsplitP "," &** integerP &*
+  (tsplitP "," &** integerP) &*
   Parser
     (\case
        [x, y, z] -> Right (mkPosition x y z)

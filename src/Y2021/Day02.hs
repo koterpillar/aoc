@@ -10,7 +10,7 @@ directionP :: Parser Text Direction4
 directionP = choiceP [("forward", E), ("down", S), ("up", N)]
 
 movementP :: Parser Text Movement
-movementP = wordsP &* (directionP &+ integerP)
+movementP = wordsP &* directionP &+ integerP
 
 moves1 :: [Movement] -> Position2
 moves1 = foldl (\pos (dir, n) -> walkN n dir pos) (Position2 0 0)

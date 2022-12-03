@@ -39,7 +39,7 @@ data Play =
 
 parsePlayP :: Parser Text Play
 parsePlayP =
-  lineGroupsP &* unconsP &* (parseNumbersLine &= traverseP parseBoard) &*
+  lineGroupsP &* unconsP &* parseNumbersLine &= traverseP parseBoard &*
   pureP (uncurry mkPlay)
   where
     parseNumbersLine = singleP &* integersP ","

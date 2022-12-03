@@ -15,7 +15,7 @@ newtype Rule =
   deriving (Show)
 
 ruleP :: Parser Text Rule
-ruleP = Rule <$> tsplitP " or " &** (tsplitP "-" &* (integerP &+ integerP))
+ruleP = Rule <$> tsplitP " or " &** tsplitP "-" &* integerP &+ integerP
 
 newtype Ticket =
   Ticket
@@ -37,9 +37,9 @@ data Notes =
 notesP :: Parser Text Notes
 notesP =
   (\(r, (t, ts)) -> Notes r t ts) <$>
-  lineGroupsP &* headTailP &*
-  ((mapFromList <$> traverseP (tsplitP ": " &* (idP &+ ruleP))) &=
-   (pureP tail &* singleP &* ticketP &+ pureP tail &** ticketP))
+  lineGroupsP &* unconsP &*
+  (mapFromList <$> traverseP (tsplitP ": " &* idP &+ ruleP)) &=
+  ((pureP tail &* singleP &* ticketP) &+ (pureP tail &** ticketP))
 
 valid :: Rule -> Int -> Bool
 valid (Rule bounds) x = any (\(lo, hi) -> inRange lo hi x) bounds

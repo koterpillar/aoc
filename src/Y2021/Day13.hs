@@ -31,7 +31,7 @@ applyFold :: Fold -> Paper -> Paper
 applyFold = Map.mapKeys . applyFoldPoint
 
 parseInstructions :: Parser Text Instructions
-parseInstructions = lineGroupsP &* (parseDots &+ traverseP parseFold)
+parseInstructions = lineGroupsP &* parseDots &+ traverseP parseFold
   where
     parseDots = mapFromList . flip zip (repeat ()) <$> traverseP parseDot
     parseDot = tsplitP "," &* pairPWith Position2 integerP integerP

@@ -18,8 +18,8 @@ priority c
 
 parser :: Parser Text [Rucksack]
 parser =
-  linesP &**
-  (charactersP &* pureP splitHalf &* (pureP Set.fromList &= pureP Set.fromList))
+  linesP &** charactersP &* pureP splitHalf &* pureP Set.fromList &=
+  pureP Set.fromList
   where
     splitHalf t = splitAt l t
       where

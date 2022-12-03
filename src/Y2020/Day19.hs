@@ -20,19 +20,19 @@ ruleP :: Parser Text Rule
 ruleP =
   (RChar <$>
    filterP (Text.isPrefixOf "\"") &* pureP (Text.replace "\"" "") &* charP) &|
-  (RRecurse <$> (tsplitP " | " &** (wordsP &** integerP)))
+  (RRecurse <$> (tsplitP " | " &** wordsP &** integerP))
 
 type Rules = Map Int Rule
 
 rulesP :: Parser [Text] Rules
-rulesP = mapFromList <$> traverseP (tsplitP ": " &* (integerP &+ ruleP))
+rulesP = mapFromList <$> traverseP (tsplitP ": " &* integerP &+ ruleP)
 
 type Message = [Char]
 
 type Input = (Rules, [Message])
 
 parser :: Parser Text Input
-parser = lineGroupsP &* (rulesP &+ traverseP stringP)
+parser = lineGroupsP &* rulesP &+ traverseP stringP
 
 getRule :: Rules -> Int -> Rule
 getRule rules idx = mapLookupE "rule" idx rules

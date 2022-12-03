@@ -36,10 +36,10 @@ data Instruction
 parseInstruction :: Parser Text Instruction
 parseInstruction = tsplitP " = " &* pairP &* (parseSetMask &| parseSetMem)
   where
-    parseSetMask = SetMask . snd <$> (requireP "mask" &= parseBitMask)
+    parseSetMask = SetMask . snd <$> requireP "mask" &= parseBitMask
     parseSetMem =
       uncurry SetMem <$>
-      (pureP (terase "mem[" . terase "]") &* integerP &= integerP)
+      (pureP (terase "mem[" . terase "]") &* integerP) &= integerP
 
 data CPU =
   CPU

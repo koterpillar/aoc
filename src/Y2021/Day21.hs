@@ -165,4 +165,4 @@ tasks =
     ]
 
 parse :: Parser Text Positions
-parse = linesP &** (tsplitP ": " &* pairPWith (\_ x -> x) (constP ()) integerP)
+parse = linesP &** tsplitP ": " &* pairPWith (\_ x -> x) (constP ()) integerP

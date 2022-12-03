@@ -19,7 +19,7 @@ instance GridItem Seat where
 type Grid = Grid2 Seat
 
 parseGrid :: Parser Text Grid
-parseGrid = fromMatrixG <$> linesP &** (charactersP &** choiceEBP ".L#")
+parseGrid = fromMatrixG <$> linesP &** charactersP &** choiceEBP ".L#"
 
 countOccupied :: [Seat] -> Int
 countOccupied = countIf (== Occupied)

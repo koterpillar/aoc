@@ -12,9 +12,8 @@ data Instruction
 parseInstruction :: Parser Text Instruction
 parseInstruction =
   uncurry ($) <$>
-  wordsP &*
-  (choiceP [("acc", Acc), ("jmp", Jmp), ("nop", Nop)] &+ pureP (terase "+") &*
-   integerP)
+  wordsP &* choiceP [("acc", Acc), ("jmp", Jmp), ("nop", Nop)] &+
+  (pureP (terase "+") &* integerP)
 
 type Program = Map Int Instruction
 

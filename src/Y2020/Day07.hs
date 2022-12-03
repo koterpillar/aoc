@@ -12,7 +12,7 @@ parseBag :: Parser Text Bag
 parseBag = pureP $ terase " bag" . terase " bags"
 
 parseInner :: Parser Text (Int, Bag)
-parseInner = tspanP isDigit &* (integerP &= pureP Text.tail &* parseBag)
+parseInner = tspanP isDigit &* integerP &= (pureP Text.tail &* parseBag)
 
 type Rule = (Bag, Set (Int, Bag))
 
@@ -23,7 +23,7 @@ parseInners =
   parseInner
 
 parseRule :: Parser Text Rule
-parseRule = tsplitP " contain " &* (parseBag &+ parseInners)
+parseRule = tsplitP " contain " &* parseBag &+ parseInners
 
 type Rules = Map Bag (Set (Int, Bag))
 

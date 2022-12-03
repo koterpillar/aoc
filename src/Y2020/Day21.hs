@@ -31,7 +31,7 @@ newtype I =
 type Food = (Set I, Set A)
 
 parseFood :: Parser Text Food
-parseFood = tsplitP " (contains " &* (parseIngredients &+ parseAllergens)
+parseFood = tsplitP " (contains " &* parseIngredients &+ parseAllergens
   where
     parseAllergens = Set.fromList . map A <$> pureP (terase ")") &* tsplitP ", "
     parseIngredients = Set.fromList . map I <$> wordsP

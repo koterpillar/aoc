@@ -15,12 +15,12 @@ data Instruction
 
 parseInstruction :: Parser Text Instruction
 parseInstruction =
-  (uncurry id) <$>
+  uncurry id <$>
   tspanP isLetter &*
-  (choiceP
-     ([(tshow d, Move d) | d <- allDir4] ++
-      [("L", RotateLeft), ("R", RotateRight), ("F", Forward)]) &=
-   integerP)
+  choiceP
+    ([(tshow d, Move d) | d <- allDir4] ++
+     [("L", RotateLeft), ("R", RotateRight), ("F", Forward)]) &=
+  integerP
 
 data Ship =
   Ship

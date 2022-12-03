@@ -32,10 +32,8 @@ parseTiles = lineGroupsP &* pureP (filter $ not . null) &** parseTile
 parseTile :: Parser [Text] Tile
 parseTile =
   uncurry Tile <$>
-  unconsP &*
-  (pureP (Text.replace "Tile " "" . Text.replace ":" "") &* integerP &=
-   pureP Text.unlines &*
-   dotGridP)
+  unconsP &* (pureP (Text.replace "Tile " "" . Text.replace ":" "") &* integerP) &=
+  (pureP Text.unlines &* dotGridP)
 
 newtype Edge =
   Edge [Bool]
