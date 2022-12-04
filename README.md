@@ -21,22 +21,14 @@ stack build --file-watch --exec 'main 2017 05'
 
 ## New day
 
-Create `src/Y20YY/DayDD.hs` with the following content:
+```shell
+./create_day
 
-```haskell
-module Y20YY.DayDD where
+# specific year, next day
+./create_day 2020
 
-import AOC
-import Utils
-
-solver = error "write solver"
-
-tasks = Tasks
-    20YY
-    DD
-    ShowExamples
-    (error "parser, see Miniparse")
-    [Task solver (error "example result")]
+# specific year and day
+./create_day 2020 6
 ```
 
 ## Formatting
