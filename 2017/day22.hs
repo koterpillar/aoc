@@ -1,16 +1,16 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE BangPatterns    #-}
+{-# LANGUAGE RankNTypes      #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 
-import Control.Lens
+import           Control.Lens
 
-import Data.Map.Strict (Map)
+import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
-import Debug.Trace
+import           Debug.Trace
 
-import Utils
+import           Utils
 
 data CellState
   = Clean
@@ -20,16 +20,16 @@ data CellState
   deriving (Ord, Eq)
 
 instance Show CellState where
-  show Clean = "."
+  show Clean    = "."
   show Infected = "#"
   show Weakened = "W"
-  show Flagged = "F"
+  show Flagged  = "F"
 
 toggle :: CellState -> CellState
-toggle Clean = Weakened
+toggle Clean    = Weakened
 toggle Weakened = Infected
 toggle Infected = Flagged
-toggle Flagged = Clean
+toggle Flagged  = Clean
 
 type Grid = Map Position2 CellState
 
@@ -53,13 +53,15 @@ gBounds g = (Position2 xmin ymin, Position2 xmax ymax)
     ys = map pY ps
     ps = Map.keys g
 
-data World = World
-  { _wGrid :: !Grid
-  , _wVirusPos :: !Position2
-  , _wVirusDir :: !Direction4
-  , _wTurnsInfected :: !Int
-  , _wSteps :: !Int
-  } deriving (Ord, Eq)
+data World =
+  World
+    { _wGrid          :: !Grid
+    , _wVirusPos      :: !Position2
+    , _wVirusDir      :: !Direction4
+    , _wTurnsInfected :: !Int
+    , _wSteps         :: !Int
+    }
+  deriving (Ord, Eq)
 
 makeLenses ''World
 
@@ -96,20 +98,18 @@ wAt p = wGrid . at p . non Clean
 step :: World -> World
 step (!w) =
   w & wAt curPos .~ newState & wVirusPos .~ newPos & wVirusDir .~ newDir &
-  wTurnsInfected +~
-  infected &
-  wSteps +~
-  progress 10000 (w ^. wSteps) 1
+  wTurnsInfected +~ infected &
+  wSteps +~ progress 10000 (w ^. wSteps) 1
   where
     curPos = w ^. wVirusPos
     curState = w ^. wAt curPos
     curDir = w ^. wVirusDir
     newDir =
       case curState of
-        Clean -> turnLeft curDir
+        Clean    -> turnLeft curDir
         Infected -> turnRight curDir
         Weakened -> curDir
-        Flagged -> reverse4 curDir
+        Flagged  -> reverse4 curDir
     newPos = walk newDir curPos
     newState = toggle curState
     infected =

@@ -1,26 +1,28 @@
-import Data.List
-import Data.List.Split
-import Data.List.Utils
+import           Data.List
+import           Data.List.Split
+import           Data.List.Utils
 
-import Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.Map        (Map)
+import qualified Data.Map        as Map
 
-import Data.Maybe
+import           Data.Maybe
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Set        (Set)
+import qualified Data.Set        as Set
 
-import Utils
+import           Utils
 
 type Name = String
 
 type Weight = Int
 
-data Program = Program
-  { pName :: Name
-  , pWeight :: Weight
-  , pChildren :: [Name]
-  } deriving (Eq, Show)
+data Program =
+  Program
+    { pName     :: Name
+    , pWeight   :: Weight
+    , pChildren :: [Name]
+    }
+  deriving (Eq, Show)
 
 parseLine :: String -> Program
 parseLine ln =
@@ -61,7 +63,8 @@ totalWeight pt name = do
   case discrepancy childWeights of
     Nothing -> pure $ pWeight p + sum childWeights
     Just (right, wrong) -> do
-      let ((offending, _):_) = filter (\(_, w) -> w == wrong) (zip (pChildren p) childWeights)
+      let ((offending, _):_) =
+            filter (\(_, w) -> w == wrong) (zip (pChildren p) childWeights)
       Left (offending, wrong - right)
 
 discrepancy :: Ord a => [a] -> Maybe (a, a) -- right and wrong
@@ -71,9 +74,9 @@ discrepancy [_, _] = Nothing
 discrepancy (x1:x2:x3:xs)
   | x1 == x2 =
     case filter (/= x1) (x3 : xs) of
-      [] -> Nothing
+      []      -> Nothing
       [wrong] -> Just (x1, wrong)
-      _ -> error "too many different values"
+      _       -> error "too many different values"
   | x1 == x3 = Just (x1, x2)
   | x2 == x3 = Just (x2, x1)
   | otherwise = error "too many different values"

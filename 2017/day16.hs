@@ -1,20 +1,20 @@
-import Data.Char
+import           Data.Char
 
-import Data.List
-import Data.List.Split
-import Data.List.Utils
+import           Data.List
+import           Data.List.Split
+import           Data.List.Utils
 
-import Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.Map        (Map)
+import qualified Data.Map        as Map
 
-import Data.Maybe
+import           Data.Maybe
 
-import Data.Monoid
+import           Data.Monoid
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Set        (Set)
+import qualified Data.Set        as Set
 
-import Utils
+import           Utils
 
 type Program = Char
 
@@ -32,10 +32,8 @@ instance Show Scene where
 
 data Move
   = Spin Int
-  | Exchange Int
-             Int
-  | Partner Program
-            Program
+  | Exchange Int Int
+  | Partner Program Program
   deriving (Ord, Eq, Show)
 
 ssize :: Scene -> Int
@@ -59,7 +57,7 @@ commands = map parseMove . splitOn ","
     parseMove ('s':x) = Spin $ read x
     parseMove ('x':rest) =
       let [a, b] = splitOn "/" rest
-      in Exchange (read a) (read b)
+       in Exchange (read a) (read b)
     parseMove ['p', a, '/', b] = Partner a b
 
 fmove :: [Move] -> Scene -> Scene
@@ -69,15 +67,14 @@ example :: [Move]
 example = commands "s1,x3/4,pe/b"
 
 data Moves =
-  Moves !(Map Int Int)
-        !(Map Program Program)
+  Moves !(Map Int Int) !(Map Program Program)
   deriving (Eq, Ord, Show)
 
 iempty :: Int -> Map Int Int
-iempty sz = idmap [0..sz - 1]
+iempty sz = idmap [0 .. sz - 1]
 
 pempty :: Int -> Map Program Program
-pempty sz = idmap $ take sz ['a'..]
+pempty sz = idmap $ take sz ['a' ..]
 
 emptyMoves :: Int -> Moves
 emptyMoves sz = Moves (iempty sz) (pempty sz)
@@ -92,8 +89,10 @@ toMoves sz = go $ emptyMoves sz
     go (Moves im pm) (Spin a:rs) = go (Moves (spin `mmult` im) pm) rs
       where
         spin = Map.fromList [(i, (i - a) `mod` sz) | i <- [0 .. sz - 1]]
-    go (Moves im pm) (Exchange a b:rs) = go (Moves (iswap sz a b `mmult` im) pm) rs
-    go (Moves im pm) (Partner a b:rs) = go (Moves im (pm `mmult` pswap sz a b)) rs
+    go (Moves im pm) (Exchange a b:rs) =
+      go (Moves (iswap sz a b `mmult` im) pm) rs
+    go (Moves im pm) (Partner a b:rs) =
+      go (Moves im (pm `mmult` pswap sz a b)) rs
 
 iswap :: Int -> Int -> Int -> Map Int Int
 iswap sz a b = Map.insert a b $ Map.insert b a $ iempty sz
@@ -122,7 +121,7 @@ powersof2 x =
       go x ((i, p):ps)
         | x >= p = i : go (x - p) ps
         | otherwise = go x ps
-  in go x candidates
+   in go x candidates
 
 bypowers :: (a -> a -> a) -> a -> a -> Int -> a
 bypowers mul one base x =
@@ -130,7 +129,7 @@ bypowers mul one base x =
       pwrs = iterate sqr base
       needed = powersof2 x
       neededVals = map (\n -> pwrs !! n) needed
-  in foldr mul one neededVals
+   in foldr mul one neededVals
 
 mmpower' :: Int -> Int -> Moves -> Moves
 mmpower' sz n x = bypowers mmmult (emptyMoves sz) x n

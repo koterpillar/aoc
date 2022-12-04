@@ -1,16 +1,16 @@
-import Data.List
-import Data.List.Split
-import Data.List.Utils
+import           Data.List
+import           Data.List.Split
+import           Data.List.Utils
 
-import Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.Map        (Map)
+import qualified Data.Map        as Map
 
-import Data.Maybe
+import           Data.Maybe
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Set        (Set)
+import qualified Data.Set        as Set
 
-import Utils
+import           Utils
 
 type City = String
 

@@ -1,11 +1,11 @@
-import Data.Char
+import           Data.Char
 
-import Data.List.Split
+import           Data.List.Split
 
-import Data.Map.Strict (Map)
+import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
-import Data.Maybe
+import           Data.Maybe
 
 data Dir6
   = N
@@ -54,9 +54,9 @@ cancelOut dir path =
   let opp = opp6 dir
       there = pGet dir path
       back = pGet opp path
-  in if there >= back
-       then pSet opp 0 $ pSet dir (there - back) path
-       else path
+   in if there >= back
+        then pSet opp 0 $ pSet dir (there - back) path
+        else path
 
 pOptTriangle :: Path -> Path
 pOptTriangle path = foldr cancelTriangle path all6
@@ -69,7 +69,7 @@ cancelTriangle dir1 path =
       x2 = pGet dir2 path
       xR = pGet dirR path
       xmin = min x1 x2
-  in pSet dirR (xR + xmin) $ pSet dir1 (x1 - xmin) $ pSet dir2 (x2 - xmin) path
+   in pSet dirR (xR + xmin) $ pSet dir1 (x1 - xmin) $ pSet dir2 (x2 - xmin) path
 
 replTuple :: (a, Int) -> [a]
 replTuple (a, n) = replicate n a

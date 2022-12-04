@@ -1,31 +1,33 @@
 {-# LANGUAGE RankNTypes #-}
-import Control.Arrow
-import Control.Lens
 
-import Data.List
-import Data.List.Extra
+import           Control.Arrow
+import           Control.Lens
 
-import Data.Either
+import           Data.List
+import           Data.List.Extra
 
-import Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.Either
 
-import Data.Ord
+import           Data.Map           (Map)
+import qualified Data.Map           as Map
 
-import Data.Maybe
+import           Data.Ord
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Maybe
 
-import Text.Parsec
-import Text.Parsec.Number
-import Text.Parsec.String
+import           Data.Set           (Set)
+import qualified Data.Set           as Set
 
-import Utils
+import           Text.Parsec
+import           Text.Parsec.Number
+import           Text.Parsec.String
+
+import           Utils
 
 chunksOf23 :: [a] -> [[a]]
-chunksOf23 lst | length lst `mod` 2 == 0 = chunksOf 2 lst
-               | otherwise = chunksOf 3 lst
+chunksOf23 lst
+  | length lst `mod` 2 == 0 = chunksOf 2 lst
+  | otherwise = chunksOf 3 lst
 
 chunked2' :: (forall b. [b] -> [[b]]) -> Iso' [[a]] [[[[a]]]]
 chunked2' chunking =
@@ -39,9 +41,11 @@ chunked2 n = chunked2' $ chunksOf n
 chunked2_23 :: Iso' [[a]] [[[[a]]]]
 chunked2_23 = chunked2' chunksOf23
 
-newtype Pattern = Pattern
-  { pItems :: [[Bool]]
-  } deriving (Eq, Ord)
+newtype Pattern =
+  Pattern
+    { pItems :: [[Bool]]
+    }
+  deriving (Eq, Ord)
 
 pIso :: Iso' Pattern [[Bool]]
 pIso = iso pItems Pattern
@@ -49,10 +53,10 @@ pIso = iso pItems Pattern
 iIso :: Iso' Bool Char
 iIso = iso b c
   where
-    b True = '#'
+    b True  = '#'
     b False = '.'
     c '#' = True
-    c _ = False
+    c _   = False
 
 instance Show Pattern where
   show p = p ^. pIso . mapping (mapping iIso) . to unlines
@@ -60,9 +64,10 @@ instance Show Pattern where
 pSize :: Pattern -> Int
 pSize (Pattern p) = length p
 
-newtype Grid = Grid
-  { gGrid :: [[Bool]]
-  }
+newtype Grid =
+  Grid
+    { gGrid :: [[Bool]]
+    }
 
 gIso :: Iso' Grid [[Bool]]
 gIso = iso gGrid Grid
@@ -76,17 +81,18 @@ gSize (Grid g) = length g
 gPatternSize :: Grid -> Int
 gPatternSize g =
   let gs = gSize g
-  in if gs `mod` 2 == 0
-       then 2
-       else 3
+   in if gs `mod` 2 == 0
+        then 2
+        else 3
 
 gPatterns :: Iso' Grid [[Pattern]]
 gPatterns = gIso . chunked2_23 . mapping (mapping (from pIso))
 
-data Rule = Rule
-  { rFrom :: Pattern
-  , rTo :: Pattern
-  }
+data Rule =
+  Rule
+    { rFrom :: Pattern
+    , rTo   :: Pattern
+    }
 
 parseRule :: Parser Rule
 parseRule = Rule <$> parsePattern <*> (string " => " *> parsePattern)

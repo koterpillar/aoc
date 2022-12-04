@@ -1,30 +1,32 @@
 {-# LANGUAGE DeriveFunctor #-}
 
-import Data.List
+import           Data.List
 
-import Data.Either
+import           Data.Either
 
-import Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.Map           (Map)
+import qualified Data.Map           as Map
 
-import Data.Ord
+import           Data.Ord
 
-import Data.Maybe
+import           Data.Maybe
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Set           (Set)
+import qualified Data.Set           as Set
 
-import Text.Parsec
-import Text.Parsec.Number
-import Text.Parsec.String
+import           Text.Parsec
+import           Text.Parsec.Number
+import           Text.Parsec.String
 
-import Utils
+import           Utils
 
-data R3 = R3
-  { r3x :: !Int
-  , r3y :: !Int
-  , r3z :: !Int
-  } deriving (Ord, Eq, Show)
+data R3 =
+  R3
+    { r3x :: !Int
+    , r3y :: !Int
+    , r3z :: !Int
+    }
+  deriving (Ord, Eq, Show)
 
 r3add :: R3 -> R3 -> R3
 r3add (R3 x1 y1 z1) (R3 x2 y2 z2) = R3 (x1 + x2) (y1 + y2) (z1 + z2)
@@ -32,11 +34,13 @@ r3add (R3 x1 y1 z1) (R3 x2 y2 z2) = R3 (x1 + x2) (y1 + y2) (z1 + z2)
 r3sub :: R3 -> R3 -> R3
 r3sub (R3 x1 y1 z1) (R3 x2 y2 z2) = R3 (x1 - x2) (y1 - y2) (z1 - z2)
 
-data Pt v = Pt
-  { ppos :: !v
-  , pvel :: !v
-  , pacc :: !v
-  } deriving (Eq, Show, Functor)
+data Pt v =
+  Pt
+    { ppos :: !v
+    , pvel :: !v
+    , pacc :: !v
+    }
+  deriving (Eq, Show, Functor)
 
 type P3 = Pt R3
 
@@ -100,7 +104,7 @@ receding p1 p2 = receding' $ closeness $ p3sub p1 p2
   where
     receding' (da, dv, dp) =
       let vals = [da, dv, dp]
-      in all (>= 0) vals && any (> 0) vals
+       in all (>= 0) vals && any (> 0) vals
 
 collide :: Maybe Int -> P3 -> P3 -> Maybe Int
 collide maxT p1 p2 = go p1 p2 0
@@ -123,5 +127,5 @@ survivors pts = map fst $ filter (not . dies) pts'
     collideL (_, Nothing) _ = False
     collideL (pt1, Just l1) (pt2, Just l2) =
       let lmin = min l1 l2
-      in pt1 /= pt2 && isJust (collide (Just lmin) pt1 pt2)
+       in pt1 /= pt2 && isJust (collide (Just lmin) pt1 pt2)
     dies ptl = any (collideL ptl) pts'

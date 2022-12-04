@@ -1,9 +1,9 @@
 module Day06 where
 
-import qualified Data.Set as S
 import qualified Data.Map.Strict as M
+import qualified Data.Set        as S
 
-import Utils
+import           Utils
 
 type Bank = Int
 

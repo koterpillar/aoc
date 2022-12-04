@@ -1,23 +1,23 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE BangPatterns    #-}
+{-# LANGUAGE RankNTypes      #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-import Control.Lens
+import           Control.Lens
 
-import Data.List.Utils
+import           Data.List.Utils
 
-import Data.Map.Strict (Map)
+import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
-import Data.Maybe
+import           Data.Maybe
 
-import Data.Monoid
+import           Data.Monoid
 
-import Data.IntSet (IntSet)
-import qualified Data.IntSet as IntSet
+import           Data.IntSet     (IntSet)
+import qualified Data.IntSet     as IntSet
 
-import Graph
-import Utils
+import           Graph
+import           Utils
 
 type Position = Int
 
@@ -30,11 +30,13 @@ data Direction
   | TMRigh
   deriving (Eq, Ord, Show)
 
-data TM = TM
-  { _tmPosition :: !Position
-  , _tmTape :: !IntSet
-  , _tmState :: !TMState
-  } deriving (Eq, Ord)
+data TM =
+  TM
+    { _tmPosition :: !Position
+    , _tmTape     :: !IntSet
+    , _tmState    :: !TMState
+    }
+  deriving (Eq, Ord)
 
 makeLenses ''TM
 

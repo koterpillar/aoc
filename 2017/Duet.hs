@@ -1,17 +1,17 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes      #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Duet where
 
-import Control.Lens
+import           Control.Lens
 
-import Data.Either
+import           Data.Either
 
-import Data.List.Split
-import qualified Data.Map as M
-import Data.Maybe
+import           Data.List.Split
+import qualified Data.Map        as M
+import           Data.Maybe
 
-import Utils
+import           Utils
 
 type Register = Char
 
@@ -26,17 +26,12 @@ type Offset = Int
 
 data Instruction
   = Snd Expr
-  | Set Expr
-        Expr
-  | Add Expr
-        Expr
-  | Mul Expr
-        Expr
-  | Mod Expr
-        Expr
+  | Set Expr Expr
+  | Add Expr Expr
+  | Mul Expr Expr
+  | Mod Expr Expr
   | Rcv Expr
-  | Jgz Expr
-        Expr
+  | Jgz Expr Expr
   deriving (Ord, Eq, Show)
 
 type Registers = M.Map Register Value
@@ -45,27 +40,30 @@ type Program = [Instruction]
 
 type Address = Int
 
-data Computer = Computer
-  { _cRegisters :: Registers
-  , _cProgram :: Program
-  , _cIP :: Address
-  } deriving (Eq, Ord, Show)
+data Computer =
+  Computer
+    { _cRegisters :: Registers
+    , _cProgram   :: Program
+    , _cIP        :: Address
+    }
+  deriving (Eq, Ord, Show)
 
 makeLenses ''Computer
 
 -- a computer awaiting a value that will be put into given register
 data Paused =
-  Paused Register
-         Computer
+  Paused Register Computer
   deriving (Eq, Ord, Show)
 
-data Duet = Duet
-  { _dComp0 :: Either Paused Computer
-  , _dComp1 :: Either Paused Computer
-  , _dSentBy0 :: [Value]
-  , _dSentBy1 :: [Value]
-  , _dTotalSent1 :: Int
-  } deriving (Eq, Ord, Show)
+data Duet =
+  Duet
+    { _dComp0      :: Either Paused Computer
+    , _dComp1      :: Either Paused Computer
+    , _dSentBy0    :: [Value]
+    , _dSentBy1    :: [Value]
+    , _dTotalSent1 :: Int
+    }
+  deriving (Eq, Ord, Show)
 
 makeLenses ''Duet
 
@@ -75,12 +73,12 @@ resume v (Paused r c) = cAdvance $ (cRegister r .~ v) c
 bootDuet :: Program -> Duet
 bootDuet p =
   Duet
-  { _dComp0 = Right $ boot 0 p
-  , _dComp1 = Right $ boot 1 p
-  , _dSentBy0 = []
-  , _dSentBy1 = []
-  , _dTotalSent1 = 0
-  }
+    { _dComp0 = Right $ boot 0 p
+    , _dComp1 = Right $ boot 1 p
+    , _dSentBy0 = []
+    , _dSentBy1 = []
+    , _dTotalSent1 = 0
+    }
 
 registers :: [Register]
 registers = ['a' .. 'z']
@@ -95,7 +93,7 @@ boot programID instructions =
 stopped :: Computer -> Bool
 stopped c =
   let ip = c ^. cIP
-  in ip < 0 || ip >= length (c ^. cProgram)
+   in ip < 0 || ip >= length (c ^. cProgram)
 
 unsafeMaybeLens :: Iso' (Maybe a) a
 unsafeMaybeLens = iso fromJust Just
@@ -112,7 +110,7 @@ cAdvance = cIP +~ 1
 eval :: Computer -> Expr -> Value
 eval comp expr =
   case expr of
-    (SValue val) -> val
+    (SValue val)    -> val
     (SRegister reg) -> comp ^. cRegister reg
 
 type PushPull = Either Paused (Maybe Value, Computer)
@@ -143,7 +141,7 @@ duetStopped d =
   where
     stoppedPair (Right c) _ = stopped c
     stoppedPair (Left _) [] = True
-    stoppedPair (Left _) _ = False
+    stoppedPair (Left _) _  = False
 
 stepDuet :: Duet -> Duet
 stepDuet d =
@@ -154,7 +152,7 @@ stepDuet d =
           case d ^. dComp0 of
             Left p0 ->
               case d ^. dSentBy1 of
-                [] -> error "deadlock in step!"
+                []     -> error "deadlock in step!"
                 (v:vs) -> d & dComp0 .~ Right (resume v p0) & dSentBy1 .~ vs
             Right c0 ->
               case step c0 of
@@ -178,15 +176,15 @@ runDuet d
 parse :: [String] -> Program
 parse = map (parseInstr . splitOn " ")
   where
-    parseInstr ["snd", src] = Snd (parseExpr src)
+    parseInstr ["snd", src]      = Snd (parseExpr src)
     parseInstr ["set", src, dst] = Set (parseExpr src) (parseExpr dst)
     parseInstr ["add", src, dst] = Add (parseExpr src) (parseExpr dst)
     parseInstr ["mul", src, dst] = Mul (parseExpr src) (parseExpr dst)
     parseInstr ["mod", src, dst] = Mod (parseExpr src) (parseExpr dst)
     parseInstr ["jgz", src, dst] = Jgz (parseExpr src) (parseExpr dst)
-    parseInstr ["rcv", reg] = Rcv $ parseExpr reg
+    parseInstr ["rcv", reg]      = Rcv $ parseExpr reg
     parseReg [r] = r
-    parseReg e = error $ e ++ " is not a register"
+    parseReg e   = error $ e ++ " is not a register"
     parseExpr src =
       if head src `elem` registers
         then SRegister $ parseReg src

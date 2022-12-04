@@ -1,17 +1,17 @@
-import Data.List
-import Data.List.Utils
+import           Data.List
+import           Data.List.Utils
 
-import Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.Map        (Map)
+import qualified Data.Map        as Map
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Set        (Set)
+import qualified Data.Set        as Set
 
-import Data.Maybe
+import           Data.Maybe
 
-import Debug.Trace
+import           Debug.Trace
 
-import Utils
+import           Utils
 
 type Grid = Map Position2 Char
 
@@ -25,7 +25,7 @@ path :: Grid -> String
 path g = go g (startPos g) S
 
 pathLetters :: Grid -> String
-pathLetters = filter (`elem` ['A'..'Z']) . path
+pathLetters = filter (`elem` ['A' .. 'Z']) . path
 
 pathLen :: Grid -> Int
 pathLen = length . path
@@ -33,7 +33,7 @@ pathLen = length . path
 go :: Grid -> Position2 -> Direction4 -> String
 go g pos dir =
   case Map.lookup pos g of
-    Nothing -> []
+    Nothing  -> []
     Just '+' -> '+' : turnFrom pos dir
     Just ltr -> ltr : keepGoing pos dir
   where
@@ -48,11 +48,11 @@ go g pos dir =
           canTurn (W, _, Just '|') = False
           canTurn (N, _, Just '-') = False
           canTurn (S, _, Just '-') = False
-          canTurn (_, _, Nothing) = False
-          canTurn _ = True
-      in case candidates of
-           [(newDir, newPos, _)] -> go g newPos newDir
-           _ -> error $ show candidates
+          canTurn (_, _, Nothing)  = False
+          canTurn _                = True
+       in case candidates of
+            [(newDir, newPos, _)] -> go g newPos newDir
+            _                     -> error $ show candidates
 
 readGrid :: IO Grid
 readGrid = parseGrid <$> readLines
@@ -64,7 +64,7 @@ parseGrid = foldr (uncurry parseLine) Map.empty . zip [0 ..]
     parseLine y str g = foldr (uncurry parseChar) g $ zip [0 ..] str
       where
         parseChar x ' ' = id
-        parseChar x ch = Map.insert (Position2 x y) ch
+        parseChar x ch  = Map.insert (Position2 x y) ch
 
 example :: Grid
 example =

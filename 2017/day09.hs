@@ -1,19 +1,19 @@
-import Data.List.Utils
+import           Data.List.Utils
 
-import Data.Either
+import           Data.Either
 
-import Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.Map           (Map)
+import qualified Data.Map           as Map
 
-import Data.Maybe
+import           Data.Maybe
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Set           (Set)
+import qualified Data.Set           as Set
 
-import Text.Parsec
-import Text.Parsec.String
+import           Text.Parsec
+import           Text.Parsec.String
 
-import Utils
+import           Utils
 
 newtype Garbage =
   Garbage String
@@ -54,10 +54,10 @@ totalScore = ts' 1
 totalGarbage :: Group -> Int
 totalGarbage = tg . Left
   where
-    tg (Left (Group cs)) = sum $ map tg cs
+    tg (Left (Group cs))   = sum $ map tg cs
     tg (Right (Garbage g)) = length g
 
 parsegroup :: String -> Group
 parsegroup s =
   let (Right g) = parse group "" s
-  in g
+   in g

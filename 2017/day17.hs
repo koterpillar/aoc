@@ -1,33 +1,37 @@
 #!/usr/bin/env stack
 -- stack runghc
-import Control.Applicative
-import Control.Monad
+import           Control.Applicative
+import           Control.Monad
 
-import Data.Char
+import           Data.Char
 
-import Data.List
-import Data.List.Split
-import Data.List.Utils
+import           Data.List
+import           Data.List.Split
+import           Data.List.Utils
 
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
+import           Data.Map.Strict     (Map)
+import qualified Data.Map.Strict     as Map
 
-import Data.Maybe
+import           Data.Maybe
 
-import Data.Monoid
+import           Data.Monoid
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Set            (Set)
+import qualified Data.Set            as Set
 
-import System.Environment (getArgs)
+import           System.Environment  (getArgs)
 
-import Utils
+import           Utils
 
 data Tree a
-  = Tree { tSizeCache :: !Int
-         , tLeft :: !(Tree a)
-         , tRight :: !(Tree a) }
-  | Leaf { tValue :: !a }
+  = Tree
+      { tSizeCache :: !Int
+      , tLeft      :: !(Tree a)
+      , tRight     :: !(Tree a)
+      }
+  | Leaf
+      { tValue :: !a
+      }
   deriving (Show)
 
 tSize :: Tree a -> Int
@@ -54,7 +58,7 @@ tInsertAfter n v t@Tree {}
       (tInsertAfter (n - tSize (tLeft t)) v (tRight t))
 
 tFlatten :: Tree a -> [a]
-tFlatten (Leaf v) = [v]
+tFlatten (Leaf v)     = [v]
 tFlatten (Tree _ l r) = tFlatten l <> tFlatten r
 
 tIndexOf :: Eq a => a -> Tree a -> Maybe Int
@@ -66,10 +70,11 @@ tIndexOf a t@Tree {} = i1 <|> i2
     i1 = tIndexOf a (tLeft t)
     i2 = (+ tSize (tLeft t)) <$> tIndexOf a (tRight t)
 
-data SpinList = SpinList
-  { slCurrent :: !Int
-  , slContents :: !(Tree Int)
-  }
+data SpinList =
+  SpinList
+    { slCurrent  :: !Int
+    , slContents :: !(Tree Int)
+    }
 
 slLength :: SpinList -> Int
 slLength = tSize . slContents

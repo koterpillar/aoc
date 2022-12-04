@@ -1,29 +1,30 @@
 {-# LANGUAGE RecordWildCards #-}
 
-import Data.List
-import Data.List.Split
-import Data.List.Utils
+import           Data.List
+import           Data.List.Split
+import           Data.List.Utils
 
-import Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.Map        (Map)
+import qualified Data.Map        as Map
 
-import Data.Maybe
+import           Data.Maybe
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Set        (Set)
+import qualified Data.Set        as Set
 
-import Utils
+import           Utils
 
 type Register = String
 
 type Value = Int
 
-data Instr = Instr
-  { iReg :: Register
-  , iInc :: Value
-  , iConditionReg :: Register
-  , iConditionFunc :: Value -> Bool
-  }
+data Instr =
+  Instr
+    { iReg           :: Register
+    , iInc           :: Value
+    , iConditionReg  :: Register
+    , iConditionFunc :: Value -> Bool
+    }
 
 parseInstr :: String -> Instr
 parseInstr str = Instr {..}
@@ -38,8 +39,8 @@ parseInstr str = Instr {..}
     condval = read condvalstr
     iConditionFunc =
       case condstr of
-        ">" -> (> condval)
-        "<" -> (< condval)
+        ">"  -> (> condval)
+        "<"  -> (< condval)
         ">=" -> (>= condval)
         "<=" -> (<= condval)
         "==" -> (== condval)

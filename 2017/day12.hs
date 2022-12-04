@@ -1,17 +1,17 @@
-import Data.List.Utils
+import           Data.List.Utils
 
-import Data.Map.Strict (Map)
+import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
-import Data.Maybe
+import           Data.Maybe
 
-import Data.Monoid
+import           Data.Monoid
 
-import Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.Set        (Set)
+import qualified Data.Set        as Set
 
-import Graph
-import Utils
+import           Graph
+import           Utils
 
 type Program = Int
 
@@ -28,5 +28,5 @@ parsePipes =
     readPipeLine (p':_:ps') =
       let p = read p'
           ps = map read ps'
-      in [(p, Set.singleton p2) | p2 <- ps] ++
-         [(p2, Set.singleton p) | p2 <- ps]
+       in [(p, Set.singleton p2) | p2 <- ps] ++
+          [(p2, Set.singleton p) | p2 <- ps]
