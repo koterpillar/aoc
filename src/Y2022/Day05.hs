@@ -38,10 +38,7 @@ dropLast ls = take (length ls - 1) ls
 
 listsP :: Parser Text [Maybe Char]
 listsP =
-  pureP (map (maybespace . headE "listsP" . tail) . chunksOf 4 . Text.unpack)
-  where
-    maybespace ' ' = Nothing
-    maybespace c   = Just c
+  pureP (map (toNothing ' ' . headE "listsP" . tail) . chunksOf 4 . Text.unpack)
 
 parser :: Parser Text Input
 parser = lineGroupsP &* stacksP &+ traverseP parseInstruction

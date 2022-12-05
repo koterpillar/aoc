@@ -144,11 +144,8 @@ findUnmatched cid d =
 
 deleteTile :: GridLink -> State GridLinks GridLink
 deleteTile l@(GridLink (Tile i _) _) = do
-  modify $ Map.mapMaybe $ removeEmpty . filter ((/= i) . glId)
+  modify $ Map.mapMaybe $ toNothing [] . filter ((/= i) . glId)
   pure l
-  where
-    removeEmpty [] = Nothing
-    removeEmpty ls = Just ls
 
 findNW :: Int -> State GridLinks GridLink
 findNW cid = do

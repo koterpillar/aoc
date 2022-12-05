@@ -183,6 +183,11 @@ zipWithTail f = map (uncurry f) . zipTail
 mostCommon :: Ord a => [a] -> Maybe a
 mostCommon = fmap snd . maybeMaximum . map swap . Map.toList . mapFromListCount
 
+toNothing :: Eq a => a -> a -> Maybe a
+toNothing a b
+  | a == b = Nothing
+  | otherwise = Just b
+
 fromJustE :: String -> Maybe a -> a
 fromJustE = fromMaybe . error
 
