@@ -32,9 +32,7 @@ parseInstruction =
 stacksP :: Parser [Text] Stacks
 stacksP =
   Map.fromList . zip [1 ..] . map catMaybes . transpose <$>
-  pureP dropLast &* traverseP listsP
-
-dropLast ls = take (length ls - 1) ls
+  pureP init &* traverseP listsP
 
 listsP :: Parser Text [Maybe Char]
 listsP =
