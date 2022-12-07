@@ -89,4 +89,16 @@ part1 = sum . map dirSize . findDirs isSmall . mkFileTree
     isSmall File {} = False
     isSmall d       = dirSize d <= 100000
 
-tasks = Tasks 2022 7 (CodeBlock 1) parser [Task part1 95437]
+part2 :: Input -> Int
+part2 input = dmin
+  where
+    root = mkFileTree input
+    totalSpace = 70000000
+    usedSpace = dirSize root
+    freeNeeded = 30000000
+    enough d@Dir {} = totalSpace - (usedSpace - dirSize d) >= freeNeeded
+    enough _        = False
+    dmin = minimum $ map dirSize $ findDirs enough root
+
+tasks =
+  Tasks 2022 7 (CodeBlock 1) parser [Task part1 95437, Task part2 24933642]
