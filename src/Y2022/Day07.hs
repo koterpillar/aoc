@@ -23,6 +23,10 @@ data FileDir
 emptyDir :: FileDir
 emptyDir = Dir mempty
 
+dContents :: FileDir -> [FileDir]
+dContents (File {}) = []
+dContents (Dir c)   = Map.elems c
+
 data Command
   = CD Text
   | LS FileDir
@@ -53,22 +57,36 @@ parser :: Parser Text Input
 parser = tsplitP "$ " &* pureP (filter $ not . Text.null) &** linesP &* cmdP
 
 mkFileTree :: Input -> FileDir
-mkFileTree = snd . foldl' go (undefined, emptyDir)
+mkFileTree = snd . foldl' parseCmd (undefined, emptyDir)
 
 type Session = ([Text], FileDir)
 
-go :: Session -> Command -> Session
-go (_, dir) (CD "/")      = ([], dir)
-go (path, dir) (CD "..")  = (tail path, dir)
-go (path, dir) (CD name)  = (name : path, dir)
-go (path, dir) (LS files) = (path, go' (reverse path) files dir)
+parseCmd :: Session -> Command -> Session
+parseCmd (_, dir) (CD "/")      = ([], dir)
+parseCmd (path, dir) (CD "..")  = (tail path, dir)
+parseCmd (path, dir) (CD name)  = (name : path, dir)
+parseCmd (path, dir) (LS files) = (path, fillDir (reverse path) files dir)
 
-go' :: [Text] -> FileDir -> FileDir -> FileDir
-go' [] files _ = files
-go' (name:path) files (Dir t) =
-  Dir $ Map.alter (Just . go' path files . fromMaybe emptyDir) name t
+fillDir :: [Text] -> FileDir -> FileDir -> FileDir
+fillDir [] files _ = files
+fillDir (name:path) files (Dir t) =
+  Dir $ Map.alter (Just . fillDir path files . fromMaybe emptyDir) name t
+
+dirSize :: FileDir -> Int
+dirSize (File size) = size
+dirSize (Dir c)     = sum $ map dirSize $ Map.elems c
+
+findDirs :: (FileDir -> Bool) -> FileDir -> [FileDir]
+findDirs p r = execState (go r) []
+  where
+    nom :: FileDir -> State [FileDir] ()
+    nom f = when (p f) $ modify (f :)
+    go d = nom d >> traverse_ go (dContents d)
 
 part1 :: Input -> Int
-part1 = error . show . mkFileTree
+part1 = sum . map dirSize . findDirs isSmall . mkFileTree
+  where
+    isSmall File {} = False
+    isSmall d       = dirSize d <= 100000
 
 tasks = Tasks 2022 7 (CodeBlock 1) parser [Task part1 95437]
