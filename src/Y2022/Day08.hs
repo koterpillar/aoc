@@ -10,18 +10,18 @@ import           Utils
 
 type Grid = Grid2 Int
 
-visibleTrees :: Grid -> Direction4 -> Position2 -> Int -> Set Position2
-visibleTrees g d p h =
+visibleDir :: Grid -> Direction4 -> Position2 -> Int -> Grid
+visibleDir g d p h =
   case Map.lookup p g of
     Nothing -> mempty
     Just ph
       | ph < h -> mempty
-      | ph == h -> visibleTrees g d (walk d p) ph
-      | otherwise -> Set.insert p $ visibleTrees g d (walk d p) ph
+      | ph == h -> visibleDir g d (walk d p) ph
+      | otherwise -> Map.insert p h $ visibleDir g d (walk d p) ph
 
-part1 :: Grid -> Int
-part1 g =
-  length $ Set.unions [visibleTrees g d p (-1) | (d, ps) <- pds, p <- ps]
+visibleInGrid :: Grid -> Grid
+visibleInGrid g =
+  foldl' Map.union mempty $ [visibleDir g d p (-1) | (d, ps) <- pds, p <- ps]
   where
     (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
     pds =
@@ -30,5 +30,25 @@ part1 g =
       , (W, [Position2 xmax y | y <- [ymin .. ymax]])
       , (E, [Position2 xmin y | y <- [ymin .. ymax]])
       ]
+
+type VGrid = Grid2 (Int, Bool)
+
+withVisible :: Grid -> Grid -> VGrid
+withVisible g vg = Map.mapWithKey go g
+  where
+    go k v = (v, Map.member k vg)
+
+instance GridItem (Int, Bool) where
+  showInGrid (i, True)  = head $ show i
+  showInGrid (i, False) = "₀₁₂₃₄₅₆₇₈₉" !! i
+
+traceWithVisible :: Grid -> Grid
+traceWithVisible g = ttrace (displayG vv) vg
+  where
+    vg = visibleInGrid g
+    vv = withVisible g vg
+
+part1 :: Grid -> Int
+part1 = length . Map.keysSet . traceWithVisible
 
 tasks = Tasks 2022 8 (CodeBlock 0) digitGridP [Task part1 21]
