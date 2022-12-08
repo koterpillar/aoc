@@ -51,4 +51,18 @@ traceWithVisible g = ttrace (displayG vv) vg
 part1 :: Grid -> Int
 part1 = length . Map.keysSet . traceWithVisible
 
-tasks = Tasks 2022 8 (CodeBlock 0) digitGridP [Task part1 21]
+scenicScore :: Grid -> Position2 -> Int
+scenicScore g p = product $ [go g d (walk d p) | d <- [N, S, E, W]]
+  where
+    h0 = fromJustE "h0" $ Map.lookup p g
+    go g d p =
+      case Map.lookup p g of
+        Nothing -> 0
+        Just h
+          | h >= h0 -> 1
+          | otherwise -> 1 + go g d (walk d p)
+
+part2 :: Grid -> Int
+part2 g = maximum $ map (scenicScore g) $ Map.keys g
+
+tasks = Tasks 2022 8 (CodeBlock 0) digitGridP [Task part1 21, Task part2 8]
