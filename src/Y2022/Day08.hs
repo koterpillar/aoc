@@ -15,9 +15,9 @@ visibleDir g d p h =
   case Map.lookup p g of
     Nothing -> mempty
     Just ph
-      | ph < h -> mempty
-      | ph == h -> visibleDir g d (walk d p) ph
-      | otherwise -> Map.insert p h $ visibleDir g d (walk d p) ph
+      | ph <= h -> rest
+      | otherwise -> Map.insert p h rest
+      where rest = visibleDir g d (walk d p) (max h ph)
 
 visibleInGrid :: Grid -> Grid
 visibleInGrid g =
