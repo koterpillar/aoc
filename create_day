@@ -17,7 +17,7 @@ if [ $# -gt 0 ]
 then
   DAY=$1
 else
-  LAST_DAY=$(find "$DIR" -name 'Day*.hs' | sed -E 's!.+Day!!;s!\.hs!!' | sort -n | tail -n 1)
+  LAST_DAY=$(find "$DIR" -name 'Day*.hs' | sed -E 's!.+Day0*!!;s!\.hs!!' | sort -n | tail -n 1)
   DAY=$((LAST_DAY + 1))
 fi
 
