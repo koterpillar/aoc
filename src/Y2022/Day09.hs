@@ -22,21 +22,21 @@ foldCollect :: (b -> a -> a) -> a -> [b] -> [a]
 foldCollect _ a []     = [a]
 foldCollect f a (b:bs) = a : foldCollect f (f b a) bs
 
-dragTowards :: Int -> Int -> Int
-dragTowards a b
+towards :: Int -> Int -> Int
+towards a b
   | b > a = pred b
   | b < a = succ b
   | otherwise = b
 
-dragTowardsP :: Position2 -> Position2 -> Position2
-dragTowardsP p1@(Position2 x1 y1) p2@(Position2 x2 y2)
+dragTowards :: Position2 -> Position2 -> Position2
+dragTowards p1@(Position2 x1 y1) p2@(Position2 x2 y2)
   | hammingDistance p1 p2 <= 1 = p2
-  | otherwise = Position2 (dragTowards x1 x2) (dragTowards y1 y2)
+  | otherwise = Position2 (towards x1 x2) (towards y1 y2)
 
 dragRope :: Direction4 -> RopeState -> RopeState
-dragRope d (h:t) =
-  let r' = walk d h : zipWith dragTowardsP r' t
-   in r'
+dragRope d (h:t) = r
+  where
+    r = walk d h : zipWith dragTowards r t
 
 mkSteps :: [Move] -> [Direction4]
 mkSteps = concatMap $ \(d, n) -> replicate n d
