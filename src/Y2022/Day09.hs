@@ -13,10 +13,10 @@ type Move = (Direction4, Int)
 parser :: Parser Text [Move]
 parser = linesP &** wordsP &* ((charP &* choiceEBP "RULD") &+ integerP)
 
-type RopeState = (Position2, Position2)
+type RopeState = [Position2]
 
-initRS :: RopeState
-initRS = (Position2 0 0, Position2 0 0)
+initRope :: Int -> RopeState
+initRope n = replicate n $ Position2 0 0
 
 foldCollect :: (b -> a -> a) -> a -> [b] -> [a]
 foldCollect _ a []     = [a]
@@ -34,19 +34,24 @@ dragTowardsP p1@(Position2 x1 y1) p2@(Position2 x2 y2)
   | otherwise = Position2 (dragTowards x1 x2) (dragTowards y1 y2)
 
 dragRope :: Direction4 -> RopeState -> RopeState
-dragRope d (h, t) = (h', t')
-  where
-    h' = walk d h
-    t' = dragTowardsP h' t
+dragRope d (h:t) =
+  let r' = walk d h : zipWith dragTowardsP r' t
+   in r'
 
 mkSteps :: [Move] -> [Direction4]
 mkSteps = concatMap $ \(d, n) -> replicate n d
 
-part1 :: [Move] -> Int
-part1 =
+traceTail :: Int -> [Move] -> Int
+traceTail n =
   length .
   ttraceF (displayG . fromSetG) .
-  Set.fromList . map snd . foldCollect dragRope initRS . mkSteps
+  Set.fromList . map last . foldCollect dragRope (initRope n) . mkSteps
+
+part1 :: [Move] -> Int
+part1 = traceTail 2
+
+part2 :: [Move] -> Int
+part2 = traceTail 10
 
 tasks =
   Tasks
@@ -56,11 +61,12 @@ tasks =
     parser
     [ Assert
         "drag rope 1"
-        (Position2 2 0, Position2 1 0)
-        (dragRope E (Position2 1 0, Position2 0 0))
+        [Position2 2 0, Position2 1 0]
+        (dragRope E [Position2 1 0, Position2 0 0])
     , Assert
         "drag rope 2"
-        (Position2 2 1, Position2 1 1)
-        (dragRope E (Position2 1 1, Position2 0 0))
+        [Position2 2 1, Position2 1 1]
+        (dragRope E [Position2 1 1, Position2 0 0])
     , Task part1 13
+    , TaskScraper (CodeBlock 7) part2 36
     ]
