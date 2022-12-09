@@ -160,6 +160,9 @@ fromMatrixG = mapFromList . concat . zipWith makeLine [0 ..]
     makeLine y = zipWith (makePoint y) [0 ..]
     makePoint y x v = (Position2 x y, v)
 
+fromSetG :: Set Position2 -> Grid2 ()
+fromSetG = Map.fromSet (const ())
+
 toMatrixG :: Map Position2 a -> [[Maybe a]]
 toMatrixG m =
   [[mapLookup (Position2 x y) m | x <- [xmin .. xmax]] | y <- [ymin .. ymax]]
