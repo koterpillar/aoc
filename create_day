@@ -36,10 +36,10 @@ import qualified Data.Text as Text
 import           AOC
 import           Utils
 
-part1 = error . show
-
 parser :: Parser Text ()
 parser = error "parser"
+
+part1 = error . show
 
 tasks =
   Tasks
