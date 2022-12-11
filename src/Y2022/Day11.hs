@@ -12,49 +12,65 @@ import           Utils
 
 data MonkeyFn
   = Square
-  | Plus Integer
-  | Mult Integer
+  | Plus Int
+  | Mult Int
   deriving (Ord, Eq, Show)
 
-mfnApply :: MonkeyFn -> Integer -> Integer
-mfnApply Square x   = x * x
-mfnApply (Plus n) x = x + n
-mfnApply (Mult n) x = x * n
+divisor :: Int
+divisor = product $ setFromList [2, 3, 5, 7, 11, 13, 17, 19, 23]
+
+normalize :: Item -> Item
+normalize (Item x) = Item (x `mod` divisor)
+
+newtype Item =
+  Item Int
+  deriving (Show)
+
+mkItem :: Int -> Item
+mkItem = Item
+
+itemApply :: MonkeyFn -> Item -> Item
+itemApply Square (Item x)   = normalize $ Item (x * x)
+itemApply (Plus n) (Item x) = normalize $ Item (x + n)
+itemApply (Mult n) (Item x) = normalize $ Item (x * n)
+
+itemDeworry :: Integer -> Item -> Item
+itemDeworry worryDiv (Item x) = Item (x `div` fromInteger worryDiv)
+
+itemTest :: Int -> Item -> Bool
+itemTest testDivisor i@(Item x) = x `mod` testDivisor == 0
 
 data Monkey =
   Monkey
-    { mItems       :: [Integer]
+    { mItems       :: [Item]
     , mOp          :: MonkeyFn
-    , mTestDivisor :: Integer
+    , mTestDivisor :: Int
     , mTrue        :: Int
     , mFalse       :: Int
-    , mSeen        :: Integer
+    , mSeen        :: Int
     }
-  deriving (Ord, Eq, Show)
+  deriving (Show)
 
 monkeyP :: Parser [Text] Monkey
 monkeyP =
   mk <$>
   unconsP &* itemsP &=
-  (unconsP &* fnP &= (unconsP &* lastNumPi &= (lastNumP &+ lastNumP)))
+  (unconsP &* fnP &= (unconsP &* lastNumP &= (lastNumP &+ lastNumP)))
   where
     mk (mItems, (mOp, (mTestDivisor, (mTrue, mFalse)))) = Monkey {..}
       where
         mSeen = 0
     itemsP =
       pureP (terase "  Starting items: ") &* tsplitP "," &**
-      (toInteger <$> integerP)
+      (mkItem <$> integerP)
     fnP =
       pureP (terase "  Operation: new = old ") &* wordsP &* pairP &*
       tupleBindP fnP1
-    fnP1 "*" = (Mult . toInteger <$> integerP) &| (Square <$ requireP "old")
-    fnP1 "+" = Plus . toInteger <$> integerP
+    fnP1 "*" = (Mult <$> integerP) &| (Square <$ requireP "old")
+    fnP1 "+" = Plus <$> integerP
 
 lastNumP :: Parser Text Int
 lastNumP = wordsP &* pureP last &* integerP
-
-lastNumPi :: Parser Text Integer
-lastNumPi = toInteger <$> lastNumP
 
 type Situation = Map Int Monkey
 
@@ -68,6 +84,13 @@ traceItems = do
   st <- get
   let items = Map.map mItems st
   traceM $ "Result: " ++ show items
+
+traceSeen :: State Situation ()
+traceSeen = do
+  st <- get
+  for_ (Map.toList $ Map.map mSeen st) $ \(i, seen) ->
+    traceM $
+    "Monkey " ++ show i ++ " inspected items " ++ show seen ++ " times."
 
 move :: Integer -> State Situation ()
 move worryDiv = do
@@ -85,35 +108,39 @@ mcount mi = mmodify mi $ \m -> m {mSeen = succ (mSeen m)}
 mmodify :: Int -> (Monkey -> Monkey) -> State Situation ()
 mmodify mi f = modify $ Map.adjust f mi
 
-inspect :: Integer -> Int -> Monkey -> Integer -> State Situation ()
+inspect :: Integer -> Int -> Monkey -> Item -> State Situation ()
 inspect worryDiv mi Monkey {..} item = do
-  let i1 = mfnApply mOp item
-  let i2 = i1 `div` worryDiv
+  let i1 = itemApply mOp item
+  let i2 = itemDeworry worryDiv i1
   let target =
-        if i2 `mod` mTestDivisor == 0
+        if itemTest mTestDivisor i2
           then mTrue
           else mFalse
   mcount mi
   throwTo mi target i2
 
-throwTo :: Int -> Int -> Integer -> State Situation ()
+throwTo :: Int -> Int -> Item -> State Situation ()
 throwTo from to item = do
   mmodify to $ \m -> m {mItems = mItems m ++ [item]}
   mmodify from $ \m -> m {mItems = tail (mItems m)}
 
-mbusiness :: Situation -> Integer
+mbusiness :: Situation -> Int
 mbusiness st = product $ take 2 $ reverse $ sort $ map mSeen $ toList st
 
 moves :: Integer -> Int -> State Situation ()
-moves worryDiv rounds = for_ [1 .. rounds] $ \r -> move worryDiv
+moves worryDiv rounds =
+  for_ [1 .. rounds] $ \r -> do
+    move worryDiv
+    when (r `mod` 100 == 0 || r == 1 || r == 20) $ traceM $ "Round " ++ show r
+    when (r `mod` 1000 == 0 || r == 1 || r == 20) traceSeen
 
-part :: Integer -> Int -> Situation -> Integer
+part :: Integer -> Int -> Situation -> Int
 part worryDiv rounds = mbusiness . execState (moves worryDiv rounds)
 
-part1 :: Situation -> Integer
+part1 :: Situation -> Int
 part1 = part 3 20
 
-part2 :: Situation -> Integer
+part2 :: Situation -> Int
 part2 = part 1 10000
 
 tasks =
