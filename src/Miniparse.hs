@@ -155,11 +155,20 @@ Parser pa &= Parser pb = Parser (\(a, b) -> liftA2 (,) (pa a) (pb b))
 
 infixl 8 &=
 
-(&=>) :: Parser a c -> (c -> Parser b d) -> Parser (a, b) d
-pa &=> f =
+bindP :: Parser a c -> (c -> Parser b d) -> Parser (a, b) d
+bindP pa f =
   Parser $ \(a, b) -> do
     c <- runParse pa a
     runParse (f c) b
+
+(&=>) :: Parser a c -> (c -> Parser b d) -> Parser (a, b) d
+pa &=> f = bindP pa f
+
+tupleBindP :: (a -> Parser b c) -> Parser (a, b) c
+tupleBindP = bindP idP
+
+unconsBindP :: (src -> Parser [src] dest) -> Parser [src] dest
+unconsBindP rest = unconsP &* (idP &=> rest)
 
 (&+) :: Show a => Parser a b -> Parser a c -> Parser [a] (b, c)
 pa &+ pb = pairP &* (pa &= pb)

@@ -41,7 +41,8 @@ manhattanDistance (Position2 x1 y1) (Position2 x2 y2) =
   abs (x2 - x1) + abs (y2 - y1)
 
 hammingDistance :: Position2 -> Position2 -> Int
-hammingDistance (Position2 x1 y1) (Position2 x2 y2) = max (abs $ x2 - x1) (abs $ y2 - y1)
+hammingDistance (Position2 x1 y1) (Position2 x2 y2) =
+  max (abs $ x2 - x1) (abs $ y2 - y1)
 
 type Grid2 a = Map Position2 a
 

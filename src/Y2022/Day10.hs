@@ -14,9 +14,10 @@ data Instruction
   deriving (Ord, Eq, Show)
 
 instrP :: Parser Text Instruction
-instrP =
-  wordsP &* (Noop <$ requireP ["noop"]) &|
-  pairPWith (const Addx) (requireP "addx") integerP
+instrP = wordsP &* unconsBindP go
+  where
+    go "noop" = Noop <$ requireP []
+    go "addx" = Addx <$> singleP &* integerP
 
 data CPU =
   CPU

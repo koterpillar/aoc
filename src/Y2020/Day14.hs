@@ -35,7 +35,7 @@ data Instruction
   deriving (Show)
 
 parseInstruction :: Parser Text Instruction
-parseInstruction = tspanP isAlpha &* (idP &=> parseCase)
+parseInstruction = tspanP isAlpha &* tupleBindP parseCase
   where
     parseCase "mask" = SetMask <$> pureP (terase " = ") &* parseBitMask
     parseCase "mem" =

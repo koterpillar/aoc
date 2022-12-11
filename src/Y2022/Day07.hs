@@ -35,10 +35,10 @@ data Command
 type Input = [Command]
 
 cmdHeaderP :: Parser Text Command
-cmdHeaderP =
-  wordsP &*
-  ((requireP ["ls"] &* constP (LS emptyDir)) &|
-   pairPWith (const CD) (requireP "cd") idP)
+cmdHeaderP = wordsP &* unconsBindP go
+  where
+    go "ls" = LS emptyDir <$ requireP []
+    go "cd" = CD <$> singleP &* idP
 
 cmdBodyP :: Command -> Parser [Text] Command
 cmdBodyP c@CD {} = requireP [] &* constP c
