@@ -1,6 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric  #-}
-
 module Y2020.Day21
   ( tasks
   ) where
@@ -20,13 +17,19 @@ newtype A =
   A
     { getA :: Text
     }
-  deriving (Eq, Ord, Generic, Hashable, Show)
+  deriving (Eq, Ord, Show)
+
+instance Hashable A where
+  hashWithSalt s = hashWithSalt s . getA
 
 newtype I =
   I
     { getI :: Text
     }
-  deriving (Eq, Ord, Generic, Hashable, Show)
+  deriving (Eq, Ord, Show)
+
+instance Hashable I where
+  hashWithSalt s = hashWithSalt s . getI
 
 type Food = (Set I, Set A)
 
