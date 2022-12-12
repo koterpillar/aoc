@@ -64,9 +64,7 @@ ruleSets =
 
 rulePossibilities :: Map Int (Set Int) -> Set Int -> Set Int
 rulePossibilities tsets range =
-  Set.fromList $
-  map fst $
-  filter (\(idx, values) -> Set.isSubsetOf values range) $ Map.toList tsets
+  Set.fromList $ filterTuple (`Set.isSubsetOf` range) $ Map.toList tsets
 
 rulesPossibilities :: Notes -> Map Text (Set Int)
 rulesPossibilities n = Map.map (rulePossibilities (ticketSets n)) (ruleSets n)

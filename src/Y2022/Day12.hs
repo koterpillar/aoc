@@ -21,15 +21,15 @@ height c
 parser :: Parser Text Grid
 parser = fromMatrixG <$> linesP &** charactersP
 
-findP g t = fst $ fromJustE "findP" $ find (\(_, c) -> c == t) $ Map.toList g
+findP c = fromJustE "findP" . mapFindValue (== c)
 
 findPath :: Grid -> Maybe [Position2]
-findPath g = findPath' g (findP g 'S')
+findPath = findPath' <*> findP 'S'
 
 findPath' :: Grid -> Position2 -> Maybe [Position2]
 findPath' g = aStarDepth moves distanceToGoal isGoal
   where
-    endP = findP g 'E'
+    endP = findP 'E' g
     isGoal p = Map.lookup p g == Just 'E'
     distanceToGoal = manhattanDistance endP
     moves p = do
@@ -46,7 +46,7 @@ starts :: Grid -> [Position2]
 starts g = [p | p <- Map.keys g, fmap height (Map.lookup p g) == Just 'a']
 
 findPaths :: Grid -> [Maybe [Position2]]
-findPaths g = map (findPath' g) (starts g)
+findPaths = map <$> findPath' <*> starts
 
 part2 = minimum . map length . catMaybes . findPaths
 

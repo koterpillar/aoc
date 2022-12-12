@@ -11,9 +11,8 @@ checksum = sum . map lineChecksum
 
 divideDivisible :: [Int] -> Int
 divideDivisible lst =
-  fst $
-  head $
-  filter (\(_, m) -> m == 0) $
+  fromJustE "divideDivisible" $
+  findTuple (== 0) $
   map (uncurry divMod) $ filter (uncurry (/=)) $ liftA2 (,) lst lst
 
 tasks =

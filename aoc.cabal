@@ -35,6 +35,7 @@ library
       Quantum
       Search
       Utils
+      Utils.Base
       Utils.Map
       Utils.Set
       Utils.Trace

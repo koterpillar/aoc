@@ -113,7 +113,7 @@ gameStep g = Quantum.map (uncurry go) $ roll $ gameDice g
         gameScore' = Map.adjust (+ position') player (gameScore g)
 
 gameWin :: Game -> Maybe Player
-gameWin g = fmap fst $ find ((>= gameUntil g) . snd) $ mapToList $ gameScore g
+gameWin g = findTuple (>= gameUntil g) $ mapToList $ gameScore g
 
 gameIsWin :: Game -> Bool
 gameIsWin = isJust . gameWin

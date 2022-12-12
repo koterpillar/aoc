@@ -1,12 +1,16 @@
 module Utils.Map where
 
-import           Data.Map   (Map)
-import qualified Data.Map   as Map
+import           Data.Foldable
+
+import           Data.Map      (Map)
+import qualified Data.Map      as Map
 
 import           Data.Maybe
 
-import           Data.Set   (Set)
-import qualified Data.Set   as Set
+import           Data.Set      (Set)
+import qualified Data.Set      as Set
+
+import           Utils.Base
 
 mapLookupE :: (Ord k, Show k) => String -> k -> Map k a -> a
 mapLookupE msg k m =
@@ -41,3 +45,6 @@ map1 = Map.singleton
 
 mapElemsSet :: Ord a => Map k a -> Set a
 mapElemsSet = Set.fromList . Map.elems
+
+mapFindValue :: (a -> Bool) -> Map k a -> Maybe k
+mapFindValue fn = findTuple fn . Map.toList
