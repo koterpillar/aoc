@@ -21,29 +21,27 @@ height c
 parser :: Parser Text Grid
 parser = fromMatrixG <$> linesP &** charactersP
 
-findP c = fromJustE "findP" . mapFindValue (== c)
-
 findPath :: Grid -> Maybe [Position2]
-findPath = findPath' <*> findP 'S'
+findPath = findPath' <*> mapFindValueE "find start" (== 'S')
 
 findPath' :: Grid -> Position2 -> Maybe [Position2]
 findPath' g = aStarDepth moves distanceToGoal isGoal
   where
-    endP = findP 'E' g
-    isGoal p = Map.lookup p g == Just 'E'
+    endP = mapFindValueE "find end" (== 'E') g
+    isGoal = (== endP)
     distanceToGoal = manhattanDistance endP
     moves p = do
       let h = mapLookupE "moves p" p g
       d <- allDir4
       let p' = walk d p
-      h' <- maybeToList $ Map.lookup p' g
+      h' <- maybeToList $ mapLookup p' g
       guard $ height h' <= succ (height h)
       pure p'
 
 part1 = length . fromJustE "part1: no path" . findPath
 
 starts :: Grid -> [Position2]
-starts g = [p | p <- Map.keys g, fmap height (Map.lookup p g) == Just 'a']
+starts = mapFilterValues ((== 'a') . height)
 
 findPaths :: Grid -> [Maybe [Position2]]
 findPaths = map <$> findPath' <*> starts

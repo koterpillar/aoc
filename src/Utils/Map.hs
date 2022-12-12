@@ -48,3 +48,9 @@ mapElemsSet = Set.fromList . Map.elems
 
 mapFindValue :: (a -> Bool) -> Map k a -> Maybe k
 mapFindValue fn = findTuple fn . Map.toList
+
+mapFindValueE :: String -> (a -> Bool) -> Map k a -> k
+mapFindValueE msg fn = fromJustE msg . mapFindValue fn
+
+mapFilterValues :: (a -> Bool) -> Map k a -> [k]
+mapFilterValues fn = filterTuple fn . Map.toList
