@@ -1,9 +1,5 @@
 module Y2022.Day12 where
 
-import qualified Data.Map  as Map
-import qualified Data.Set  as Set
-import qualified Data.Text as Text
-
 import           AOC
 import           Grid
 import           Path
