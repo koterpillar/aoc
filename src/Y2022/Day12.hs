@@ -31,7 +31,7 @@ findPath' g = aStarDepth moves distanceToGoal isGoal
   where
     endP = findP g 'E'
     isGoal p = Map.lookup p g == Just 'E'
-    distanceToGoal = const 20
+    distanceToGoal = manhattanDistance endP
     moves p = do
       let h = mapLookupE "moves p" p g
       d <- allDir4
