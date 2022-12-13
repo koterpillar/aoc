@@ -1,6 +1,6 @@
 module Y2021.Day18 where
 
-import           Control.Monad.State
+import           Data.Aeson
 
 import           AOC
 import           Utils
@@ -117,7 +117,7 @@ tasks =
     2021
     18
     (CodeBlock 7)
-    (linesP &** stringP &* stateP parseS)
+    (linesP &** snailIntP)
     [ Assert "split 9" Nothing (snsplit $ PNumber 9)
     , Assert "split 11" (Just $ parse "[5,6]") (snsplit $ PNumber 11)
     , Assert "split 12" (Just $ parse "[6,6]") (snsplit $ PNumber 12)
@@ -165,21 +165,13 @@ tasks =
     , Task part2 3993
     ]
 
-parseS :: StateParser String SnailInt
-parseS = do
-  c <- unconsSP_
-  case c of
-    '[' -> do
-      n1 <- parseS
-      ensureUnconsSP_ ','
-      n2 <- parseS
-      ensureUnconsSP_ ']'
-      return $ PPair n1 n2
-    d
-      | isDigit d -> do
-        putBackSP d
-        PNumber <$> naturalSP
-      | otherwise -> failSP $ "expected number or [, got " <> show c
+instance FromJSON SnailInt where
+  parseJSON p = PNumber <$> parseJSON p <|> mkPair <$> parseJSON p
+    where
+      mkPair [l, r] = PPair l r
 
-parse :: String -> SnailInt
-parse = justParse (stateP parseS)
+snailIntP :: Parser Text SnailInt
+snailIntP = jsonP
+
+parse :: Text -> SnailInt
+parse = justParse snailIntP
