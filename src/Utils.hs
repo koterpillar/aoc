@@ -10,6 +10,7 @@ module Utils
   , module Utils.Base
   , module Utils.Map
   , module Utils.Set
+  , module Utils.Text
   , module Utils.Trace
   , Map
   , Set
@@ -91,6 +92,7 @@ import           Text.Read
 import           Utils.Base
 import           Utils.Map
 import           Utils.Set
+import           Utils.Text
 import           Utils.Trace
 
 mostCommon :: Ord a => [a] -> Maybe a

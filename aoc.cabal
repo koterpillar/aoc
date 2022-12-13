@@ -38,6 +38,7 @@ library
       Utils.Base
       Utils.Map
       Utils.Set
+      Utils.Text
       Utils.Trace
       Y2017.Day01
       Y2017.Day02

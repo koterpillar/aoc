@@ -29,15 +29,9 @@ import           Data.Maybe
 import           Data.Set                  (Set)
 import qualified Data.Set                  as Set
 
-import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
-import qualified Data.Text.IO              as Text
-
 import           Data.Traversable          (for)
 
 import           Data.Tuple
-
-import           Text.Read
 
 import           Utils.Trace
 
@@ -70,9 +64,6 @@ iterateEither fn v =
 
 dupe :: a -> (a, a)
 dupe a = (a, a)
-
-pad :: Int -> Text -> Text
-pad sz = Text.justifyRight sz ' '
 
 sset :: Int -> a -> [a] -> [a]
 sset idx val lst = take idx lst ++ [val] ++ drop (idx + 1) lst
@@ -110,21 +101,6 @@ countTrue = countIf id
 inRange :: Ord k => k -> k -> k -> Bool
 inRange lo hi k = lo <= k && k <= hi
 
-ttrim :: Text -> Text
-ttrim = Text.dropWhile (== '\n') . Text.dropWhileEnd (== '\n')
-
-tshow :: Show a => a -> Text
-tshow = Text.pack . show
-
-treplace :: Text -> Text -> Text -> Text
-treplace = Text.replace
-
-terase :: Text -> Text -> Text
-terase piece = Text.replace piece ""
-
-tlength :: Text -> Int
-tlength = Text.length
-
 zipTail :: [a] -> [(a, a)]
 zipTail a = zip a (tail a)
 
@@ -153,9 +129,6 @@ headE _ x    = head x
 lastE :: String -> [a] -> a
 lastE msg [] = error msg
 lastE _ x    = last x
-
-instance Memoizable Text where
-  memoize f t = memoize (f . Text.pack) (Text.unpack t)
 
 findTuple :: Foldable t => (a -> Bool) -> t (k, a) -> Maybe k
 findTuple fn = fmap fst . find (fn . snd)
