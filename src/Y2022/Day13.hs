@@ -50,7 +50,7 @@ instance Ord Packet where
   compare (PList a) (PNum b)  = compare (PList a) (packetNumToList b)
 
 part1 :: Input -> Int
-part1 = sum . map fst . filter ((/= GT) . uncurry compare . snd) . zip [1 ..]
+part1 = sum . filterTuple (uncurry (<=)) . zipN 1
 
 dividers :: [Packet]
 dividers = [PList [PList [PNum n]] | n <- [2, 6]]
@@ -58,8 +58,7 @@ dividers = [PList [PList [PNum n]] | n <- [2, 6]]
 part2 :: Input -> Int
 part2 =
   product .
-  map fst .
-  filter (\(_, p) -> p `elem` dividers) .
-  zip [1 ..] . sort . (++) dividers . concatMap (\(a, b) -> [a, b])
+  filterTuple (`elem` dividers) .
+  zipN 1 . sort . (++) dividers . concatMap (\(a, b) -> [a, b])
 
 tasks = Tasks 2022 13 (CodeBlock 0) parser [Task part1 13, Task part2 140]

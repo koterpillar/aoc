@@ -31,7 +31,7 @@ parseInstruction =
 
 stacksP :: Parser [Text] Stacks
 stacksP =
-  Map.fromList . zip [1 ..] . map catMaybes . transpose <$>
+  Map.fromList . zipN 1 . map catMaybes . transpose <$>
   pureP init &* traverseP listsP
 
 listsP :: Parser Text [Maybe Char]

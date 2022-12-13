@@ -24,7 +24,7 @@ mkGrid inside = Grid {..}
     outside = False
 
 mkInstructions :: [Bool] -> Instructions
-mkInstructions = mapFromList . zip [0 ..]
+mkInstructions = mapFromList . zipN 0
 
 instructionFor :: Instructions -> Int -> Bool
 instructionFor instructions n =

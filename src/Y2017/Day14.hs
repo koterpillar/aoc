@@ -27,7 +27,7 @@ grid :: Text -> Grid
 grid seed = mapFromList $ zip points (repeat ())
   where
     points = [Position2 x y | y <- [0 .. 127], x <- ones y]
-    ones y = [x | (x, '1') <- zip [0 ..] bin]
+    ones y = [x | (x, '1') <- zipN 0 bin]
       where
         bin = Text.unpack $ knotHashBin $ seed <> "-" <> tshow y
 

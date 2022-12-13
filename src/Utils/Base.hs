@@ -1,5 +1,4 @@
-module Utils.Base
-   where
+module Utils.Base where
 
 import           Control.Applicative       (liftA2, (<|>))
 
@@ -131,6 +130,9 @@ zipTail a = zip a (tail a)
 
 zipWithTail :: (a -> a -> b) -> [a] -> [b]
 zipWithTail f = map (uncurry f) . zipTail
+
+zipN :: Enum a => a -> [b] -> [(a, b)]
+zipN n = zip [n ..]
 
 toNothing :: Eq a => a -> a -> Maybe a
 toNothing a b

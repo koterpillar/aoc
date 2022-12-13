@@ -83,10 +83,10 @@ gameCurrentPlayer game = (gameTurn game + 1) `mod1` length (gamePositions game)
 startGame :: Positions -> Game
 startGame positions = Game {..}
   where
-    gamePositions = mapFromList $ zip [1 ..] positions
+    gamePositions = mapFromList $ zipN 1 positions
     gameDice = Deterministic 1
     gameTurn = 0
-    gameScore = mapFromList $ zip [1 ..] $ replicate (length positions) 0
+    gameScore = mapFromList $ zipN 1 $ replicate (length positions) 0
     gameUntil = 1000
 
 startGameDirac :: Positions -> Game

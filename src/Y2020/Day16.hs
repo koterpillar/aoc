@@ -56,7 +56,7 @@ nValidTickets n = filter (null . invalid1 n) $ nTickets n
 ticketSets :: Notes -> Map Int (Set Int)
 ticketSets =
   Map.fromList .
-  zip [0 ..] . map Set.fromList . transpose . map unTicket . nValidTickets
+  zipN 0 . map Set.fromList . transpose . map unTicket . nValidTickets
 
 ruleSets :: Notes -> Map Text (Set Int)
 ruleSets =
