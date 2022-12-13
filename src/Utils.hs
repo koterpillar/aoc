@@ -22,10 +22,11 @@ module Utils
   , bimap
   , chr
   , chunksOf
-  , guard
+  , enumerate
   , first
   , for
   , for_
+  , guard
   , isDigit
   , isLower
   , isUpper

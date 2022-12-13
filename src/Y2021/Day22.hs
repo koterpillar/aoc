@@ -57,7 +57,7 @@ data Axis
   deriving (Ord, Eq, Bounded, Enum, Show)
 
 allAxis :: [Axis]
-allAxis = boundedAll
+allAxis = enumerate
 
 type Cuboid = Map Axis Range
 

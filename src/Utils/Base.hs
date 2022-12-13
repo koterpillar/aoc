@@ -154,9 +154,6 @@ lastE :: String -> [a] -> a
 lastE msg [] = error msg
 lastE _ x    = last x
 
-boundedAll :: (Bounded a, Enum a) => [a]
-boundedAll = [minBound .. maxBound]
-
 instance Memoizable Text where
   memoize f t = memoize (f . Text.pack) (Text.unpack t)
 

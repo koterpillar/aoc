@@ -15,7 +15,7 @@ data Amphi
   deriving (Ord, Eq, Bounded, Enum, Show)
 
 amphis :: [Amphi]
-amphis = boundedAll
+amphis = enumerate
 
 instance Hashable Amphi where
   hashWithSalt s a = hashWithSalt s (show a)

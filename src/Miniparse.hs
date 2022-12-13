@@ -58,7 +58,7 @@ choiceP choices =
 
 choiceEBP ::
      (Ord src, Show src, Bounded dest, Enum dest) => [src] -> Parser src dest
-choiceEBP = choiceP . (`zip` boundedAll)
+choiceEBP = choiceP . (`zip` enumerate)
 
 requireP :: (Show a, Eq a) => a -> Parser a ()
 requireP expected =

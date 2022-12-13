@@ -16,7 +16,7 @@ data Wire
   deriving (Ord, Eq, Show, Enum, Bounded)
 
 wires :: [Wire]
-wires = boundedAll
+wires = enumerate
 
 type Display = Set Wire
 

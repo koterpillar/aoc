@@ -28,7 +28,7 @@ shapeScore Rock     = 1
 shapeScore Paper    = 2
 shapeScore Scissors = 3
 
-findWS x s = headE "no score found" [y | y <- boundedAll, winScore x y == s]
+findWS x s = headE "no score found" [y | y <- enumerate, winScore x y == s]
 
 modifyShape :: RPS -> RPS -> (RPS, RPS)
 modifyShape x Rock     = (x, findWS x 0)
