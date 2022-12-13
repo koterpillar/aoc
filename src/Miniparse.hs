@@ -8,8 +8,11 @@ module Miniparse
 import           Control.Applicative
 import           Control.Monad.State
 
+import qualified Data.Aeson          as Aeson
+
 import qualified Data.Map            as Map
 import qualified Data.Text           as Text
+import qualified Data.Text.Encoding  as Text
 
 import           Bit
 import           Grid
@@ -136,6 +139,9 @@ dotsP = charactersP &** dotP
 
 bitsP :: Parser Text BitString
 bitsP = charactersP &** choiceEBP ['0', '1']
+
+jsonP :: Aeson.FromJSON a => Parser Text a
+jsonP = pureP Text.encodeUtf8 &* Parser Aeson.eitherDecodeStrict'
 
 (&*) :: Parser a b -> Parser b c -> Parser a c
 Parser p1 &* Parser p2 = Parser $ p1 >=> p2

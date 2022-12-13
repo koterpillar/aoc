@@ -118,6 +118,7 @@ library
       TypeApplications
   build-depends:
       MissingH
+    , aeson
     , astar
     , base >=4.7 && <5
     , containers
@@ -155,6 +156,7 @@ executable main
       TypeApplications
   build-depends:
       MissingH
+    , aeson
     , aoc
     , astar
     , base >=4.7 && <5

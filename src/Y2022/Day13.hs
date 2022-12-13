@@ -1,5 +1,7 @@
 module Y2022.Day13 where
 
+import           Data.Aeson
+
 import           AOC
 import           Utils
 
@@ -8,34 +10,13 @@ data Packet
   | PList [Packet]
   deriving (Show)
 
-packetP :: Parser Text Packet
-packetP = charactersP &* stateP packetSP
-
-packetSP :: StateParser [Char] Packet
-packetSP = do
-  unconsSP_ >>= \case
-    '[' -> PList <$> listSP
-    c
-      | isDigit c -> do
-        putBackSP c
-        PNum <$> naturalSP
-      | otherwise -> failSP $ "packetSP: unexpected character: " <> [c]
-
-listSP :: StateParser [Char] [Packet]
-listSP = do
-  unconsSP_ >>= \case
-    ']' -> pure []
-    c -> do
-      putBackSP c
-      p <- packetSP
-      unconsSP_ >>= \case
-        ',' -> (p :) <$> listSP
-        ']' -> pure [p]
+instance FromJSON Packet where
+  parseJSON p = PNum <$> parseJSON p <|> PList <$> parseJSON p
 
 type Input = [(Packet, Packet)]
 
 parser :: Parser Text Input
-parser = lineGroupsP &** (packetP &+ packetP)
+parser = lineGroupsP &** (jsonP &+ jsonP)
 
 packetNumToList :: Int -> Packet
 packetNumToList n = PList [PNum n]
