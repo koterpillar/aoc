@@ -56,7 +56,7 @@ sandInit :: Position2
 sandInit = Position2 500 0
 
 dropAllSand :: Maybe Int -> Grid -> Grid
-dropAllSand floor = iterateSettle $ dropSand floor sandInit
+dropAllSand floor = iterateSettleL $ dropSand floor sandInit
 
 countSand :: Maybe Int -> Grid -> Int
 countSand y = countIf (Sand ==) . Map.elems . dropAllSand y

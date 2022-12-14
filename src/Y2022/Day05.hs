@@ -43,7 +43,7 @@ parser = lineGroupsP &* stacksP &+ traverseP parseInstruction
 
 applyInstruction :: Instruction -> Stacks -> Stacks
 applyInstruction i@(Instruction from to count) =
-  iterateN count $ \s0 ->
+  iterateNL count $ \s0 ->
     let ff = s0 Map.! from
         f = headE "move from empty" ff
         f1 = tail ff

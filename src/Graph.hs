@@ -18,7 +18,7 @@ reverseGraph graph = SMap.fromListWith mappend neighbors
       pure (v', set1 v)
 
 reachableFrom :: Ord v => v -> Graph v -> Set v
-reachableFrom v graph = iterateSettle (`vicinity` graph) (set1 v)
+reachableFrom v graph = iterateSettleL (`vicinity` graph) (set1 v)
 
 vertices :: Graph v -> Set v
 vertices = SMap.keysSet

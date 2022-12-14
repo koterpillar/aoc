@@ -46,7 +46,7 @@ countMap =
   concatMap (\((e1, e2), c) -> [(e1, c), (e2, c)]) . mapToList
 
 solve steps (polymer, insertions) =
-  diff $ iterateN steps (step insertions) (toPairs polymer)
+  diff $ iterateNL steps (step insertions) (toPairs polymer)
   where
     diff = (\counts -> last counts - head counts) . sort . toList . countMap
 
@@ -64,7 +64,7 @@ tasks =
     , AssertExample
         "step"
         (toPairs "NBBNBNBBCCNBCNCCNBBNBBNBBBNBBNBBCBHCBHHNHCBBCBHCB")
-        (\(p, i) -> iterateN 4 (step i) $ toPairs p)
+        (\(p, i) -> iterateNL 4 (step i) $ toPairs p)
     , Assert
         "countMap"
         (mapFromList [('A', 2), ('B', 2)])

@@ -30,7 +30,7 @@ risk depth = depth + 1
 type Basin = Set FPoint
 
 basins :: Floor -> [Basin]
-basins grid = iterateSettle (map growBasin) initialBasins
+basins grid = iterateSettleL (map growBasin) initialBasins
   where
     initialBasins :: [Basin]
     initialBasins = map set1 $ lowPoints grid

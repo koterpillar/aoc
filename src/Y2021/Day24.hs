@@ -191,7 +191,7 @@ optimize1 (i1:i2:is)
   | otherwise = i1 : optimize1 (i2 : is)
 
 optimize :: Program -> Program
-optimize = iterateSettle optimize1 . filter (not . noop)
+optimize = iterateSettleL optimize1 . filter (not . noop)
 
 bestInput ::
      forall c. (DigitCollapse c, Show c)

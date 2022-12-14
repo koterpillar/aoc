@@ -80,7 +80,7 @@ step instructions grid = ttraceF gridDisplay result
 
 lightAfter :: Int -> (Instructions, Grid) -> Int
 lightAfter steps (instructions, grid) =
-  gridCount $ iterateN steps (step instructions) $ ttraceF gridDisplay grid
+  gridCount $ iterateNL steps (step instructions) $ ttraceF gridDisplay grid
 
 part1 = lightAfter 2
 

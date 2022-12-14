@@ -47,10 +47,10 @@ step occupiedNeighbors maxOccupied g =
 
 stabilizedSeats, stabilizedSeats2 :: Grid -> Int
 stabilizedSeats =
-  countOccupied . toList . iterateSettle (step occupiedNeighbors 4)
+  countOccupied . toList . iterateSettleL (step occupiedNeighbors 4)
 
 stabilizedSeats2 =
-  countOccupied . toList . iterateSettle (step occupiedNeighbors2 5)
+  countOccupied . toList . iterateSettleL (step occupiedNeighbors2 5)
 
 tasks =
   Tasks

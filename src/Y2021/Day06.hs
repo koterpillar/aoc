@@ -19,7 +19,7 @@ pondTotal :: Pond -> Int
 pondTotal = sum
 
 countAfter :: Int -> Pond -> Int
-countAfter days = pondTotal . iterateN days pondStep
+countAfter days = pondTotal . iterateNL days pondStep
 
 part1 = countAfter 80
 

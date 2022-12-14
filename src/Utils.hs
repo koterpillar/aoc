@@ -8,6 +8,7 @@ module Utils
   , module Data.List
   , module Data.Tuple
   , module Utils.Base
+  , module Utils.Iterate
   , module Utils.Map
   , module Utils.Set
   , module Utils.Text
@@ -72,16 +73,12 @@ import           Data.List
 import           Data.List.Extra
 
 import           Data.Map                  (Map)
-import qualified Data.Map                  as Map
 
 import           Data.Maybe
 
 import           Data.Set                  (Set)
-import qualified Data.Set                  as Set
 
 import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
-import qualified Data.Text.IO              as Text
 
 import           Data.Traversable          (for)
 
@@ -90,10 +87,11 @@ import           Data.Tuple
 import           Text.Read
 
 import           Utils.Base
+import           Utils.Iterate
 import           Utils.Map
 import           Utils.Set
 import           Utils.Text
 import           Utils.Trace
 
 mostCommon :: Ord a => [a] -> Maybe a
-mostCommon = fmap snd . maybeMaximum . map swap . Map.toList . mapFromListCount
+mostCommon = fmap snd . maybeMaximum . map swap . mapToList . mapFromListCount

@@ -35,33 +35,6 @@ import           Data.Tuple
 
 import           Utils.Trace
 
-iterateN :: Int -> (a -> a) -> a -> a
-iterateN 0 _ v = v
-iterateN n fn v =
-  let !u = iterateN (n - 1) fn v
-   in progress 1000000 n $ fn u
-
-iterateWhile :: (a -> Bool) -> (a -> a) -> a -> [a]
-iterateWhile continue fn v
-  | continue v =
-    let v' = fn v
-     in v : iterateWhile continue fn v'
-  | otherwise = []
-
-iterateSettle :: Eq a => (a -> a) -> a -> a
-iterateSettle fn v =
-  if v == v'
-    then v
-    else iterateSettle fn v'
-  where
-    v' = fn v
-
-iterateEither :: (a -> Either b a) -> a -> b
-iterateEither fn v =
-  case fn v of
-    Left b  -> b
-    Right v -> iterateEither fn v
-
 dupe :: a -> (a, a)
 dupe a = (a, a)
 
