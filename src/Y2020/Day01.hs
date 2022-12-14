@@ -8,12 +8,11 @@ findSum :: Int -> Int -> [Int] -> Set Int
 findSum count total candidates =
   lastE "empty path" $
   fromJustE "no numbers add to requested" $
-  aStar prependNumber distance toGoal isGoal mempty
+  aStarDepth prependNumber toGoal isGoal mempty
   where
     prependNumber :: Set Int -> [Set Int]
     prependNumber existing =
       [setInsert x existing | x <- candidates, not (setMember x existing)]
-    distance = const $ const 1
     toGoal :: Set Int -> Int
     toGoal numbers
       | length numbers > count = tooFarAway

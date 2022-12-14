@@ -71,7 +71,7 @@ pStep play@Play {..} =
         }
 
 pAllWins :: Play -> [Int]
-pAllWins = concatMap pWinningScore . unfoldr (fmap dupe . pStep)
+pAllWins = concatMap pWinningScore . iterateMaybe pStep
 
 part1 :: Play -> Int
 part1 = head . pAllWins

@@ -12,7 +12,7 @@ import           Utils
 data State s =
   State
     { sTurns    :: STRef s Int
-    , sRecent   :: (MVector s Int)
+    , sRecent   :: MVector s Int
     , sLastSaid :: STRef s Int
     }
 

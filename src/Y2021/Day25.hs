@@ -37,17 +37,11 @@ instance GridItem Direction4 where
   showInGrid S = 'v'
   showInGrid _ = error "showInGrid"
 
+gtrace :: Grid -> Grid
 gtrace = ttraceF (displayG . fst)
 
-iw1 :: Int -> Grid -> Int
-iw1 n g =
-  let g' = step $ gtrace g
-   in if g == g'
-        then n
-        else iw1 (n + 1) g'
-
 part1 :: Grid -> Int
-part1 = iw1 1
+part1 = length . iterateSettle step
 
 tasks = Tasks 2021 25 (CodeBlock 0) parse [Task part1 58]
 
