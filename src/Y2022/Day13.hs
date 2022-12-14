@@ -42,4 +42,17 @@ part2 =
   filterTuple (`elem` dividers) .
   zipN 1 . sort . (++) dividers . concatMap (\(a, b) -> [a, b])
 
-tasks = Tasks 2022 13 (CodeBlock 0) parser [Task part1 13, Task part2 140]
+tasks =
+  Tasks
+    2022
+    13
+    (CodeBlock 0)
+    parser
+    [ Assert
+        "nesting matters"
+        LT
+        (let x = PNum 2
+          in compare (PList [x, PList [x, x]]) (PList [PList [x, x], x]))
+    , Task part1 13
+    , Task part2 140
+    ]
