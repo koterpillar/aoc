@@ -8,7 +8,9 @@ import           Text.Read           (readEither)
 
 import           Miniparse.Base
 
-type StateParser src dest = StateT src (Either String) dest
+type StateParserT err src dest = StateT src (Either err) dest
+
+type StateParser src dest = StateParserT String src dest
 
 stateP ::
      (Eq src, Monoid src, Show src) => StateParser src dest -> Parser src dest
@@ -19,7 +21,7 @@ stateP p =
       then Right result
       else Left $ "unconsumed remainder: " ++ show remainder
 
-unconsSP :: StateParser [a] (Maybe a)
+unconsSP :: StateParserT e [a] (Maybe a)
 unconsSP =
   state $ \case
     []     -> (Nothing, [])
@@ -38,10 +40,10 @@ ensureUnconsSP expected =
 ensureUnconsSP_ :: (Eq a, Show a) => a -> StateParser [a] ()
 ensureUnconsSP_ = ensureUnconsSP . Just
 
-putBackSP :: a -> StateParser [a] ()
+putBackSP :: a -> StateParserT err [a] ()
 putBackSP x = modify (x :)
 
-failSP :: String -> StateParser src dest
+failSP :: err -> StateParserT err src dest
 failSP = lift . Left
 
 readSP :: Read a => String -> StateParser src a
