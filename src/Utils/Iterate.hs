@@ -1,5 +1,9 @@
 module Utils.Iterate where
 
+import           Data.List
+
+import           Utils.Base
+
 type ItFn a = (a -> a) -> a -> [a]
 
 type ItFnL a = (a -> a) -> a -> a
@@ -33,6 +37,12 @@ iterateSettle fn v =
 
 iterateSettleL :: Eq a => ItFnL a
 iterateSettleL f = last . iterateSettle f
+
+iterateMaybe :: (a -> Maybe a) -> a -> [a]
+iterateMaybe f = unfoldr (fmap dupe . f)
+
+iterateMaybeL :: (a -> Maybe a) -> a -> a
+iterateMaybeL f = last . iterateMaybe f
 
 iterateEither :: (a -> Either b a) -> a -> b
 iterateEither fn v =
