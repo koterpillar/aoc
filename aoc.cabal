@@ -31,6 +31,8 @@ library
       Graph
       Grid
       Miniparse
+      Miniparse.Base
+      Miniparse.State
       Path
       Quantum
       Search
