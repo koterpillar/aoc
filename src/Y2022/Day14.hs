@@ -37,13 +37,13 @@ mkGrid = Map.unions . map go
       | x1 > x2 = p1 : go1 (Position2 (x1 - 1) y1) (Position2 x2 y2)
       | otherwise = [p1]
 
-dropSand :: Maybe Int -> Grid -> Position2 -> Maybe Grid
-dropSand floor g p =
+dropSand :: Maybe Int -> Position2 -> Grid -> Grid
+dropSand floor p g =
   if pY p > maxY
-    then traceShow p Nothing
+    then g
     else case nextPoint of
-           Just p' -> dropSand floor g p'
-           Nothing -> Just $ Map.insert p Sand g
+           Just p' -> dropSand floor p' g
+           Nothing -> Map.insert p Sand g
   where
     (_, Position2 _ maxY') = boundsG g
     maxY = fromMaybe maxY' floor
@@ -52,17 +52,14 @@ dropSand floor g p =
       | Just (pY p) == floor = False
       | otherwise = isNothing (Map.lookup p g)
 
+sandInit :: Position2
 sandInit = Position2 500 0
 
 dropAllSand :: Maybe Int -> Grid -> Grid
-dropAllSand y g =
-  case dropSand y g sandInit of
-    Just g'
-      | g == g' -> g -- FIXME
-      | otherwise -> dropAllSand y g'
-    Nothing -> ttraceF displayG g
+dropAllSand floor = iterateSettle $ dropSand floor sandInit
 
-countSand y = countIf ((==) Sand) . Map.elems . dropAllSand y
+countSand :: Maybe Int -> Grid -> Int
+countSand y = countIf (Sand ==) . Map.elems . dropAllSand y
 
 part1 = countSand Nothing . mkGrid
 
@@ -70,6 +67,7 @@ part2 input =
   let g = mkGrid input
    in countSand (Just $ floorY g) g
 
+floorY :: Grid2 a -> Int
 floorY g =
   let (_, Position2 _ maxY) = boundsG g
    in maxY + 2
