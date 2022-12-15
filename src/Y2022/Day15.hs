@@ -40,14 +40,16 @@ parser =
     pps = pureP $ \[x1, y1, x2, y2] -> ((x1, y1), (x2, y2))
     pp = uncurry Position2 <$> (integerP &= integerP)
 
-empties :: Position2 -> Position2 -> Set Position2
-empties sensor@(Position2 sx sy) beacon =
+empties :: (Int -> Bool) -> Position2 -> Position2 -> Set Position2
+empties yfilter sensor@(Position2 sx sy) beacon =
   Set.fromList
-    [ Position2 x y
-    | x <- [xmin .. xmax]
-    , y <- [ymin .. ymax]
-    , manhattanDistance sensor (Position2 x y) <= d
-    , Position2 x y /= beacon
+    [ p
+    | y <- [ymin .. ymax]
+    , yfilter y
+    , x <- [xmin .. xmax]
+    , let p = Position2 x y
+    , manhattanDistance sensor p <= d
+    , p /= beacon
     ]
   where
     d = manhattanDistance sensor beacon
@@ -56,11 +58,18 @@ empties sensor@(Position2 sx sy) beacon =
     ymin = sy - d
     ymax = sy + d
 
+isExample input = fst (head input) == Position2 2 18
+
 part1 input =
-  ttrace (displayG g) $ length $ Set.filter (\(Position2 _ y) -> y == 10) es
+  length $
+  Map.filterWithKey (\(Position2 _ y) v -> y == filterY && v == Empty) g'
   where
-    g = mkGrid $ traceShowId input
-    es =
-      Set.unions $ map (traceShowF length . uncurry empties . traceShowId) input
+    g = mkGrid input
+    filterY =
+      if isExample input
+        then 10
+        else 2000000
+    es = Set.unions $ map (uncurry $ empties (== filterY)) input
+    g' = Map.union g $ Map.fromSet (const Empty) es
 
 tasks = Tasks 2022 15 (CodeBlock 0) parser [Task part1 26]
