@@ -6,6 +6,7 @@ module Utils
   , module Data.Function.Memoize
   , module Data.Maybe
   , module Data.List
+  , module Data.List.Extra
   , module Data.Tuple
   , module Utils.Base
   , module Utils.Iterate
@@ -23,8 +24,6 @@ module Utils
   , (>=>)
   , bimap
   , chr
-  , chunksOf
-  , enumerate
   , first
   , for
   , for_
@@ -34,15 +33,12 @@ module Utils
   , isUpper
   , join
   , liftA2
-  , maximumOn
-  , minimumOn
   , on
   , ord
   , readEither
   , replicateM
   , replicateM_
   , second
-  , splitOn
   , toList
   , traverse_
   , unless
@@ -57,7 +53,7 @@ import           Data.Bifunctor            (bimap, first, second)
 
 import           Data.Char                 (chr, isDigit, isLower, isUpper, ord)
 
-import           Data.Containers.ListUtils (nubInt, nubOrd)
+import           Data.Containers.ListUtils (nubInt)
 
 import           Data.Either
 import           Data.Either.Extra

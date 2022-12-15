@@ -19,7 +19,6 @@ import           Data.Function             (on, (&))
 import           Data.Function.Memoize
 
 import           Data.List
-import           Data.List.Extra
 
 import           Data.Map                  (Map)
 import qualified Data.Map                  as Map

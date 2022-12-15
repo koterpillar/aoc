@@ -224,8 +224,8 @@ joinTiles gss =
 mergeIds :: [Tile] -> [[Int]]
 mergeIds = mapmap tid . merge1
 
-merge :: [Tile] -> Grid
-merge = joinTiles . mapmap (tgrid . shrink) . merge1
+mergeT :: [Tile] -> Grid
+mergeT = joinTiles . mapmap (tgrid . shrink) . merge1
 
 fixupExample :: [[a]] -> [[a]]
 fixupExample = transpose . reverse . map reverse
@@ -317,7 +317,7 @@ tasks =
     [ Task (product . findCorners) 20899048083289
     , Task findTileSize tileSize
     , Task (fixupExample . mergeIds) exampleMergedIds
-    , Task (displayG . fixupExampleGrid . merge) exampleMerged
+    , Task (displayG . fixupExampleGrid . mergeT) exampleMerged
     , Assert "monster counts itself" [Position2 0 0] (monsterOrigins monster)
     , Assert
         "monster counts itself plus dot"
@@ -327,9 +327,9 @@ tasks =
         "monster counts itself shifted"
         [Position2 2 2]
         (monsterOrigins (shiftG (Position2 2 2) monster))
-    , Task (countMonsters . fixupGrid fixupExample . merge) 2
+    , Task (countMonsters . fixupGrid fixupExample . mergeT) 2
     , Task
-        (setFromList . map countMonsters . flips . merge)
+        (setFromList . map countMonsters . flips . mergeT)
         (setFromList [0, 2])
-    , Task (subtractMonstersFlips . merge) 273
+    , Task (subtractMonstersFlips . mergeT) 273
     ]
