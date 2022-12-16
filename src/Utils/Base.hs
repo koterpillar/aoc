@@ -64,6 +64,18 @@ maybeMaximum :: Ord a => [a] -> Maybe a
 maybeMaximum [] = Nothing
 maybeMaximum xs = Just $ maximum xs
 
+minimumsOn :: Ord b => (a -> b) -> [a] -> [a]
+minimumsOn _ [] = []
+minimumsOn f as = [a | a <- as, f a == m]
+  where
+    m = minimum $ map f as
+
+maximumsOn :: Ord b => (a -> b) -> [a] -> [a]
+maximumsOn _ [] = []
+maximumsOn f as = [a | a <- as, f a == m]
+  where
+    m = maximum $ map f as
+
 countIf :: (a -> Bool) -> [a] -> Int
 countIf p = length . filter p
 
