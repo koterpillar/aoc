@@ -35,7 +35,7 @@ parser =
 data VState =
   VState
     { vMap       :: Input
-    , vPosition  :: VKey
+    , vPositions :: [VKey]
     , vOpenK     :: Set VKey
     , vMinute    :: Int
     , vTotalTime :: Int
@@ -46,15 +46,18 @@ data VState =
 vAt :: VState -> VKey -> VData
 vAt VState {..} k = fromJustE "vAt" $ Map.lookup k vMap
 
-vHere :: VState -> VData
-vHere s = vAt s (vPosition s)
+vPosition :: Int -> VState -> VKey
+vPosition i VState {..} = vPositions !! i
+
+vHere :: Int -> VState -> VData
+vHere i s = vAt s (vPosition i s)
 
 instance Show VState where
   show s@VState {..} =
     "T" ++
     show vMinute ++
     " at " ++
-    show vPosition ++
+    show vPositions ++
     " open " ++
     show (Set.toList vOpenK) ++
     " released " ++
@@ -70,35 +73,40 @@ vCurrentFlow = sum . map vFlow . vOpen
 vTotalFlow :: VState -> Int
 vTotalFlow s = vReleased s + (vTotalTime s - vMinute s) * vCurrentFlow s
 
-vTurn :: VState -> Maybe VState
-vTurn s
-  | vPosition s `Set.member` vOpenK s = Nothing
-  | vFlow (vHere s) == 0 = Nothing
-  | otherwise = Just $ s {vOpenK = Set.insert (vPosition s) (vOpenK s)}
+vTurn :: Int -> VState -> Maybe VState
+vTurn i s
+  | vPosition i s `Set.member` vOpenK s = Nothing
+  | vFlow (vHere i s) == 0 = Nothing
+  | otherwise = Just $ s {vOpenK = Set.insert (vPosition i s) (vOpenK s)}
 
-vWalk :: VState -> VKey -> VState
-vWalk s k = s {vPosition = k}
+vWalk :: Int -> VState -> VKey -> VState
+vWalk i s k = s {vPositions = sort $ sset i k $ vPositions s}
 
 vMoves :: VState -> [VState]
 vMoves s
   | vMinute s == vTotalTime s = []
-  | otherwise = map tick $ maybeToList (vTurn s) ++ map (vWalk s) reachable
+  | otherwise =
+    map tick $
+    concat
+      [ maybeToList (vTurn i s) ++ map (vWalk i s) (reachable i)
+      | i <- [0 .. length (vPositions s) - 1]
+      ]
   where
     tick s_ = s_ {vMinute = succ $ vMinute s_, vReleased = flow}
     flow = vReleased s + sum (map vFlow (vOpen s))
-    reachable = vNext (vHere s)
+    reachable i = vNext (vHere i s)
 
 vInit :: Int -> Int -> Input -> VState
 vInit minutes workers vMap = VState {..}
   where
-    vPosition = "AA"
+    vPositions = replicate workers "AA"
     vOpenK = mempty
     vMinute = 0
     vTotalTime = minutes
     vReleased = 0
 
 newtype Layers =
-  Layers (Map VKey KTree)
+  Layers (Map [VKey] KTree)
 
 data KTree
   = Leaf VState
@@ -147,12 +155,12 @@ kWorthy b (Node k l r)
   | otherwise = kWorthy b l
 
 keep :: Layers -> VState -> Bool
-keep (Layers ls) v = kWorthy v $ fromMaybe Stmp $ Map.lookup (vPosition v) ls
+keep (Layers ls) v = kWorthy v $ fromMaybe Stmp $ Map.lookup (vPositions v) ls
 
 layerAdd :: VState -> Layers -> Layers
 layerAdd v l@(Layers ls)
   | keep l v =
-    Layers $ Map.alter (Just . kinsert v . fromMaybe kempty) (vPosition v) ls
+    Layers $ Map.alter (Just . kinsert v . fromMaybe kempty) (vPositions v) ls
   | otherwise = l
 
 layerAddMany :: Layers -> [VState] -> Layers
@@ -186,4 +194,4 @@ part1 = start 30 1
 part2 = start 26 2
 
 -- Warning: part1 requires >90 seconds but <600
-tasks = Tasks 2022 16 (CodeBlock 0) parser [Task part1 1651]
+tasks = Tasks 2022 16 (CodeBlock 0) parser [Task part1 1651, Task part2 1707]
