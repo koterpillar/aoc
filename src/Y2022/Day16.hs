@@ -17,9 +17,6 @@ data VData =
     }
   deriving (Eq, Ord, Show)
 
-instance Hashable VData where
-  hashWithSalt s VData {..} = hashWithSalt s (vFlow, vNext)
-
 type Input = Map VKey VData
 
 parser :: Parser Text Input
@@ -35,53 +32,107 @@ parser =
 
 data VState =
   VState
-    { vMap       :: Input
-    , vPosition  :: VKey
-    , vOpen      :: Set VKey
-    , vRemaining :: Int
-    , vReleased  :: Int
+    { vMap      :: Input
+    , vPosition :: VKey
+    , vOpenK    :: Set VKey
+    , vMinute   :: Int
+    , vReleased :: Int
     }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
 
-instance Hashable VState where
-  hashWithSalt s VState {..} =
-    hashWithSalt s (vMap, vPosition, vOpen, vRemaining, vReleased)
+vAt :: VState -> VKey -> VData
+vAt VState {..} k = fromJustE "vAt" $ Map.lookup k vMap
 
-initState :: Input -> VState
-initState vMap = VState {..}
+vHere :: VState -> VData
+vHere s = vAt s (vPosition s)
+
+instance Show VState where
+  show s@VState {..} =
+    "T" ++
+    show vMinute ++
+    " at " ++
+    show vPosition ++
+    " open " ++
+    show (Set.toList vOpenK) ++
+    " released " ++
+    show vReleased ++
+    " current " ++ show (vCurrentFlow s) ++ " total " ++ show (vTotalFlow s)
+
+vOpen :: VState -> [VData]
+vOpen s = map (vAt s) $ Set.toList (vOpenK s)
+
+vCurrentFlow :: VState -> Int
+vCurrentFlow = sum . map vFlow . vOpen
+
+vTotalFlow :: VState -> Int
+vTotalFlow s = vReleased s + (minutes - vMinute s) * vCurrentFlow s
+
+vReachable :: VState -> [VKey]
+vReachable = vNext . vHere
+
+vTick :: VState -> VState
+vTick s = s {vMinute = succ $ vMinute s}
+
+vTurn :: VState -> Maybe VState
+vTurn s
+  | vPosition s `Set.member` vOpenK s = Nothing
+  | vFlow (vHere s) == 0 = Nothing
+  | otherwise = Just $ s {vOpenK = Set.insert (vPosition s) (vOpenK s)}
+
+vWalk :: VState -> VKey -> VState
+vWalk s k = s {vPosition = k}
+
+vMoves :: VState -> [VState]
+vMoves s0 = map vTick $ maybeToList (vTurn s) ++ map (vWalk s) (vReachable s)
+  where
+    s = s0 {vReleased = vReleased s0 + sum (map vFlow (vOpen s0))}
+
+vInit :: Input -> VState
+vInit vMap = VState {..}
   where
     vPosition = "AA"
-    vOpen = mempty
-    vRemaining = 30
+    vOpenK = mempty
+    vMinute = 1
     vReleased = 0
 
-part1 input =
-  vReleased $
-  lastE "empty path" $
-  fromJustE "no path" $ aStarDepth moves score ((== 0) . vRemaining) st
+vNotBetter :: VState -> VState -> Bool
+vNotBetter a b =
+  vPosition a == vPosition b &&
+  Set.isSubsetOf (vOpenK b) (vOpenK a) && vReleased a >= vReleased b
+
+type Layer = [VState]
+
+type Layers = [Layer]
+
+lInit :: VState -> Layers
+lInit v = [[v]]
+
+compact :: Layer -> Layer
+compact []     = []
+compact (v:vs) = v : compact (filter (not . vNotBetter v) vs)
+
+keep :: Layers -> VState -> Bool
+keep ls v = not $ any (any (`vNotBetter` v)) ls
+
+lGo :: Layers -> Layers
+lGo ls =
+  if null ns1
+    then ls
+    else lGo (ns : ls)
   where
-    score s = maxScore - vReleased s
-    maxScore = 100000000
-    st = initState input
-    moves s =
-      map pssss $
-      maybeToList (actOpen s) ++ map (actMove s) (reachable s) ++ [s]
+    l = traceShowF (("min",) . vMinute . head) $ head ls
+    m l
+      | vMinute l == minutes = []
+      | otherwise = vMoves l
+    ns0 = traceShowF (("raw", ) . length) $ concatMap m l
+    ns1 = traceShowF (("cmp", ) . length) $ compact ns0
+    ns2 = traceShowF (("kep", ) . length) $ filter (keep ls) ns1
+    ns = ns2
 
-pssss :: VState -> VState
-pssss s = s {vRemaining = pred (vRemaining s), vReleased = vReleased s + flow}
+minutes = 31
+
+part1 input = vTotalFlow $ traceShowId $ maximumOn vTotalFlow $ join $ lGo $ lInit st
   where
-    flow =
-      sum $ map vFlow $ mapMaybe (`Map.lookup` vMap s) $ Set.toList (vOpen s)
-
-reachable :: VState -> [VKey]
-reachable VState {..} = maybe [] vNext $ Map.lookup vPosition vMap
-
-actOpen :: VState -> Maybe VState
-actOpen s
-  | vPosition s `Set.member` vOpen s = Nothing
-  | otherwise = Just $ s {vOpen = Set.insert (vPosition s) (vOpen s)}
-
-actMove :: VState -> VKey -> VState
-actMove s k = s {vPosition = k}
+    st = vInit input
 
 tasks = Tasks 2022 16 (CodeBlock 0) parser [Task part1 1651]
