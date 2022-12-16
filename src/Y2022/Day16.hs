@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Y2022.Day16 where
 
 import qualified Data.Map  as Map
@@ -32,11 +34,12 @@ parser =
 
 data VState =
   VState
-    { vMap      :: Input
-    , vPosition :: VKey
-    , vOpenK    :: Set VKey
-    , vMinute   :: Int
-    , vReleased :: Int
+    { vMap       :: Input
+    , vPosition  :: VKey
+    , vOpenK     :: Set VKey
+    , vMinute    :: Int
+    , vTotalTime :: Int
+    , vReleased  :: Int
     }
   deriving (Eq, Ord)
 
@@ -65,10 +68,7 @@ vCurrentFlow :: VState -> Int
 vCurrentFlow = sum . map vFlow . vOpen
 
 vTotalFlow :: VState -> Int
-vTotalFlow s = vReleased s + (minutes - vMinute s) * vCurrentFlow s
-
-vReachable :: VState -> [VKey]
-vReachable = vNext . vHere
+vTotalFlow s = vReleased s + (vTotalTime s - vMinute s) * vCurrentFlow s
 
 vTick :: VState -> VState
 vTick s = s {vMinute = succ $ vMinute s}
@@ -83,22 +83,24 @@ vWalk :: VState -> VKey -> VState
 vWalk s k = s {vPosition = k}
 
 vMoves :: VState -> [VState]
-vMoves s0 = map vTick $ maybeToList (vTurn s) ++ map (vWalk s) (vReachable s)
+vMoves s0 = map vTick $ maybeToList (vTurn s) ++ map (vWalk s) reachable
   where
     s = s0 {vReleased = vReleased s0 + sum (map vFlow (vOpen s0))}
+    reachable = vNext (vHere s)
 
-vInit :: Input -> VState
-vInit vMap = VState {..}
+vInit :: Int -> Int -> Input -> VState
+vInit minutes workers vMap = VState {..}
   where
     vPosition = "AA"
     vOpenK = mempty
     vMinute = 1
+    vTotalTime = minutes + 1
     vReleased = 0
 
 vNotBetter :: VState -> VState -> Bool
 vNotBetter a b =
   vPosition a == vPosition b &&
-  Set.isSubsetOf (vOpenK b) (vOpenK a) && vReleased a >= vReleased b
+  Set.isSubsetOf (vOpenK b) (vOpenK a) && vTotalFlow a >= vTotalFlow b
 
 newtype Layers =
   Layers (Map (VKey, Set VKey) VState)
@@ -135,26 +137,31 @@ layerMk = layerAddMany layers0
 compact :: [VState] -> [VState]
 compact = unLayers . layerMk
 
-lGo :: [VState] -> Layers -> Layers
-lGo l ls =
+lGo :: Int -> [VState] -> Layers -> Layers
+lGo minutes l ls =
   if null ns1
     then ls
-    else lGo ns $ traceShowF (("lrs", ) . layersSize) $ layerAddMany ls l
+    else lGo minutes ns $
+         traceF (prependShow "lrs" . layersSize) $ layerAddMany ls l
   where
-    l1 = traceShowF (("min", ) . vMinute . head) l
+    l1 = traceF (prependShow "min" . vMinute . head) l
     m l
       | vMinute l == minutes = []
       | otherwise = vMoves l
-    ns0 = traceShowF (("raw", ) . length) $ concatMap m l1
-    ns1 = traceShowF (("cmp", ) . length) $ compact ns0
+    ns0 = traceF (prependShow "raw" . length) $ concatMap m l1
+    ns1 = traceF (prependShow "cmp" . length) $ compact ns0
     ns = ns1
 
-minutes = 31
-
-part1 input =
-  vTotalFlow $ traceShowId $ maximumOn vTotalFlow $ unLayers $ lGo [st] layers0
+start :: Int -> Int -> Input -> Int
+start minutes workers input =
+  vTotalFlow $
+  traceShowId $ maximumOn vTotalFlow $ unLayers $ lGo (minutes + 1) [st] layers0
   where
-    st = vInit input
+    st = vInit minutes workers input
+
+part1 = start 30 1
+
+part2 = start 26 2
 
 -- Warning: part1 requires >90 seconds but <600
 tasks = Tasks 2022 16 (CodeBlock 0) parser [Task part1 1651]
