@@ -203,4 +203,5 @@ part1 = start 30 1
 
 part2 = start 26 2
 
+-- on my data the right answer to part 2 is between 2722 and 2922
 tasks = Tasks 2022 16 (CodeBlock 0) parser [Task part1 1651, Task part2 1707]
