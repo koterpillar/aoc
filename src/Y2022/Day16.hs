@@ -162,7 +162,7 @@ kWorthy b (Node k l r)
   | otherwise = kWorthy b l
 
 keep :: Layers -> VState -> Bool
-keep (Layers ls) v = kWorthy v $ fromMaybe Stmp $ Map.lookup (vPositions v) ls
+keep (Layers ls) v = maybe True (kWorthy v) $ Map.lookup (vPositions v) ls
 
 layerAdd :: VState -> Layers -> Layers
 layerAdd v l@(Layers ls)
