@@ -100,35 +100,46 @@ vNotBetter a b =
   vPosition a == vPosition b &&
   Set.isSubsetOf (vOpenK b) (vOpenK a) && vReleased a >= vReleased b
 
-type Layer = [VState]
-
 newtype Layers =
-  Layers Layer
-
-lInit :: VState -> Layer
-lInit v = [v]
+  Layers (Map (VKey, Set VKey) VState)
 
 layers0 :: Layers
-layers0 = Layers []
+layers0 = Layers mempty
 
 unLayers :: Layers -> [VState]
-unLayers (Layers ls) = ls
+unLayers (Layers ls) = toList ls
 
-compact :: Layer -> Layer
-compact []     = []
-compact (v:vs) = v : compact (filter (not . vNotBetter v) vs)
+layersSize :: Layers -> Int
+layersSize (Layers ls) = length ls
 
 keep :: Layers -> VState -> Bool
-keep (Layers ls) v = not $ any (`vNotBetter` v) ls
+keep (Layers ls) v = not $ any (`vNotBetter` v) os
+  where
+    os =
+      catMaybes
+        [ Map.lookup (vPosition v, o) ls
+        | o <- Set.toList (Set.powerSet (vOpenK v))
+        ]
 
-layerAdd :: Layers -> Layer -> Layers
-layerAdd (Layers ls) l = Layers (l ++ ls)
+layerAdd :: VState -> Layers -> Layers
+layerAdd v l@(Layers ls)
+  | keep l v = Layers $ Map.insert (vPosition v, vOpenK v) v ls
+  | otherwise = l
 
-lGo :: Layer -> Layers -> Layers
+layerAddMany :: Layers -> [VState] -> Layers
+layerAddMany = foldr layerAdd
+
+layerMk :: [VState] -> Layers
+layerMk = layerAddMany layers0
+
+compact :: [VState] -> [VState]
+compact = unLayers . layerMk
+
+lGo :: [VState] -> Layers -> Layers
 lGo l ls =
   if null ns1
     then ls
-    else lGo ns $ layerAdd ls l
+    else lGo ns $ traceShowF (("lrs", ) . layersSize) $ layerAddMany ls l
   where
     l1 = traceShowF (("min", ) . vMinute . head) l
     m l
@@ -136,15 +147,14 @@ lGo l ls =
       | otherwise = vMoves l
     ns0 = traceShowF (("raw", ) . length) $ concatMap m l1
     ns1 = traceShowF (("cmp", ) . length) $ compact ns0
-    ns2 = traceShowF (("kep", ) . length) $ filter (keep ls) ns1
-    ns = ns2
+    ns = ns1
 
 minutes = 31
 
 part1 input =
-  vTotalFlow $
-  traceShowId $ maximumOn vTotalFlow $ unLayers $ lGo (lInit st) layers0
+  vTotalFlow $ traceShowId $ maximumOn vTotalFlow $ unLayers $ lGo [st] layers0
   where
     st = vInit input
 
+-- Warning: part1 requires >90 seconds but <600
 tasks = Tasks 2022 16 (CodeBlock 0) parser [Task part1 1651]
