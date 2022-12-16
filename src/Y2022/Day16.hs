@@ -121,8 +121,12 @@ kempty :: KTree
 kempty = Stmp
 
 ktoList :: KTree -> [VState]
+ktoList Stmp         = []
 ktoList (Leaf v)     = [v]
 ktoList (Node _ l r) = ktoList l ++ ktoList r
+
+ksize :: KTree -> Int
+ksize = length . ktoList
 
 kinsert :: VState -> KTree -> KTree
 kinsert v Stmp = Leaf v
@@ -148,7 +152,7 @@ unLayers :: Layers -> [VState]
 unLayers (Layers ls) = concatMap ktoList $ toList ls
 
 layersSize :: Layers -> Int
-layersSize (Layers ls) = length ls
+layersSize (Layers ls) = sum $ map ksize $ toList ls
 
 kWorthy :: VState -> KTree -> Bool
 kWorthy _ Stmp = True
