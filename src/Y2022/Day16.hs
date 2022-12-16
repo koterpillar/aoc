@@ -70,9 +70,6 @@ vCurrentFlow = sum . map vFlow . vOpen
 vTotalFlow :: VState -> Int
 vTotalFlow s = vReleased s + (vTotalTime s - vMinute s) * vCurrentFlow s
 
-vTick :: VState -> VState
-vTick s = s {vMinute = succ $ vMinute s}
-
 vTurn :: VState -> Maybe VState
 vTurn s
   | vPosition s `Set.member` vOpenK s = Nothing
@@ -83,9 +80,12 @@ vWalk :: VState -> VKey -> VState
 vWalk s k = s {vPosition = k}
 
 vMoves :: VState -> [VState]
-vMoves s0 = map vTick $ maybeToList (vTurn s) ++ map (vWalk s) reachable
+vMoves s
+  | vMinute s == vTotalTime s = []
+  | otherwise = map tick $ maybeToList (vTurn s) ++ map (vWalk s) reachable
   where
-    s = s0 {vReleased = vReleased s0 + sum (map vFlow (vOpen s0))}
+    tick s_ = s_ {vMinute = succ $ vMinute s_, vReleased = flow}
+    flow = vReleased s + sum (map vFlow (vOpen s))
     reachable = vNext (vHere s)
 
 vInit :: Int -> Int -> Input -> VState
@@ -93,8 +93,8 @@ vInit minutes workers vMap = VState {..}
   where
     vPosition = "AA"
     vOpenK = mempty
-    vMinute = 1
-    vTotalTime = minutes + 1
+    vMinute = 0
+    vTotalTime = minutes
     vReleased = 0
 
 vNotBetter :: VState -> VState -> Bool
@@ -137,27 +137,22 @@ layerMk = layerAddMany layers0
 compact :: [VState] -> [VState]
 compact = unLayers . layerMk
 
-lGo :: Int -> [VState] -> Layers -> Layers
-lGo minutes l ls =
-  if null ns1
+lGo :: [VState] -> Layers -> Layers
+lGo l ls =
+  if null ns
     then ls
-    else lGo minutes ns $
-         traceF (prependShow "lrs" . layersSize) $ layerAddMany ls l
+    else lGo ns $ traceF (prependShow "lrs" . layersSize) $ layerAddMany ls l
   where
     l1 = traceF (prependShow "min" . vMinute . head) l
-    m l
-      | vMinute l == minutes = []
-      | otherwise = vMoves l
-    ns0 = traceF (prependShow "raw" . length) $ concatMap m l1
-    ns1 = traceF (prependShow "cmp" . length) $ compact ns0
-    ns = ns1
+    ns0 = traceF (prependShow "raw" . length) $ concatMap vMoves l1
+    ns2 = traceF (prependShow "cmp" . length) $ compact ns0
+    ns = ns2
 
 start :: Int -> Int -> Input -> Int
 start minutes workers input =
-  vTotalFlow $
-  traceShowId $ maximumOn vTotalFlow $ unLayers $ lGo (minutes + 1) [st] layers0
+  vTotalFlow $ traceShowId $ maximumOn vTotalFlow $ unLayers $ lGo [st] layers0
   where
-    st = vInit minutes workers input
+    st = vInit minutes workers $ traceShowId input
 
 part1 = start 30 1
 
