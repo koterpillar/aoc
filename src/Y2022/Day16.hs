@@ -186,9 +186,18 @@ lGo l ls =
     ns1 = traceF (prependShow "cmp" . length) $ compact ns0
     ns = ns1
 
+maximumsOn :: Ord b => (a -> b) -> [a] -> [a]
+maximumsOn _ [] = []
+maximumsOn f as = [a | a <- as, f a == m]
+  where
+    m = maximum $ map f as
+
 start :: Int -> Int -> Input -> Int
 start minutes workers input =
-  vTotalFlow $ traceShowId $ maximumOn vTotalFlow $ unLayers $ lGo [st] layers0
+  vTotalFlow $
+  head $
+  traceF (unlines . map show) $
+  maximumsOn vTotalFlow $ unLayers $ lGo [st] layers0
   where
     st = vInit minutes workers input
 
