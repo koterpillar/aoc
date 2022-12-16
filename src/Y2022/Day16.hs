@@ -102,36 +102,48 @@ vNotBetter a b =
 
 type Layer = [VState]
 
-type Layers = [Layer]
+newtype Layers =
+  Layers Layer
 
-lInit :: VState -> Layers
-lInit v = [[v]]
+lInit :: VState -> Layer
+lInit v = [v]
+
+layers0 :: Layers
+layers0 = Layers []
+
+unLayers :: Layers -> [VState]
+unLayers (Layers ls) = ls
 
 compact :: Layer -> Layer
 compact []     = []
 compact (v:vs) = v : compact (filter (not . vNotBetter v) vs)
 
 keep :: Layers -> VState -> Bool
-keep ls v = not $ any (any (`vNotBetter` v)) ls
+keep (Layers ls) v = not $ any (`vNotBetter` v) ls
 
-lGo :: Layers -> Layers
-lGo ls =
+layerAdd :: Layers -> Layer -> Layers
+layerAdd (Layers ls) l = Layers (l ++ ls)
+
+lGo :: Layer -> Layers -> Layers
+lGo l ls =
   if null ns1
     then ls
-    else lGo (ns : ls)
+    else lGo ns $ layerAdd ls l
   where
-    l = traceShowF (("min",) . vMinute . head) $ head ls
+    l1 = traceShowF (("min", ) . vMinute . head) l
     m l
       | vMinute l == minutes = []
       | otherwise = vMoves l
-    ns0 = traceShowF (("raw", ) . length) $ concatMap m l
+    ns0 = traceShowF (("raw", ) . length) $ concatMap m l1
     ns1 = traceShowF (("cmp", ) . length) $ compact ns0
     ns2 = traceShowF (("kep", ) . length) $ filter (keep ls) ns1
     ns = ns2
 
 minutes = 31
 
-part1 input = vTotalFlow $ traceShowId $ maximumOn vTotalFlow $ join $ lGo $ lInit st
+part1 input =
+  vTotalFlow $
+  traceShowId $ maximumOn vTotalFlow $ unLayers $ lGo (lInit st) layers0
   where
     st = vInit input
 
