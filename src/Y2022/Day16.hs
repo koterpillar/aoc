@@ -80,19 +80,22 @@ vTurn i s
   | otherwise = Just $ s {vOpenK = Set.insert (vPosition i s) (vOpenK s)}
 
 vWalk :: Int -> VState -> VKey -> VState
-vWalk i s k = s {vPositions = sort $ sset i k $ vPositions s}
+vWalk i s k = s {vPositions = sset i k $ vPositions s}
 
 vMoves :: VState -> [VState]
 vMoves s
   | vMinute s == vTotalTime s = []
-  | otherwise =
-    map tick $
-    concat
-      [ maybeToList (vTurn i s) ++ map (vWalk i s) (reachable i)
-      | i <- [0 .. length (vPositions s) - 1]
-      ]
+  | otherwise = map tick $ foldr mi [s] [0 .. length (vPositions s) - 1]
   where
-    tick s_ = s_ {vMinute = succ $ vMinute s_, vReleased = flow}
+    mi i =
+      concatMap $ \s_ ->
+        maybeToList (vTurn i s_) ++ map (vWalk i s_) (reachable i)
+    tick s_ =
+      s_
+        { vMinute = succ $ vMinute s_
+        , vReleased = flow
+        , vPositions = sort $ vPositions s_
+        }
     flow = vReleased s + sum (map vFlow (vOpen s))
     reachable i = vNext (vHere i s)
 
@@ -187,11 +190,10 @@ start :: Int -> Int -> Input -> Int
 start minutes workers input =
   vTotalFlow $ traceShowId $ maximumOn vTotalFlow $ unLayers $ lGo [st] layers0
   where
-    st = vInit minutes workers $ traceShowId input
+    st = vInit minutes workers input
 
 part1 = start 30 1
 
 part2 = start 26 2
 
--- Warning: part1 requires >90 seconds but <600
 tasks = Tasks 2022 16 (CodeBlock 0) parser [Task part1 1651, Task part2 1707]
