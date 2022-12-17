@@ -110,19 +110,30 @@ vInit minutes workers vMap = VState {..}
     vTotalTime = minutes
     vReleased = 0
 
-type Seen = Set ([VKey], Set VKey)
+type Seen = Map ([VKey], Set VKey) [VState]
 
 initSeen :: Seen
 initSeen = mempty
 
+better :: VState -> VState -> Bool
+better a b = vMinute a < vMinute b || vTotalFlow a > vTotalFlow b
+
+-- | Whether given state (first argument) is an improvement on known states (second argument)
+improves :: VState -> [VState] -> Maybe [VState]
+improves a [] = Just [a]
+improves a (b:bs)
+  | better b a = Nothing
+  | better a b = improves a bs
+  | otherwise = (b :) <$> improves a bs
+
 checkMarkSeen :: VState -> State Seen Bool
-checkMarkSeen s = do
-  let k = (vPositions s, vOpenK s)
-  gets (Set.member k) >>= \case
-    True -> pure False
-    False -> do
-      traceM $ prependShow "new" s
-      modify' (Set.insert k)
+checkMarkSeen a = do
+  let k = (vPositions a, vOpenK a)
+  gets (improves a . fromMaybe [] . Map.lookup k) >>= \case
+    Nothing -> pure False
+    Just as -> do
+      traceM $ prependShow "improvement" a
+      modify' (Map.insert k as)
       pure True
 
 dfs :: VState -> State Seen [VState]
