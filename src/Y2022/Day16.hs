@@ -79,9 +79,12 @@ vCurrentFlow = sum . map vFlow . vOpen
 vTotalFlow :: VState -> Int
 vTotalFlow s = vReleased s + (vTotalTime s - vMinute s) * vCurrentFlow s
 
+vIsOpen :: VKey -> VState -> Bool
+vIsOpen k s = k `Set.member` vOpenK s
+
 vTurn :: Int -> VState -> Maybe VState
 vTurn i s
-  | vPosition i s `Set.member` vOpenK s = Nothing
+  | vIsOpen (vPosition i s) s = Nothing
   | vFlow (vHere i s) == 0 = Nothing
   | otherwise =
     Just $
