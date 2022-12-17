@@ -122,8 +122,14 @@ vInit minutes workers vMap = VState {..}
     vTotalTime = minutes
     vReleased = 0
 
-better :: VState -> VState -> Bool
-better a b = at <= bt && af >= bf && (at < bt || af > bf)
+maybeCompare :: VState -> VState -> Maybe Ordering
+maybeCompare a b
+  | at == bt && af == bf = Just EQ
+  | at == bt && af > bf = Just GT
+  | at == bt && af < bf = Just LT
+  | at < bt && af == bf = Just GT
+  | at > bt && af == bf = Just LT
+  | otherwise = Nothing
   where
     at = vMinute a
     bt = vMinute b
@@ -133,11 +139,12 @@ better a b = at <= bt && af >= bf && (at < bt || af > bf)
 -- | Whether given state (first argument) is an improvement on known states (second argument)
 improves :: VState -> [VState] -> Maybe [VState]
 improves a [] = Just [a]
-improves a (b:bs)
-  | a == b = Nothing
-  | better b a = Nothing
-  | better a b = improves a bs
-  | otherwise = (b :) <$> improves a bs
+improves a (b:bs) =
+  case maybeCompare a b of
+    Nothing -> (b :) <$> improves a bs
+    Just GT -> improves a bs
+    Just EQ -> Nothing
+    Just LT -> Nothing
 
 type Seen = Map ([VKey], Set VKey) [VState]
 
