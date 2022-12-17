@@ -59,15 +59,15 @@ vHere :: Int -> VState -> VData
 vHere i s = vAt s (vPosition i s)
 
 instance Show VState where
-  show s@VState {..} =
+  show s =
     "T" ++
-    show vMinute ++
+    show (vMinute s) ++
     " at " ++
-    show vPositions ++
+    show (vPositions s) ++
     " open " ++
-    show (Set.toList vOpenK) ++
+    show (Set.toList $ vOpenK s) ++
     " released " ++
-    show vReleased ++
+    show (vReleased s) ++
     " current " ++ show (vCurrentFlow s) ++ " total " ++ show (vTotalFlow s)
 
 vOpen :: VState -> [VData]
