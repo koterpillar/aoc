@@ -122,6 +122,7 @@ better a b = vMinute a < vMinute b || vTotalFlow a > vTotalFlow b
 improves :: VState -> [VState] -> Maybe [VState]
 improves a [] = Just [a]
 improves a (b:bs)
+  | a == b = Nothing
   | better b a = Nothing
   | better a b = improves a bs
   | otherwise = (b :) <$> improves a bs
@@ -129,11 +130,12 @@ improves a (b:bs)
 checkMarkSeen :: VState -> State Seen Bool
 checkMarkSeen a = do
   let k = (vPositions a, vOpenK a)
-  gets (improves a . fromMaybe [] . Map.lookup k) >>= \case
+  bs <- gets $ fromMaybe [] . Map.lookup k
+  case improves a bs of
     Nothing -> pure False
-    Just as -> do
+    Just bs' -> do
       traceM $ prependShow "improvement" a
-      modify' (Map.insert k as)
+      modify' (Map.insert k bs')
       pure True
 
 dfs :: VState -> State Seen [VState]
