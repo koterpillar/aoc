@@ -58,8 +58,10 @@ putInChamber rock = do
 data St =
   St
     { stWind    :: [Direction4]
+    , stWindInd :: Int
     , stChamber :: Grid
     , stRock    :: Maybe Rock
+    , stRockInd :: Int
     , stOffset  :: Int
     }
 
@@ -77,8 +79,17 @@ displaySt St {..} =
   displayG $
   foldr Map.union (Map.map (const C) stChamber) (Map.map (const R) <$> stRock)
 
+succMod :: Int -> Int -> Int
+succMod n x = succ x `mod` n
+
 stInit :: [Direction4] -> St
-stInit wind = St (cycle wind) initChamber Nothing 0
+stInit stWind = St {..}
+  where
+    stWindInd = 0
+    stChamber = initChamber
+    stRock = Nothing
+    stRockInd = 0
+    stOffset = 0
 
 stHeight :: St -> Int
 stHeight St {..} = -ymin + stOffset
@@ -88,8 +99,9 @@ stHeight St {..} = -ymin + stOffset
 getWind :: State St Direction4
 getWind = do
   wind <- gets stWind
-  modify $ \s -> s {stWind = tail wind}
-  return $ head wind
+  i <- gets stWindInd
+  modify $ \s -> s {stWindInd = succMod (length wind) i}
+  pure $ wind !! i
 
 tryMoveRock :: Direction4 -> State St Bool
 tryMoveRock d = do
@@ -123,11 +135,13 @@ dropRockGo = do
                    (stChamber s)
              }
 
-dropRock :: Int -> Rock -> State St ()
-dropRock n r = do
+dropRock :: Int -> State St ()
+dropRock n = do
   when (n `mod` 10000 == 0) $ traceShowM n
   when (n `mod` 10 == 0) optimize
+  r <- (rocks !!) <$> gets stRockInd
   putInChamber r
+  modify $ \s -> s {stRockInd = succMod (length rocks) (stRockInd s)}
   dropRockGo
 
 probe :: Grid -> Int -> Int -> Int -> Maybe Int
@@ -148,16 +162,14 @@ optimize = do
       show (length g) ++
       " to " ++
       show (length g') ++
-      " pts " ++
-      show (sum $ map (\(Position2 x y) -> x + y) $ Map.keys g')
+      " pts " ++ show (sum $ map (\(Position2 x y) -> x + y) $ Map.keys g')
     modify $ \s -> s {stChamber = g', stOffset = stOffset s - cutoff}
 
 start :: Int -> [Direction4] -> Int
 start n input = stHeight st1
   where
     st0 = stInit $ traceF (prependShow "input length" . length) input
-    rs = take n $ cycle rocks
-    act = traverse (uncurry dropRock) $ zip [1 ..] rs
+    act = traverse dropRock [1 .. n]
     st1 = execState act st0
 
 tasks =
