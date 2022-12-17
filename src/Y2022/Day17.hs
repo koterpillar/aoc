@@ -60,6 +60,7 @@ data St =
     { stWind    :: [Direction4]
     , stChamber :: Grid
     , stRock    :: Maybe Rock
+    , stOffset  :: Int
     }
 
 data GI
@@ -77,10 +78,10 @@ displaySt St {..} =
   foldr Map.union (Map.map (const C) stChamber) (Map.map (const R) <$> stRock)
 
 stInit :: [Direction4] -> St
-stInit wind = St (cycle wind) initChamber Nothing
+stInit wind = St (cycle wind) initChamber Nothing 0
 
 stHeight :: St -> Int
-stHeight St {..} = -ymin
+stHeight St {..} = -ymin + stOffset
   where
     (Position2 _ ymin, _) = boundsG stChamber
 
@@ -124,9 +125,8 @@ dropRockGo = do
 
 dropRock :: Int -> Rock -> State St ()
 dropRock n r = do
-  when (n `mod` 1000 == 0) $ do
-    traceShowM n
-    optimize
+  when (n `mod` 10000 == 0) $ traceShowM n
+  when (n `mod` 10 == 0) optimize
   putInChamber r
   dropRockGo
 
@@ -140,13 +140,22 @@ optimize = do
   let (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
   for_ (traverse (probe g ymin ymax) [xmin .. xmax]) $ \depths -> do
     let cutoff = maximum depths
-    let g' = Map.filterWithKey (\(Position2 _ y) _ -> y <= cutoff) g
-    modify $ \s -> s {stChamber = g'}
+    let g' =
+          Map.mapKeys (\(Position2 x y) -> Position2 x (y - cutoff)) $
+          Map.filterWithKey (\(Position2 _ y) _ -> y <= cutoff) g
+    traceM $
+      "optimized " ++
+      show (length g) ++
+      " to " ++
+      show (length g') ++
+      " pts " ++
+      show (sum $ map (\(Position2 x y) -> x + y) $ Map.keys g')
+    modify $ \s -> s {stChamber = g', stOffset = stOffset s - cutoff}
 
 start :: Int -> [Direction4] -> Int
 start n input = stHeight st1
   where
-    st0 = stInit input
+    st0 = stInit $ traceF (prependShow "input length" . length) input
     rs = take n $ cycle rocks
     act = traverse (uncurry dropRock) $ zip [1 ..] rs
     st1 = execState act st0
