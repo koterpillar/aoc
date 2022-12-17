@@ -100,6 +100,24 @@ vWalk i s k =
     , vPrevs = sset i (Just $ vPosition i s) $ vPrevs s
     }
 
+vTargetFlow :: VState -> VKey -> VKey -> Int
+vTargetFlow s k1 k2 =
+  if vFlow p2 > 0 && not (vIsOpen k2 s)
+    then vFlow p2
+    else case filter (/= k1) $ vNext p2 of
+           [k3] -> vTargetFlow s k2 k3
+           _    -> 0
+  where
+    p2 = vAt s k2
+
+vReachable :: Int -> VState -> [VKey]
+vReachable i s = sorted
+  where
+    nexts = [k | k <- vNext p1, Just k /= vPrev i s]
+    sorted = sortOn (negate . vTargetFlow s k1) nexts
+    p1 = vAt s k1
+    k1 = vPosition i s
+
 vMoves :: VState -> [VState]
 vMoves s
   | vMinute s == vTotalTime s = []
@@ -107,10 +125,9 @@ vMoves s
   where
     mi i =
       concatMap $ \s_ ->
-        maybeToList (vTurn i s_) ++ map (vWalk i s_) (reachable i)
+        maybeToList (vTurn i s_) ++ map (vWalk i s_) (vReachable i s)
     tick s_ = s_ {vMinute = succ $ vMinute s_, vReleased = flow}
     flow = vReleased s + sum (map vFlow (vOpen s))
-    reachable i = [k | k <- vNext (vHere i s), Just k /= vPrev i s]
 
 vInit :: Int -> Int -> Input -> VState
 vInit minutes workers vMap = VState {..}
