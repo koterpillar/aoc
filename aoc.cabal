@@ -108,6 +108,7 @@ library
       Y2022.Day14
       Y2022.Day15
       Y2022.Day16
+      Y2022.Day17
   other-modules:
       Paths_aoc
   hs-source-dirs:
