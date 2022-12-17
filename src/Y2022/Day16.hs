@@ -38,6 +38,7 @@ data VState =
   VState
     { vMap       :: Input
     , vPositions :: [VKey]
+    , vPrevs     :: [Maybe VKey]
     , vOpenK     :: Set VKey
     , vMinute    :: Int
     , vTotalTime :: Int
@@ -50,6 +51,9 @@ vAt VState {..} k = fromJustE "vAt" $ Map.lookup k vMap
 
 vPosition :: Int -> VState -> VKey
 vPosition i VState {..} = vPositions !! i
+
+vPrev :: Int -> VState -> Maybe VKey
+vPrev i VState {..} = vPrevs !! i
 
 vHere :: Int -> VState -> VData
 vHere i s = vAt s (vPosition i s)
@@ -79,10 +83,19 @@ vTurn :: Int -> VState -> Maybe VState
 vTurn i s
   | vPosition i s `Set.member` vOpenK s = Nothing
   | vFlow (vHere i s) == 0 = Nothing
-  | otherwise = Just $ s {vOpenK = Set.insert (vPosition i s) (vOpenK s)}
+  | otherwise =
+    Just $
+    s
+      { vOpenK = Set.insert (vPosition i s) (vOpenK s)
+      , vPrevs = sset i Nothing $ vPrevs s
+      }
 
 vWalk :: Int -> VState -> VKey -> VState
-vWalk i s k = s {vPositions = sset i k $ vPositions s}
+vWalk i s k =
+  s
+    { vPositions = sset i k $ vPositions s
+    , vPrevs = sset i (Just $ vPosition i s) $ vPrevs s
+    }
 
 vMoves :: VState -> [VState]
 vMoves s
@@ -92,28 +105,19 @@ vMoves s
     mi i =
       concatMap $ \s_ ->
         maybeToList (vTurn i s_) ++ map (vWalk i s_) (reachable i)
-    tick s_ =
-      s_
-        { vMinute = succ $ vMinute s_
-        , vReleased = flow
-        , vPositions = sort $ vPositions s_
-        }
+    tick s_ = s_ {vMinute = succ $ vMinute s_, vReleased = flow}
     flow = vReleased s + sum (map vFlow (vOpen s))
-    reachable i = vNext (vHere i s)
+    reachable i = [k | k <- vNext (vHere i s), Just k /= vPrev i s]
 
 vInit :: Int -> Int -> Input -> VState
 vInit minutes workers vMap = VState {..}
   where
     vPositions = replicate workers "AA"
+    vPrevs = replicate workers Nothing
     vOpenK = mempty
     vMinute = 0
     vTotalTime = minutes
     vReleased = 0
-
-type Seen = Map ([VKey], Set VKey) [VState]
-
-initSeen :: Seen
-initSeen = mempty
 
 better :: VState -> VState -> Bool
 better a b = vMinute a < vMinute b || vTotalFlow a > vTotalFlow b
@@ -126,6 +130,11 @@ improves a (b:bs)
   | better b a = Nothing
   | better a b = improves a bs
   | otherwise = (b :) <$> improves a bs
+
+type Seen = Map ([VKey], Set VKey) [VState]
+
+initSeen :: Seen
+initSeen = mempty
 
 checkMarkSeen :: VState -> State Seen Bool
 checkMarkSeen a = do
