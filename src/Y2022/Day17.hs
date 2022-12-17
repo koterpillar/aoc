@@ -1,10 +1,12 @@
+{-# LANGUAGE Strict #-}
+
 module Y2022.Day17 where
 
-import           Control.Monad.State
+import           Control.Monad.State.Strict
 
-import qualified Data.Map            as Map
-import qualified Data.Set            as Set
-import qualified Data.Text           as Text
+import qualified Data.Map                   as Map
+import qualified Data.Set                   as Set
+import qualified Data.Text                  as Text
 
 import           AOC
 import           Grid
@@ -120,15 +122,18 @@ dropRockGo = do
                    (stChamber s)
              }
 
-dropRock :: Rock -> State St ()
-dropRock r = putInChamber r >> dropRockGo
+dropRock :: Int -> Rock -> State St ()
+dropRock n r = do
+  when (n `mod` 1000 == 0) $ traceShowM n
+  putInChamber r
+  dropRockGo
 
 start :: Int -> [Direction4] -> Int
 start n input = stHeight st1
   where
     st0 = stInit input
     rs = take n $ cycle rocks
-    act = traverse dropRock rs
+    act = traverse (uncurry dropRock) $ zip [1 ..] rs
     st1 = execState act st0
 
 tasks =
