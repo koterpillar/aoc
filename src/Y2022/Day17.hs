@@ -80,9 +80,9 @@ stInit :: [Direction4] -> St
 stInit wind = St (cycle wind) initChamber Nothing
 
 stHeight :: St -> Int
-stHeight St {..} = ymax - ymin
+stHeight St {..} = -ymin
   where
-    (Position2 _ ymin, Position2 _ ymax) = boundsG stChamber
+    (Position2 _ ymin, _) = boundsG stChamber
 
 getWind :: State St Direction4
 getWind = do
@@ -124,9 +124,24 @@ dropRockGo = do
 
 dropRock :: Int -> Rock -> State St ()
 dropRock n r = do
-  when (n `mod` 1000 == 0) $ traceShowM n
+  when (n `mod` 1000 == 0) $ do
+    traceShowM n
+    optimize
   putInChamber r
   dropRockGo
+
+probe :: Grid -> Int -> Int -> Int -> Maybe Int
+probe g ymin ymax x =
+  listToMaybe [y | y <- [ymin .. ymax], Map.member (Position2 x y) g]
+
+optimize :: State St ()
+optimize = do
+  g <- gets stChamber
+  let (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
+  for_ (traverse (probe g ymin ymax) [xmin .. xmax]) $ \depths -> do
+    let cutoff = maximum depths
+    let g' = Map.filterWithKey (\(Position2 _ y) _ -> y <= cutoff) g
+    modify $ \s -> s {stChamber = g'}
 
 start :: Int -> [Direction4] -> Int
 start n input = stHeight st1
