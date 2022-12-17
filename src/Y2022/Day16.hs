@@ -25,6 +25,9 @@ data VData =
 
 type Input = Map VKey VData
 
+iValves :: Input -> [VKey]
+iValves = mapFilterValues $ (> 0) . vFlow
+
 parser :: Parser Text Input
 parser =
   Map.fromList <$> linesP &** wordsP &* pureP tail &* unconsP &* (idP &= vdp)
@@ -143,7 +146,7 @@ vInit minutes workers vMap = VState {..}
 
 instance Positionable VState where
   latticePosition s =
-    (60 - vMinute s) : vReleased s : map valve (Map.keys $ vMap s)
+    map valve (iValves $ vMap s) ++ [60 - vMinute s, vReleased s]
     where
       valve k =
         if vIsOpen k s
