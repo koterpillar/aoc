@@ -120,7 +120,12 @@ vInit minutes workers vMap = VState {..}
     vReleased = 0
 
 better :: VState -> VState -> Bool
-better a b = vMinute a < vMinute b || vTotalFlow a > vTotalFlow b
+better a b = at <= bt && af >= bf && (at < bt || af > bf)
+  where
+    at = vMinute a
+    bt = vMinute b
+    af = vTotalFlow a
+    bf = vTotalFlow b
 
 -- | Whether given state (first argument) is an improvement on known states (second argument)
 improves :: VState -> [VState] -> Maybe [VState]
