@@ -12,6 +12,8 @@ import           AOC
 import           Path
 import           Utils
 
+import           Y2022.Lattice
+
 type VKey = Text
 
 data VData =
@@ -139,40 +141,25 @@ vInit minutes workers vMap = VState {..}
     vTotalTime = minutes
     vReleased = 0
 
-maybeCompare :: VState -> VState -> Maybe Ordering
-maybeCompare a b
-  | at == bt && af == bf = Just EQ
-  | at == bt && af > bf = Just GT
-  | at == bt && af < bf = Just LT
-  | at < bt && af == bf = Just GT
-  | at > bt && af == bf = Just LT
-  | otherwise = Nothing
-  where
-    at = vMinute a
-    bt = vMinute b
-    af = vTotalFlow a
-    bf = vTotalFlow b
+instance Positionable VState where
+  latticePosition s =
+    (60 - vMinute s) : vReleased s : map valve (Map.keys $ vMap s)
+    where
+      valve k =
+        if vIsOpen k s
+          then 1
+          else 0
 
--- | Whether given state (first argument) is an improvement on known states (second argument)
-improves :: VState -> [VState] -> Maybe [VState]
-improves a [] = Just [a]
-improves a (b:bs) =
-  case maybeCompare a b of
-    Nothing -> (b :) <$> improves a bs
-    Just GT -> improves a bs
-    Just EQ -> Nothing
-    Just LT -> Nothing
-
-type Seen = Map ([VKey], Set VKey) [VState]
+type Seen = Map [VKey] Lattice
 
 initSeen :: Seen
 initSeen = mempty
 
 checkMarkSeen :: VState -> State Seen Bool
 checkMarkSeen a = do
-  let k = (vPositions a, vOpenK a)
-  bs <- gets $ fromMaybe [] . Map.lookup k
-  case improves a bs of
+  let k = vPositions a
+  bs <- gets $ fromMaybe latticeEmpty . Map.lookup k
+  case latticeInsert bs a of
     Nothing -> pure False
     Just bs' -> do
       traceM $ prependShow "improvement" a
@@ -187,10 +174,7 @@ dfs a =
 
 start :: Int -> Int -> Input -> Int
 start minutes workers input =
-  vTotalFlow $
-  head $
-  traceF (unlines . map show) $
-  minimumsOn vMinute $ maximumsOn vTotalFlow $ evalState (dfs st) initSeen
+  vTotalFlow $ traceShowId $ maximumOn vTotalFlow $ evalState (dfs st) initSeen
   where
     st = vInit minutes workers input
 
