@@ -80,7 +80,19 @@ data VPosition
 
 vEnRoute :: Int -> VKey -> VPosition
 vEnRoute 0 = VAt
-vEnRoute i = VEnRoute i
+vEnRoute i
+  | i < 0 = error $ "vEnRoute: negative time: " ++ show i
+  | otherwise = VEnRoute i
+
+vDue :: VPosition -> Int
+vDue (VAt _)        = 0
+vDue (VEnRoute i _) = i
+
+vSubtract :: Int -> VPosition -> VPosition
+vSubtract 0 p = p
+vSubtract i p@(VAt _) =
+  error $ "Can't subtract " ++ show i ++ " from " ++ show p
+vSubtract i (VEnRoute j k) = vEnRoute (j - i) k
 
 data VState =
   VState
@@ -151,11 +163,23 @@ vMoveOne i s = maybeToList (vTurn i s) ++ map (vWalk i s) (vReachable i s)
 
 vMoves :: VState -> [VState]
 vMoves s0
-  | vMinute s0 == vTotalTime s0 = []
-  | otherwise = tick <$> foldrM vMoveOne s0 (vIndices s0)
+  | vMinute s0 >= vTotalTime s0 = []
+  | otherwise = vWarp . tick <$> foldrM vMoveOne s0 (vIndices s0)
   where
     tick s_ = s_ {vMinute = succ $ vMinute s_, vReleased = flow}
-    flow = vReleased s0 + sum (map vFlow (vOpen s0))
+    flow = vReleased s0 + vCurrentFlow s0
+
+vWarp :: VState -> VState
+vWarp s =
+  s
+    { vMinute = vMinute s + t
+    , vPositions = ps'
+    , vReleased = vReleased s + t * vCurrentFlow s
+    }
+  where
+    ps = vPositions s
+    t = minimum $ map vDue ps
+    ps' = map (vSubtract t) ps
 
 vInit :: Int -> Int -> Input -> VState
 vInit minutes workers vMap = VState {..}
