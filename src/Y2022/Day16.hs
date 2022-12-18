@@ -2,6 +2,7 @@
 
 module Y2022.Day16 where
 
+import           Control.Arrow              ((***))
 import           Control.Monad.State.Strict
 
 import           Data.Foldable              (foldrM)
@@ -65,7 +66,6 @@ mPath :: Input -> PathFn
 mPath m = \from to -> mapLookupE "mPath" (from, to) paths
   where
     !paths =
-      traceF (prependShow "paths length" . length) $
       Map.fromList $ do
         from <- vAA : mValves m
         to <- vAA : mValves m
@@ -108,11 +108,29 @@ start :: Int -> Input -> Int
 start minutes input = score
   where
     !path = mPath input
-    score = mTally input path minutes $ mValves input
+    score =
+      mTally input path minutes $
+      traceF (prependShow "valves" . length) $ mValves input
 
 part1 = start 30
 
-part2 = error "not implemented" -- start 26 2
+splits :: Ord a => [a] -> [([a], [a])]
+splits [] = [([], [])]
+splits (x:xs) = do
+  (ls, rs) <- splits xs
+  [(x : ls, rs), (ls, x : rs)]
 
--- on my data the right answer to part 2 is between 2722 and 2922
+start2 :: Int -> Input -> Int
+start2 minutes input =
+  maximum $
+  map (uncurry (+) . (score *** score)) $
+  listProgress 100 $
+  traceF (prependShow "splits" . length) $ splits $ mValves input
+  where
+    !path = mPath input
+    score = mTally input path minutes
+
+-- Takes around 5 minutes
+part2 = start2 26
+
 tasks = Tasks 2022 16 (CodeBlock 0) parser [Task part1 1651, Task part2 1707]
