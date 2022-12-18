@@ -6,7 +6,7 @@ import           Control.Monad.State.Strict
 
 import           Data.Foldable              (foldrM)
 
-import qualified Data.Map                   as Map
+import qualified Data.Map.Strict            as Map
 import qualified Data.Set                   as Set
 import qualified Data.Text                  as Text
 
@@ -91,18 +91,27 @@ mExcludeZero = iterateMaybeL mExcludeOneZero
 type PathFn = VKey -> VKey -> Int
 
 mPath :: Input -> PathFn
-mPath m =
-  memoize2 $ \from to ->
-    traceF (prependShow "mPath" . (from, to, )) $
-    fst $
-    lastE "mPath" $
-    fromJustE "mPath" $
-    aStar moves (subtract `on` fst) (const 0) ((== to) . snd) (0, from)
+mPath m = \from to -> mapLookupE "mPath" (from, to) paths
+  where
+    !paths =
+      traceF (prependShow "paths length" . length) $
+      Map.fromList $ do
+        from <- vAA : mValves m
+        to <- vAA : mValves m
+        guard $ from /= to
+        pure ((from, to), mPath' m from to)
+
+mPath' :: Input -> PathFn
+mPath' m from to =
+  fst $
+  lastE "mPath" $
+  fromJustE "mPath" $
+  aStar moves (subtract `on` fst) (const 0) ((== to) . snd) (0, from)
   where
     moves (d, k) = [(d + d', k') | (d', k') <- vNext $ mapLookupE "mPath" k m]
 
 mValves :: Input -> [VKey]
-mValves = mapFilterValues ((/= 0) . vFlow)
+mValves = map fst . sortOn (negate . snd) . filter ((> 0) . snd) . Map.toList . Map.map vFlow
 
 type Order = [VKey]
 
@@ -138,7 +147,7 @@ mTally m limit = go 0 0
         kf = vFlow $ mapLookupE "mTally" k m
 
 start :: Int -> Input -> Int
-start minutes input = maximum $ listProgress 1000 $ map score orders
+start minutes input = maximum $ listProgress 1000000 $ take 5000000 $ map score orders
   where
     orders = mOrders input
     !path = mPath input
