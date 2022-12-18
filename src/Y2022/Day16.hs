@@ -44,6 +44,35 @@ parser =
        ((pureP (terase "rate=" . terase ";") &* integerP) &=
         (pureP (drop 4 . map (terase ",")) &* idP)))
 
+-- | Cut out the given vertex, connecting its two neighbors directly instead.
+mExclude :: VKey -> ((Int, VKey), (Int, VKey)) -> Input -> Input
+mExclude b ((da, a), (dc, c)) =
+  Map.delete b . Map.mapWithKey (\d v -> v {vNext = map (go d) (vNext v)})
+  where
+    go k1 (i, k2)
+      | k1 == a && k2 == b = (i + dc, c)
+      | k1 == c && k2 == b = (i + da, a)
+      | k2 == b =
+        error $
+        "mExclude: found " ++
+        show k1 ++
+        " connected to " ++
+        show k2 ++ " but it's not " ++ show a ++ " or " ++ show c
+      | otherwise = (i, k2)
+
+mExcludeOneZero :: Input -> Maybe Input
+mExcludeOneZero input = do
+  (b, ds) <-
+    listToMaybe
+      [ (b, ((da, a), (dc, c)))
+      | (b, VData {vNext = [(da, a), (dc, c)], vFlow = 0}) <- Map.toList input
+      , b /= "AA"
+      ]
+  pure $ mExclude b ds input
+
+mExcludeZero :: Input -> Input
+mExcludeZero = iterateMaybeL mExcludeOneZero
+
 data VPosition
   = VAt VKey
   | VEnRoute Int VKey
@@ -65,7 +94,7 @@ data VState =
   deriving (Eq, Ord)
 
 vAt :: VState -> VKey -> VData
-vAt VState {..} k = fromJustE "vAt" $ Map.lookup k vMap
+vAt VState {..} k = mapLookupE "vAt" k vMap
 
 vPosition :: Int -> VState -> VPosition
 vPosition i VState {..} = vPositions !! i
@@ -173,7 +202,8 @@ start :: Int -> Int -> Input -> Int
 start minutes workers input =
   vTotalFlow $ traceShowId $ maximumOn vTotalFlow $ evalState (dfs st) initSeen
   where
-    st = vInit minutes workers input
+    st = vInit minutes workers input'
+    input' = mExcludeZero input
 
 part1 = start 30 1
 
