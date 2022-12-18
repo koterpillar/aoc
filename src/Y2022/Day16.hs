@@ -15,11 +15,16 @@ import           Path
 import           Utils
 
 newtype VKey =
-  VKey Text
+  VKey
+    { unVKey :: Text
+    }
   deriving (Eq, Ord)
 
 instance Hashable VKey where
-  hashWithSalt s (VKey k) = hashWithSalt s k
+  hashWithSalt s = hashWithSalt s . unVKey
+
+instance Memoizable VKey where
+  memoize f t = memoize (f . VKey) (unVKey t)
 
 vAA :: VKey
 vAA = VKey "AA"
@@ -83,12 +88,16 @@ mExcludeOneZero input = do
 mExcludeZero :: Input -> Input
 mExcludeZero = iterateMaybeL mExcludeOneZero
 
-mPath :: Input -> VKey -> VKey -> Int
-mPath m from to =
-  fst $
-  lastE "mPath" $
-  fromJustE "mPath" $
-  aStar moves (subtract `on` fst) (const 0) ((== to) . snd) (0, from)
+type PathFn = VKey -> VKey -> Int
+
+mPath :: Input -> PathFn
+mPath m =
+  memoize2 $ \from to ->
+    traceF (prependShow "mPath" . (from, to, )) $
+    fst $
+    lastE "mPath" $
+    fromJustE "mPath" $
+    aStar moves (subtract `on` fst) (const 0) ((== to) . snd) (0, from)
   where
     moves (d, k) = [(d + d', k') | (d', k') <- vNext $ mapLookupE "mPath" k m]
 
@@ -98,7 +107,7 @@ mValves = mapFilterValues ((/= 0) . vFlow)
 type Order = [VKey]
 
 mOrders :: Input -> [Order]
-mOrders = permutations . mValves
+mOrders = permutations . traceF (prependShow "valves" . length) . mValves
 
 data Event =
   Event
@@ -107,36 +116,33 @@ data Event =
     }
   deriving (Eq, Ord, Show)
 
-mExecute :: Input -> Order -> [Event]
-mExecute m = mExecuteFrom m vAA
+mExecute :: PathFn -> Order -> [Event]
+mExecute path = mExecuteFrom path vAA
 
-mExecuteFrom :: Input -> VKey -> Order -> [Event]
+mExecuteFrom :: PathFn -> VKey -> Order -> [Event]
 mExecuteFrom _ _ [] = []
-mExecuteFrom m a (b:bs) = ev : mExecuteFrom m b bs
+mExecuteFrom path a (b:bs) = ev : mExecuteFrom path b bs
   where
     ev = Event (p + 1) b
-    p = mPath m a b
+    p = path a b
 
 mTally :: Input -> Int -> [Event] -> Int
 mTally m limit = go 0 0
   where
-    go _ _ [] = 0
-    go f t1 (Event t2 k:es)
-      | t2 > limit = 0
+    go f t [] = f * (limit - t)
+    go f t1 (Event dt k:es)
+      | t2 > limit = f * (limit - t1)
       | otherwise = f * dt + go (f + kf) t2 es
       where
-        dt = t2 - t1
+        t2 = t1 + dt
         kf = vFlow $ mapLookupE "mTally" k m
 
-mOrderScore :: Input -> Int -> Order -> Int
-mOrderScore m limit o = mTally m limit $ mExecute m o
-
 start :: Int -> Input -> Int
-start minutes input0 = maximum $ map score orders
+start minutes input = maximum $ listProgress 1000 $ map score orders
   where
-    input = mExcludeZero input0
-    orders = traceF (prependShow "orders length" . length) $ mOrders input
-    score = mOrderScore input minutes
+    orders = mOrders input
+    !path = mPath input
+    score = mTally input minutes . mExecute path
 
 part1 = start 30
 
