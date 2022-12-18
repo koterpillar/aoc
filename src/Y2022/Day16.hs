@@ -82,7 +82,9 @@ mPath' m from to =
     moves (d, k) = [(d + d', k') | (d', k') <- vNext $ mapLookupE "mPath" k m]
 
 mValves :: Input -> [VKey]
-mValves = map fst . sortOn (negate . snd) . filter ((> 0) . snd) . Map.toList . Map.map vFlow
+mValves =
+  map fst .
+  sortOn (negate . snd) . filter ((> 0) . snd) . Map.toList . Map.map vFlow
 
 type Order = [VKey]
 
@@ -118,7 +120,8 @@ mTally m limit = go 0 0
         kf = vFlow $ mapLookupE "mTally" k m
 
 start :: Int -> Input -> Int
-start minutes input = maximum $ listProgress 1000000 $ take 5000000 $ map score orders
+start minutes input =
+  maximum $ listProgress 1000000 $ take 5000000 $ map score orders
   where
     orders = mOrders input
     !path = mPath input
