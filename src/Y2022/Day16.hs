@@ -86,46 +86,29 @@ mValves =
   map fst .
   sortOn (negate . snd) . filter ((> 0) . snd) . Map.toList . Map.map vFlow
 
-type Order = [VKey]
-
-mOrders :: Input -> [Order]
-mOrders = permutations . traceF (prependShow "valves" . length) . mValves
-
-data Event =
-  Event
-    { eTime  :: Int
-    , eValve :: VKey
-    }
-  deriving (Eq, Ord, Show)
-
-mExecute :: PathFn -> Order -> [Event]
-mExecute path = mExecuteFrom path vAA
-
-mExecuteFrom :: PathFn -> VKey -> Order -> [Event]
-mExecuteFrom _ _ [] = []
-mExecuteFrom path a (b:bs) = ev : mExecuteFrom path b bs
+mTally :: Input -> PathFn -> Int -> [VKey] -> Int
+mTally m path limit = go 0 0 vAA
   where
-    ev = Event (p + 1) b
-    p = path a b
-
-mTally :: Input -> Int -> [Event] -> Int
-mTally m limit = go 0 0
-  where
-    go f t [] = f * (limit - t)
-    go f t1 (Event dt k:es)
-      | t2 > limit = f * (limit - t1)
-      | otherwise = f * dt + go (f + kf) t2 es
-      where
-        t2 = t1 + dt
-        kf = vFlow $ mapLookupE "mTally" k m
+    go f t _ [] = f * (limit - t)
+    go f1 t1 p1 vs
+      | t1 > limit = f1 * (limit - t1)
+      | otherwise =
+        maximum $ do
+          (p2, vrest) <- picks vs
+          let dt = path p1 p2 + 1
+          let df = vFlow $ mapLookupE "mTally" p2 m
+          let t2 = t1 + dt
+          pure $
+            if t2 > limit
+              then f1 * (limit - t1)
+              else let f2 = f1 + df
+                    in f1 * dt + go f2 t2 p2 vrest
 
 start :: Int -> Input -> Int
-start minutes input =
-  maximum $ listProgress 1000000 $ take 5000000 $ map score orders
+start minutes input = score
   where
-    orders = mOrders input
     !path = mPath input
-    score = mTally input minutes . mExecute path
+    score = mTally input path minutes $ mValves input
 
 part1 = start 30
 
