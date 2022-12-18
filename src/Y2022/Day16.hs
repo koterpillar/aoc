@@ -4,6 +4,8 @@ module Y2022.Day16 where
 
 import           Control.Monad.State.Strict
 
+import           Data.Foldable              (foldrM)
+
 import qualified Data.Map                   as Map
 import qualified Data.Set                   as Set
 import qualified Data.Text                  as Text
@@ -19,9 +21,12 @@ type VKey = Text
 data VData =
   VData
     { vFlow :: Int
-    , vNext :: [VKey]
+    , vNext :: [(Int, VKey)]
     }
   deriving (Eq, Ord, Show)
+
+mkVData :: Int -> [VKey] -> VData
+mkVData f n = VData f $ zip (repeat 1) n
 
 type Input = Map VKey VData
 
@@ -34,16 +39,24 @@ parser =
   where
     vdp =
       pureP (drop 2) &*
-      (uncurry VData <$>
+      (uncurry mkVData <$>
        unconsP &*
        ((pureP (terase "rate=" . terase ";") &* integerP) &=
         (pureP (drop 4 . map (terase ",")) &* idP)))
 
+data VPosition
+  = VAt VKey
+  | VEnRoute Int VKey
+  deriving (Eq, Ord, Show)
+
+vEnRoute :: Int -> VKey -> VPosition
+vEnRoute 0 = VAt
+vEnRoute i = VEnRoute i
+
 data VState =
   VState
     { vMap       :: Input
-    , vPositions :: [VKey]
-    , vPrevs     :: [Maybe VKey]
+    , vPositions :: [VPosition]
     , vOpenK     :: Set VKey
     , vMinute    :: Int
     , vTotalTime :: Int
@@ -54,14 +67,8 @@ data VState =
 vAt :: VState -> VKey -> VData
 vAt VState {..} k = fromJustE "vAt" $ Map.lookup k vMap
 
-vPosition :: Int -> VState -> VKey
+vPosition :: Int -> VState -> VPosition
 vPosition i VState {..} = vPositions !! i
-
-vPrev :: Int -> VState -> Maybe VKey
-vPrev i VState {..} = vPrevs !! i
-
-vHere :: Int -> VState -> VData
-vHere i s = vAt s (vPosition i s)
 
 instance Show VState where
   show s =
@@ -88,56 +95,43 @@ vIsOpen :: VKey -> VState -> Bool
 vIsOpen k s = k `Set.member` vOpenK s
 
 vTurn :: Int -> VState -> Maybe VState
-vTurn i s
-  | vIsOpen (vPosition i s) s = Nothing
-  | vFlow (vHere i s) == 0 = Nothing
-  | otherwise =
-    Just $
-    s
-      { vOpenK = Set.insert (vPosition i s) (vOpenK s)
-      , vPrevs = sset i Nothing $ vPrevs s
-      }
-
-vWalk :: Int -> VState -> VKey -> VState
-vWalk i s k =
-  s
-    { vPositions = sset i k $ vPositions s
-    , vPrevs = sset i (Just $ vPosition i s) $ vPrevs s
-    }
-
-vTargetFlow :: VState -> VKey -> VKey -> Int
-vTargetFlow s k1 k2 =
-  if vFlow p2 > 0 && not (vIsOpen k2 s)
-    then vFlow p2
-    else case filter (/= k1) $ vNext p2 of
-           [k3] -> vTargetFlow s k2 k3
-           _    -> 0
+vTurn i s =
+  case vPosition i s of
+    VEnRoute {} -> Nothing
+    VAt k       -> go k
   where
-    p2 = vAt s k2
+    go k
+      | vIsOpen k s = Nothing
+      | vFlow (vAt s k) == 0 = Nothing
+      | otherwise = Just s {vOpenK = Set.insert k (vOpenK s)}
 
-vReachable :: Int -> VState -> [VKey]
-vReachable i s = sorted
-  where
-    nexts = [k | k <- vNext p1, Just k /= vPrev i s]
-    sorted = sortOn (negate . vTargetFlow s k1) nexts
-    p1 = vAt s k1
-    k1 = vPosition i s
+vWalk :: Int -> VState -> VPosition -> VState
+vWalk i s k = s {vPositions = sset i k $ vPositions s}
+
+vReachable :: Int -> VState -> [VPosition]
+vReachable i s =
+  case vPosition i s of
+    VEnRoute i k -> [vEnRoute (i - 1) k]
+    VAt k        -> [vEnRoute (i - 1) k' | (i, k') <- vNext $ vAt s k]
+
+vIndices :: VState -> [Int]
+vIndices s = [0 .. length (vPositions s) - 1]
+
+vMoveOne :: Int -> VState -> [VState]
+vMoveOne i s = maybeToList (vTurn i s) ++ map (vWalk i s) (vReachable i s)
 
 vMoves :: VState -> [VState]
-vMoves s
-  | vMinute s == vTotalTime s = []
-  | otherwise = map tick $ foldr mi [s] [0 .. length (vPositions s) - 1]
+vMoves s0
+  | vMinute s0 == vTotalTime s0 = []
+  | otherwise = tick <$> foldrM vMoveOne s0 (vIndices s0)
   where
-    mi i =
-      concatMap $ \s_ ->
-        maybeToList (vTurn i s_) ++ map (vWalk i s_) (vReachable i s)
     tick s_ = s_ {vMinute = succ $ vMinute s_, vReleased = flow}
-    flow = vReleased s + sum (map vFlow (vOpen s))
+    flow = vReleased s0 + sum (map vFlow (vOpen s0))
 
 vInit :: Int -> Int -> Input -> VState
 vInit minutes workers vMap = VState {..}
   where
-    vPositions = replicate workers "AA"
+    vPositions = replicate workers $ VAt "AA"
     vPrevs = replicate workers Nothing
     vOpenK = mempty
     vMinute = 0
@@ -153,7 +147,7 @@ instance Positionable VState where
           then 1
           else 0
 
-type Seen = Map [VKey] Lattice
+type Seen = Map [VPosition] Lattice
 
 initSeen :: Seen
 initSeen = mempty
