@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -110,7 +110,6 @@ library
       Y2022.Day16
       Y2022.Day17
       Y2022.Day18
-      Y2022.Lattice
   other-modules:
       Paths_aoc
   hs-source-dirs:
