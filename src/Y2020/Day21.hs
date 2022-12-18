@@ -43,13 +43,6 @@ type Input = [Food]
 
 type Solution = Map A I
 
-picks :: (Ord a, Ord b) => [a] -> Set b -> [Map a b]
-picks [] bs = [Map.empty]
-picks (a:ar) bs = do
-  b <- Set.toList bs
-  let br = Set.delete b bs
-  Map.insert a b <$> picks ar br
-
 type Possibilities = Map A (Set I)
 
 possibilities :: Input -> Possibilities

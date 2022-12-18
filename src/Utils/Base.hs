@@ -94,6 +94,10 @@ zipWithTail f = map (uncurry f) . zipTail
 zipN :: Enum a => a -> [b] -> [(a, b)]
 zipN n = zip [n ..]
 
+picks :: [a] -> [(a, [a])]
+picks []     = []
+picks (x:xs) = (x, xs) : fmap (fmap (x:)) (picks xs)
+
 toNothing :: Eq a => a -> a -> Maybe a
 toNothing a b
   | a == b = Nothing
