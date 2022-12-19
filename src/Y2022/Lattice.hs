@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Y2022.Lattice
   ( Lattice
   , latticeEmpty
@@ -6,9 +8,9 @@ module Y2022.Lattice
   , Positionable(..)
   ) where
 
-import           Control.Monad.State.Strict
+import           Control.Monad.State.Class
 
-import qualified Data.Map                   as Map
+import qualified Data.Map                  as Map
 
 import           Utils
 
@@ -32,7 +34,10 @@ latticeInsert :: Positionable a => Lattice -> a -> Maybe Lattice
 latticeInsert LEmpty    = Just . LTree . mkSingleton . latticePosition
 latticeInsert (LTree l) = fmap LTree . (`lInsert` l) . latticePosition
 
-latticeInsertS :: Positionable a => a -> State Lattice Bool
+latticeInsertS ::
+     MonadState Lattice s
+  => Positionable a =>
+       a -> s Bool
 latticeInsertS a =
   gets (`latticeInsert` a) >>= \case
     Nothing -> pure False
