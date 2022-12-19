@@ -132,7 +132,7 @@ go b st
         let canConstruct = filter (stCanConstruct b st) enumerate
         let st1 = stTick st
         let candidates = map (stConstruct b st1) canConstruct ++ [st1]
-        maximum <$> traverse (go b) (take 2 candidates)
+        maximum <$> traverse (go b) (take 3 candidates)
 
 part1 = sum . map (qs . traceShowId)
   where
