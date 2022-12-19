@@ -1,12 +1,18 @@
+{-# LANGUAGE Strict #-}
+
 module Y2022.Day19 where
 
-import qualified Data.Map      as Map
-import qualified Data.Set      as Set
-import qualified Data.Text     as Text
+import           Control.Monad.State.Strict
+
+import qualified Data.Map                   as Map
+import qualified Data.Set                   as Set
+import qualified Data.Text                  as Text
 
 import           AOC
-import           Data.Foldable (foldrM)
+import           Data.Foldable              (foldrM)
 import           Utils
+
+import           Y2022.Lattice
 
 data Material
   = Geode
@@ -52,7 +58,7 @@ parser =
   blueprintP
 
 maxGeodes :: Blueprint -> Int
-maxGeodes b = go b stInit
+maxGeodes b = evalState (go b stInit) latticeEmpty
 
 data St =
   St
@@ -61,6 +67,10 @@ data St =
     , stTime      :: Int
     }
   deriving (Eq, Ord, Show)
+
+instance Positionable St where
+  latticePosition St {..} =
+    Map.elems stResources ++ Map.elems stRobots ++ [stTime]
 
 stInit :: St
 stInit = St {..}
@@ -90,13 +100,22 @@ stConstruct b m st = foldrM (uncurry stTake) st1 $ Map.toList bom
     st1 = st {stRobots = Map.insertWith (+) m 1 $ stRobots st}
     bom = mapLookupE "bom" m $ bCosts b
 
-go :: Blueprint -> St -> Int
+go :: Blueprint -> St -> State Lattice Int
 go b st
-  | stTime st == 0 = fromMaybe 0 $ Map.lookup Geode $ stResources st
-  | otherwise =
-    maximum $
-    map (go b . stTick) $
-    catMaybes [stConstruct b robot st | robot <- enumerate] ++ [st]
+  | stTime st == 0 = pure $ fromMaybe 0 $ Map.lookup Geode $ stResources st
+  | otherwise = do
+    st' <- gets (`latticeInsert` st)
+    case st' of
+      Nothing -> do
+        when (stTime st > 5) $ traceM $ prependShow "bad " st
+        pure 0
+      Just st1 -> do
+        when (stTime st > 5) $ traceM $ prependShow "good" st
+        put st1
+        let candidates =
+              map stTick $
+              catMaybes [stConstruct b robot st | robot <- enumerate] ++ [st]
+        maximum <$> traverse (go b) candidates
 
 part1 bps = sum [bID bp * maxGeodes bp | bp <- bps]
 

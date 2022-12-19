@@ -111,6 +111,7 @@ library
       Y2022.Day17
       Y2022.Day18
       Y2022.Day19
+      Y2022.Lattice
   other-modules:
       Paths_aoc
   hs-source-dirs:
