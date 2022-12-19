@@ -110,12 +110,6 @@ stCanConstruct b st r
   where
     enough m = stResource m st >= stCost b r m
 
-stCanSkip :: Blueprint -> St -> [Material] -> Bool
-stCanSkip _ _ [] = True
-stCanSkip b st cc
-  | Geode `elem` cc = False
-  | otherwise = True
-
 stConstruct :: Blueprint -> St -> Material -> St
 stConstruct b st r =
   st
@@ -135,9 +129,11 @@ go b st
       True -> do
         let canConstruct = filter (stCanConstruct b st) enumerate
         let st1 = stTick st
-        let candidates =
-              map (stConstruct b st1) canConstruct ++
-              [st1 | stCanSkip b st canConstruct]
+        let candidates
+              | Geode `elem` canConstruct = [stConstruct b st1 Geode]
+              | Obsidian `elem` canConstruct && stRobot Obsidian st1 > 0 =
+                [stConstruct b st1 Obsidian, st1]
+              | otherwise = map (stConstruct b st1) canConstruct ++ [st1]
         maximum <$> traverse (go b) (take 4 candidates)
 
 maxGeodes :: Int -> Blueprint -> Int
