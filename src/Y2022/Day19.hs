@@ -59,11 +59,6 @@ parser =
   pureP (treplace "\n  " " ") &* linesP &* pureP (filter $ not . Text.null) &**
   blueprintP
 
-maxGeodes :: Int -> Blueprint -> Int
-maxGeodes deadline b = evalState (go b st) latticeEmpty
-  where
-    st = stInit deadline
-
 data St =
   St
     { stRobots    :: Inventory
@@ -139,10 +134,16 @@ go b st
         let candidates = map (stConstruct b st1) canConstruct ++ [st1]
         maximum <$> traverse (go b) (take 4 candidates)
 
-part1 = sum . map (qs . traceShowId)
+maxGeodes :: Int -> Blueprint -> Int
+maxGeodes deadline b =
+  traceF (prependShow "result") $ evalState (go (traceShowId b) st) latticeEmpty
   where
-    qs bp = bID bp * traceF (prependShow "result") (maxGeodes 24 bp)
+    st = stInit deadline
 
-part2 = product . map (maxGeodes 32 . traceShowId) . take 3
+part1 = sum . map qs
+  where
+    qs bp = bID bp * maxGeodes 24 bp
+
+part2 = product . map (maxGeodes 32) . take 3
 
 tasks = Tasks 2022 19 (CodeBlock 0) parser [Task part1 33, Task part2 (56 * 62)]
