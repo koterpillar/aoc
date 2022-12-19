@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Y2022.Day19
   ( tasks
   ) where
@@ -112,6 +110,12 @@ stCanConstruct b st r
   where
     enough m = stResource m st >= stCost b r m
 
+stCanSkip :: Blueprint -> St -> [Material] -> Bool
+stCanSkip _ _ [] = True
+stCanSkip b st cc
+  | Geode `elem` cc = False
+  | otherwise = True
+
 stConstruct :: Blueprint -> St -> Material -> St
 stConstruct b st r =
   st
@@ -131,7 +135,9 @@ go b st
       True -> do
         let canConstruct = filter (stCanConstruct b st) enumerate
         let st1 = stTick st
-        let candidates = map (stConstruct b st1) canConstruct ++ [st1]
+        let candidates =
+              map (stConstruct b st1) canConstruct ++
+              [st1 | stCanSkip b st canConstruct]
         maximum <$> traverse (go b) (take 4 candidates)
 
 maxGeodes :: Int -> Blueprint -> Int
