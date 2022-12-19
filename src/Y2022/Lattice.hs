@@ -2,10 +2,13 @@ module Y2022.Lattice
   ( Lattice
   , latticeEmpty
   , latticeInsert
+  , latticeInsertS
   , Positionable(..)
   ) where
 
-import qualified Data.Map as Map
+import           Control.Monad.State.Strict
+
+import qualified Data.Map                   as Map
 
 import           Utils
 
@@ -28,6 +31,12 @@ latticeEmpty = LEmpty
 latticeInsert :: Positionable a => Lattice -> a -> Maybe Lattice
 latticeInsert LEmpty    = Just . LTree . mkSingleton . latticePosition
 latticeInsert (LTree l) = fmap LTree . (`lInsert` l) . latticePosition
+
+latticeInsertS :: Positionable a => a -> State Lattice Bool
+latticeInsertS a =
+  gets (`latticeInsert` a) >>= \case
+    Nothing -> pure False
+    Just l  -> put l $> True
 
 mkSingleton :: [Int] -> L
 mkSingleton = foldr ((LChoice .) . Map.singleton) LLeaf
