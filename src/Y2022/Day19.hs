@@ -68,6 +68,12 @@ data St =
     }
   deriving (Eq, Ord, Show)
 
+stResource :: Material -> St -> Int
+stResource m = mapLookupE "stResource" m . stResources
+
+stRobot :: Material -> St -> Int
+stRobot r = mapLookupE "stRobot" r . stRobots
+
 instance Positionable St where
   latticePosition St {..} =
     Map.elems stResources ++ Map.elems stRobots ++ [stTime]
@@ -94,29 +100,41 @@ stTake m q s =
     res = stResources s
     available = fromMaybe 0 $ Map.lookup m res
 
-stConstruct :: Blueprint -> Material -> St -> Maybe St
-stConstruct b m st = foldrM (uncurry stTake) st1 $ Map.toList bom
+stCost :: Blueprint -> Material -> Material -> Int
+stCost b r m = fromMaybe 0 $ Map.lookup m $ mapLookupE "stCost" r $ bCosts b
+
+stCanConstruct :: Blueprint -> St -> Material -> Bool
+stCanConstruct b st r
+  | r == Ore &&
+      stRobot Ore st >= maximum [stCost b r' Ore | r' <- enumerate, r' /= Ore] =
+    False
+  | otherwise = all enough enumerate
   where
-    st1 = st {stRobots = Map.insertWith (+) m 1 $ stRobots st}
-    bom = mapLookupE "bom" m $ bCosts b
+    enough m = stResource m st >= stCost b r m
+
+stConstruct :: Blueprint -> St -> Material -> St
+stConstruct b st r =
+  st
+    { stRobots = Map.adjust succ r $ stRobots st
+    , stResources = Map.mapWithKey consume $ stResources st
+    }
+  where
+    consume m q = q - stCost b r m
 
 go :: Blueprint -> St -> State Lattice Int
 go b st
   | stTime st == 0 = pure $ fromMaybe 0 $ Map.lookup Geode $ stResources st
-  | otherwise = do
-    st' <- gets (`latticeInsert` st)
-    case st' of
-      Nothing -> do
-        when (stTime st > 5) $ traceM $ prependShow "bad " st
-        pure 0
-      Just st1 -> do
-        when (stTime st > 5) $ traceM $ prependShow "good" st
-        put st1
-        let candidates =
-              map stTick $
-              catMaybes [stConstruct b robot st | robot <- enumerate] ++ [st]
-        maximum <$> traverse (go b) candidates
+  | otherwise =
+    latticeInsertS st >>= \case
+      False -> pure 0
+      True -> do
+        let canConstruct = filter (stCanConstruct b st) enumerate
+        let st1 = stTick st
+        let candidates = map (stConstruct b st1) canConstruct ++ [st1]
+        maximum <$> traverse (go b) (take 2 candidates)
 
-part1 bps = sum [bID bp * maxGeodes bp | bp <- bps]
+part1 = sum . map (qs . traceShowId)
+  where
+    qs bp = bID bp * traceF (prependShow "result") (maxGeodes bp)
 
 tasks = Tasks 2022 19 (CodeBlock 0) parser [Task part1 33]
