@@ -88,7 +88,6 @@ stConstruct b m st = foldrM (uncurry stTake) st1 $ Map.toList bom
 go :: Blueprint -> Int -> St -> Int
 go _ 0 St {..} = fromMaybe 0 $ Map.lookup Geode stResources
 go b time st =
-  traceShow (time, st) $
   maximum $
   map (go b (time - 1) . stTick) $
   catMaybes [stConstruct b robot st | robot <- reverse enumerate] ++ [st]
