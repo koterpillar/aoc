@@ -9,16 +9,19 @@ import           Data.Foldable (foldrM)
 import           Utils
 
 data Material
-  = Ore
-  | Clay
+  = Geode
   | Obsidian
-  | Geode
+  | Clay
+  | Ore
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 materialP :: Parser Text Material
-materialP = choiceEBP ["ore", "clay", "obsidian", "geode"]
+materialP = choiceEBP ["geode", "obsidian", "clay", "ore"]
 
 type Inventory = Map Material Int
+
+emptyInventory :: Inventory
+emptyInventory = Map.fromList $ zip enumerate $ repeat 0
 
 inventoryP :: Parser Text Inventory
 inventoryP =
@@ -49,23 +52,25 @@ parser =
   blueprintP
 
 maxGeodes :: Blueprint -> Int
-maxGeodes b = go b 24 stInit
+maxGeodes b = go b stInit
 
 data St =
   St
     { stRobots    :: Inventory
     , stResources :: Inventory
+    , stTime      :: Int
     }
   deriving (Eq, Ord, Show)
 
 stInit :: St
 stInit = St {..}
   where
-    stRobots = Map.singleton Ore 1
-    stResources = Map.fromList $ zip enumerate $ repeat 0
+    stRobots = Map.insert Ore 1 emptyInventory
+    stResources = emptyInventory
+    stTime = 24
 
 stTick :: St -> St
-stTick st = st {stResources = newResources}
+stTick st = st {stResources = newResources, stTime = pred $ stTime st}
   where
     newResources = Map.mapWithKey incr $ stResources st
     incr m n = n + fromMaybe 0 (Map.lookup m $ stRobots st)
@@ -85,12 +90,13 @@ stConstruct b m st = foldrM (uncurry stTake) st1 $ Map.toList bom
     st1 = st {stRobots = Map.insertWith (+) m 1 $ stRobots st}
     bom = mapLookupE "bom" m $ bCosts b
 
-go :: Blueprint -> Int -> St -> Int
-go _ 0 St {..} = fromMaybe 0 $ Map.lookup Geode stResources
-go b time st =
-  maximum $
-  map (go b (time - 1) . stTick) $
-  catMaybes [stConstruct b robot st | robot <- reverse enumerate] ++ [st]
+go :: Blueprint -> St -> Int
+go b st
+  | stTime st == 0 = fromMaybe 0 $ Map.lookup Geode $ stResources st
+  | otherwise =
+    maximum $
+    map (go b . stTick) $
+    catMaybes [stConstruct b robot st | robot <- enumerate] ++ [st]
 
 part1 bps = sum [bID bp * maxGeodes bp | bp <- bps]
 
