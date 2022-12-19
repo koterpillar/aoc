@@ -88,16 +88,7 @@ stTick :: St -> St
 stTick st = st {stResources = newResources, stTime = pred $ stTime st}
   where
     newResources = Map.mapWithKey incr $ stResources st
-    incr m n = n + fromMaybe 0 (Map.lookup m $ stRobots st)
-
-stTake :: Material -> Int -> St -> Maybe St
-stTake m q s =
-  if available >= q
-    then Just $ s {stResources = Map.adjust (subtract q) m res}
-    else Nothing
-  where
-    res = stResources s
-    available = fromMaybe 0 $ Map.lookup m res
+    incr m = (+) $ stRobot m st
 
 stCost :: Blueprint -> Material -> Material -> Int
 stCost b r m = fromMaybe 0 $ Map.lookup m $ mapLookupE "stCost" r $ bCosts b
@@ -119,11 +110,11 @@ stConstruct b st r =
     , stResources = Map.mapWithKey consume $ stResources st
     }
   where
-    consume m q = q - stCost b r m
+    consume m = subtract $ stCost b r m
 
 go :: Blueprint -> St -> State Lattice Int
 go b st
-  | stTime st == 0 = pure $ fromMaybe 0 $ Map.lookup Geode $ stResources st
+  | stTime st == 0 = pure $ stResource Geode st
   | otherwise =
     latticeInsertS st >>= \case
       False -> pure 0
