@@ -1,6 +1,6 @@
 {-# LANGUAGE Strict #-}
 
-module Y2022.Day19 where
+module Y2022.Day19 (tasks) where
 
 import           Control.Monad.State.Strict
 
@@ -97,11 +97,17 @@ stCost b r m = fromMaybe 0 $ Map.lookup m $ mapLookupE "stCost" r $ bCosts b
 
 -- | How many robots of a given type do we need to be able to not be restricted by this type?
 bMaxFeasible :: Material -> Blueprint -> Int
+bMaxFeasible Geode _ = 50
 bMaxFeasible r b = maximum [c | r' <- enumerate, r' /= r, let c = stCost b r' r, c > 0]
+
+bLatestFeasible :: Material -> Blueprint -> Int
+bLatestFeasible Geode b = 1
+bLatestFeasible r b = bLatestFeasible (pred r) b + 2
 
 stCanConstruct :: Blueprint -> St -> Material -> Bool
 stCanConstruct b st r
-  | r /= Geode, stRobot r st >= bMaxFeasible r b = False
+  | bLatestFeasible r b > stTime st = False
+  | stRobot r st >= bMaxFeasible r b = False
   | otherwise = all enough enumerate
   where
     enough m = stResource m st >= stCost b r m
