@@ -57,8 +57,8 @@ parser =
   pureP (treplace "\n  " " ") &* linesP &* pureP (filter $ not . Text.null) &**
   blueprintP
 
-maxGeodes :: Blueprint -> Int
-maxGeodes b = evalState (go b stInit) latticeEmpty
+maxGeodes :: Int -> Blueprint -> Int
+maxGeodes deadline b = evalState (go b $ stInit deadline) latticeEmpty
 
 data St =
   St
@@ -78,12 +78,11 @@ instance Positionable St where
   latticePosition St {..} =
     Map.elems stResources ++ Map.elems stRobots ++ [stTime]
 
-stInit :: St
-stInit = St {..}
+stInit :: Int -> St
+stInit stTime = St {..}
   where
     stRobots = Map.insert Ore 1 emptyInventory
     stResources = emptyInventory
-    stTime = 24
 
 stTick :: St -> St
 stTick st = st {stResources = newResources, stTime = pred $ stTime st}
@@ -136,6 +135,8 @@ go b st
 
 part1 = sum . map (qs . traceShowId)
   where
-    qs bp = bID bp * traceF (prependShow "result") (maxGeodes bp)
+    qs bp = bID bp * traceF (prependShow "result") (maxGeodes 24 bp)
 
-tasks = Tasks 2022 19 (CodeBlock 0) parser [Task part1 33]
+part2 = product . map (maxGeodes 32 . traceShowId) . take 3
+
+tasks = Tasks 2022 19 (CodeBlock 0) parser [Task part1 33, Task part2 (56 * 62)]
