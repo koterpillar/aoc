@@ -58,7 +58,9 @@ parser =
   blueprintP
 
 maxGeodes :: Int -> Blueprint -> Int
-maxGeodes deadline b = evalState (go b $ stInit deadline) latticeEmpty
+maxGeodes deadline b = evalState (go b st) latticeEmpty
+  where
+    st = stInit deadline
 
 data St =
   St
@@ -93,12 +95,13 @@ stTick st = st {stResources = newResources, stTime = pred $ stTime st}
 stCost :: Blueprint -> Material -> Material -> Int
 stCost b r m = fromMaybe 0 $ Map.lookup m $ mapLookupE "stCost" r $ bCosts b
 
+-- | How many robots of a given type do we need to be able to not be restricted by this type?
+bMaxFeasible :: Material -> Blueprint -> Int
+bMaxFeasible r b = maximum [c | r' <- enumerate, r' /= r, let c = stCost b r' r, c > 0]
+
 stCanConstruct :: Blueprint -> St -> Material -> Bool
 stCanConstruct b st r
-  | r /= Geode
-  , stRobot r st >=
-      maximum [c | r' <- enumerate, r' /= r, let c = stCost b r' r, c > 0] =
-    False
+  | r /= Geode, stRobot r st >= bMaxFeasible r b = False
   | otherwise = all enough enumerate
   where
     enough m = stResource m st >= stCost b r m
@@ -114,6 +117,7 @@ stConstruct b st r =
 
 go :: Blueprint -> St -> State Lattice Int
 go b st
+  | stTime st == 1 = pure $ stResource Geode st + stRobot Geode st
   | stTime st == 0 = pure $ stResource Geode st
   | otherwise =
     latticeInsertS st >>= \case
