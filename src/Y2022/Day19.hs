@@ -105,8 +105,9 @@ stCost b r m = fromMaybe 0 $ Map.lookup m $ mapLookupE "stCost" r $ bCosts b
 
 stCanConstruct :: Blueprint -> St -> Material -> Bool
 stCanConstruct b st r
-  | r == Ore &&
-      stRobot Ore st >= maximum [stCost b r' Ore | r' <- enumerate, r' /= Ore] =
+  | r /= Geode
+  , stRobot r st >=
+      maximum [c | r' <- enumerate, r' /= r, let c = stCost b r' r, c > 0] =
     False
   | otherwise = all enough enumerate
   where
