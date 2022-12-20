@@ -64,6 +64,11 @@ extra-deps:
 - linear-1.21.10
 - memoize-1.1.2
 - memory-0.18.0
+- microlens-0.4.13.1
+- microlens-ghc-0.4.14.1
+- microlens-mtl-0.2.0.3
+- microlens-platform-0.4.3.3
+- microlens-th-0.4.3.11
 - mime-types-0.1.1.0
 - MissingH-1.5.0.1
 - mono-traversable-1.0.15.3

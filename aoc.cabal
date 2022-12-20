@@ -140,6 +140,7 @@ library
     , http-conduit
     , linear
     , memoize
+    , microlens-platform
     , mtl
     , split
     , text
@@ -179,6 +180,7 @@ executable main
     , http-conduit
     , linear
     , memoize
+    , microlens-platform
     , mtl
     , split
     , text

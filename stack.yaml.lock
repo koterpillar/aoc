@@ -439,6 +439,41 @@ packages:
   original:
     hackage: memory-0.18.0
 - completed:
+    hackage: microlens-0.4.13.1@sha256:0cd8a0da5fe1b5a5c327bb5296d30940dc9f92c169372939bfcecd3faee953d7,4642
+    pantry-tree:
+      sha256: 8cf825336264bb5b0434b2b57fc808b84e503c4ec4106d5e05d975f22b9ca5cd
+      size: 461
+  original:
+    hackage: microlens-0.4.13.1
+- completed:
+    hackage: microlens-ghc-0.4.14.1@sha256:d0880578fc41358eaa38e8222ebd578ccf3c079dc6d4e55bae0b105ac89b53d4,2662
+    pantry-tree:
+      sha256: 6a83fdeeaf536b4b005570055496cf88fa652272dbfe39598dad88412685accc
+      size: 343
+  original:
+    hackage: microlens-ghc-0.4.14.1
+- completed:
+    hackage: microlens-mtl-0.2.0.3@sha256:0ace1ba95677117219681fb9a8b08b3bf049ab5973eed14453b260aaf1feb582,1965
+    pantry-tree:
+      sha256: 6a67528c409030bda8dd7b775288fc4c86bbd235bc82b77216c0ff7fb715b58a
+      size: 344
+  original:
+    hackage: microlens-mtl-0.2.0.3
+- completed:
+    hackage: microlens-platform-0.4.3.3@sha256:8ef4c8d5b9e0948489aa0b0b6a90c3d0c52e768e4e1f0e3f87697f6abd5d88fd,2930
+    pantry-tree:
+      sha256: 88798635590d2dc4920d956f3b8c43f942851bd88569f27150a9765b3fc40a58
+      size: 358
+  original:
+    hackage: microlens-platform-0.4.3.3
+- completed:
+    hackage: microlens-th-0.4.3.11@sha256:d9e18ca8512608d5699f17b71ff11a483ac52f20ffeac9150fd62bfd9518d522,2420
+    pantry-tree:
+      sha256: 40e19316523a15b3317f6bf08dee084e7f53fab8d6343c8012648eb53991dc34
+      size: 558
+  original:
+    hackage: microlens-th-0.4.3.11
+- completed:
     hackage: mime-types-0.1.1.0@sha256:c68f421c569e325ec4c5595a6916cc6336cf11c7f11bc569a62c6a32214454ad,862
     pantry-tree:
       sha256: 459281e2cec123c1d56c99173a4c1696b62ee0eb8986c3a51d4ff8b8a4eee807

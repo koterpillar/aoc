@@ -25,6 +25,7 @@ dependencies:
 - http-conduit
 - linear
 - memoize
+- microlens-platform
 - MissingH
 - mtl
 - split

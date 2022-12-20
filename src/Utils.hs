@@ -8,6 +8,7 @@ module Utils
   , module Data.List
   , module Data.List.Extra
   , module Data.Tuple
+  , module Lens.Micro.Platform
   , module Utils.Base
   , module Utils.Iterate
   , module Utils.Map
@@ -18,7 +19,6 @@ module Utils
   , Set
   , Text
   , ($>)
-  , (&)
   , (<=<)
   , (<|>)
   , (>=>)
@@ -62,7 +62,7 @@ import           Data.Foldable             (for_, toList, traverse_)
 
 import           Data.Functor              (($>))
 
-import           Data.Function             (on, (&))
+import           Data.Function             (on)
 import           Data.Function.Memoize
 
 import           Data.List
@@ -79,6 +79,8 @@ import           Data.Text                 (Text)
 import           Data.Traversable          (for)
 
 import           Data.Tuple
+
+import           Lens.Micro.Platform
 
 import           Text.Read
 
