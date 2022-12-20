@@ -40,7 +40,9 @@ dupe :: a -> (a, a)
 dupe a = (a, a)
 
 sremove :: Int -> [a] -> (a, [a])
-sremove idx lst = (lst !! idx, take idx lst ++ drop (idx + 1) lst)
+sremove idx lst =
+  let (hd, val:tl) = splitAt idx lst
+   in (val, hd ++ tl)
 
 sinsert :: Int -> a -> [a] -> [a]
 sinsert idx val lst =
