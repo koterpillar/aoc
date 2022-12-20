@@ -1,4 +1,5 @@
-{-# LANGUAGE Strict #-}
+{-# LANGUAGE Strict          #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Y2022.Day18 where
 
@@ -32,27 +33,29 @@ data St
 
 data St1 =
   St1
-    { st1m   :: Map Cube St
-    , st1min :: Cube
-    , st1max :: Cube
+    { _st1map :: Map Cube St
+    , _st1min :: Cube
+    , _st1max :: Cube
     }
+
+makeLenses ''St1
 
 stlookup :: Cube -> State St1 (Maybe St)
 stlookup c = do
   St1 {..} <- get
   pure $
-    if and (zipWith3 inRange st1min st1max c)
-      then Map.lookup c st1m
+    if and (zipWith3 inRange _st1min _st1max c)
+      then Map.lookup c _st1map
       else Just Outside
 
 stinsert :: Cube -> St -> State St1 ()
-stinsert c v = modify $ \st1 -> st1 {st1m = Map.insert c v $ st1m st1}
+stinsert c v = st1map %= Map.insert c v
 
 stremove :: Cube -> State St1 ()
-stremove c = modify $ \st1 -> st1 {st1m = Map.delete c $ st1m st1}
+stremove c = st1map %= Map.delete c
 
 stsetpending :: St -> State St1 ()
-stsetpending t = modify $ \st1 -> st1 {st1m = Map.map s $ st1m st1}
+stsetpending t = st1map %= Map.map s
   where
     s Pending = t
     s x       = x
@@ -109,12 +112,10 @@ walls (min:mins) (max:maxs) = do
   xs <- walls mins maxs
   pure $ x : xs
 
-part2 input = countTrue $ evalState (traverse isOutside sides) initSt
+part2 input = countTrue $ evalState (traverse isOutside sides) St1 {..}
   where
-    initSt =
-      St1
-        {st1m = Map.fromList $ map (, Lava) input, st1min = smin, st1max = smax}
     sides = freeSides input
-    (smin, smax) = bounds input
+    _st1map = Map.fromList $ map (, Lava) input
+    (_st1min, _st1max) = bounds input
 
 tasks = Tasks 2022 18 (CodeBlock 0) parser [Task part1 64, Task part2 58]

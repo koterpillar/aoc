@@ -1,4 +1,5 @@
-{-# LANGUAGE Strict #-}
+{-# LANGUAGE Strict          #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Y2022.Day11 where
 
@@ -42,24 +43,25 @@ itemTest testDivisor i@(Item x) = x `mod` testDivisor == 0
 
 data Monkey =
   Monkey
-    { mItems       :: [Item]
-    , mOp          :: MonkeyFn
-    , mTestDivisor :: Int
-    , mTrue        :: Int
-    , mFalse       :: Int
-    , mSeen        :: Int
+    { _mItems       :: [Item]
+    , _mOp          :: MonkeyFn
+    , _mTestDivisor :: Int
+    , _mTrue        :: Int
+    , _mFalse       :: Int
+    , _mSeen        :: Int
     }
   deriving (Show)
 
+makeLenses ''Monkey
+
 monkeyP :: Parser [Text] Monkey
 monkeyP =
-  mk <$>
-  unconsP &* itemsP &=
+  mk <$> unconsP &* itemsP &=
   (unconsP &* fnP &= (unconsP &* lastNumP &= (lastNumP &+ lastNumP)))
   where
-    mk (mItems, (mOp, (mTestDivisor, (mTrue, mFalse)))) = Monkey {..}
+    mk (_mItems, (_mOp, (_mTestDivisor, (_mTrue, _mFalse)))) = Monkey {..}
       where
-        mSeen = 0
+        _mSeen = 0
     itemsP =
       pureP (terase "  Starting items: ") &* tsplitP "," &**
       (mkItem <$> integerP)
@@ -76,21 +78,21 @@ type Situation = Map Int Monkey
 
 parser :: Parser Text Situation
 parser =
-  mapFromList <$>
-  lineGroupsP &** unconsP &* (pureP (terase ":") &* lastNumP) &= monkeyP
+  mapFromList <$> lineGroupsP &** unconsP &* (pureP (terase ":") &* lastNumP) &=
+  monkeyP
 
 traceItems :: State Situation ()
 traceItems = do
   st <- get
-  let items = Map.map mItems st
+  let items = Map.map _mItems st
   traceM $ "Result: " ++ show items
 
 traceSeen :: State Situation ()
 traceSeen = do
   st <- get
-  for_ (Map.toList $ Map.map mSeen st) $ \(i, seen) ->
-    traceM $
-    "Monkey " ++ show i ++ " inspected items " ++ show seen ++ " times."
+  for_ (Map.toList $ Map.map _mSeen st) $ \(i, seen) ->
+    traceM $ "Monkey " ++ show i ++ " inspected items " ++ show seen ++
+    " times."
 
 move :: Integer -> State Situation ()
 move worryDiv = do
@@ -100,32 +102,29 @@ move worryDiv = do
 monkeyMove :: Integer -> Int -> State Situation ()
 monkeyMove worryDiv mi = do
   mm@Monkey {..} <- gets $ mapLookupE "monkeyMove" mi
-  for_ mItems $ inspect worryDiv mi mm
+  for_ _mItems $ inspect worryDiv mi mm
 
 mcount :: Int -> State Situation ()
-mcount mi = mmodify mi $ \m -> m {mSeen = succ (mSeen m)}
-
-mmodify :: Int -> (Monkey -> Monkey) -> State Situation ()
-mmodify mi f = modify $ Map.adjust f mi
+mcount mi = ix mi . mSeen += 1
 
 inspect :: Integer -> Int -> Monkey -> Item -> State Situation ()
 inspect worryDiv mi Monkey {..} item = do
-  let i1 = itemApply mOp item
+  let i1 = itemApply _mOp item
   let i2 = itemDeworry worryDiv i1
   let target =
-        if itemTest mTestDivisor i2
-          then mTrue
-          else mFalse
+        if itemTest _mTestDivisor i2
+          then _mTrue
+          else _mFalse
   mcount mi
   throwTo mi target i2
 
 throwTo :: Int -> Int -> Item -> State Situation ()
 throwTo from to item = do
-  mmodify to $ \m -> m {mItems = mItems m ++ [item]}
-  mmodify from $ \m -> m {mItems = tail (mItems m)}
+  ix to . mItems %= (++ [item])
+  ix from . mItems %= tail
 
 mbusiness :: Situation -> Int
-mbusiness st = product $ take 2 $ reverse $ sort $ map mSeen $ toList st
+mbusiness st = product $ take 2 $ reverse $ sort $ map _mSeen $ toList st
 
 moves :: Integer -> Int -> State Situation ()
 moves worryDiv rounds =
