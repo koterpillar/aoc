@@ -16,8 +16,7 @@ parser :: Parser Text [Cube]
 parser = linesP &** tsplitP "," &** integerP
 
 adjanced :: Cube -> [Cube]
-adjanced a =
-  [sset i (f $ a !! i) a | i <- [0 .. length a - 1], f <- [succ, pred]]
+adjanced a = [a & ix i %~ f | i <- [0 .. length a - 1], f <- [succ, pred]]
 
 freeSides :: [Cube] -> [Cube]
 freeSides cubes = filter (not . (`elem` cubes)) $ concatMap adjanced cubes

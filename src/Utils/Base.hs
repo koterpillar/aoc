@@ -32,13 +32,12 @@ import           Data.Traversable          (for)
 
 import           Data.Tuple
 
+import           Lens.Micro.Platform
+
 import           Utils.Trace
 
 dupe :: a -> (a, a)
 dupe a = (a, a)
-
-sset :: Int -> a -> [a] -> [a]
-sset idx val lst = take idx lst ++ [val] ++ drop (idx + 1) lst
 
 sremove :: Int -> [a] -> (a, [a])
 sremove idx lst = (lst !! idx, take idx lst ++ drop (idx + 1) lst)
@@ -96,7 +95,7 @@ zipN n = zip [n ..]
 
 picks :: [a] -> [(a, [a])]
 picks []     = []
-picks (x:xs) = (x, xs) : fmap (fmap (x:)) (picks xs)
+picks (x:xs) = (x, xs) : fmap (fmap (x :)) (picks xs)
 
 toNothing :: Eq a => a -> a -> Maybe a
 toNothing a b
