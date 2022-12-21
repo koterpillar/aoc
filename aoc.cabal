@@ -112,6 +112,7 @@ library
       Y2022.Day18
       Y2022.Day19
       Y2022.Day20
+      Y2022.Day21
       Y2022.Lattice
   other-modules:
       Paths_aoc
