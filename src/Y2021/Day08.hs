@@ -91,8 +91,7 @@ displaysP :: Parser Text [Display]
 displaysP = wordsP &** displayP
 
 readingP :: Parser Text Reading
-readingP =
-  tsplitP "|" &* pairPWith Reading (setFromList <$> displaysP) displaysP
+readingP = tsplitP "|" &* ap2P Reading (setFromList <$> displaysP) displaysP
 
 readingsP :: Parser Text [Reading]
 readingsP = pureP (treplace "|\n" "|") &* linesP &** readingP

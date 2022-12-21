@@ -16,8 +16,8 @@ data Instruction
 instrP :: Parser Text Instruction
 instrP = wordsP &* unconsBindP go
   where
-    go "noop" = Noop <$ requireP []
-    go "addx" = Addx <$> singleP &* integerP
+    go "noop" = ap0P Noop
+    go "addx" = ap1P Addx integerP
 
 data CPU =
   CPU

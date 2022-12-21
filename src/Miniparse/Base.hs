@@ -117,7 +117,7 @@ digitsP :: Parser Text [Int]
 digitsP = charactersP &** (pureP Text.singleton &* integerP)
 
 position2P :: Parser Text Position2
-position2P = tsplitP "," &* pairPWith Position2 integerP integerP
+position2P = tsplitP "," &* ap2P Position2 integerP integerP
 
 digitGridP :: Parser Text (Grid2 Int)
 digitGridP = fromMatrixG <$> linesP &** digitsP
@@ -190,8 +190,45 @@ pairP =
     [x, y] -> Right (x, y)
     other  -> Left $ "pairP: expected 2 elements, got " ++ show other
 
-pairPWith :: Show a => (b -> c -> d) -> Parser a b -> Parser a c -> Parser [a] d
-pairPWith f pb pc = uncurry f <$> pb &+ pc
+ap0P :: Show src => b -> Parser [src] b
+ap0P f = f <$ filterP null
+
+ap1P :: Show src => (b -> c) -> Parser src b -> Parser [src] c
+ap1P f p = f <$> singleP &* p
+
+ap2P ::
+     Show src => (b -> c -> d) -> Parser src b -> Parser src c -> Parser [src] d
+ap2P f pb pc = uncurry f <$> pb &+ pc
+
+ap3P ::
+     Show src
+  => (b -> c -> d -> e)
+  -> Parser src b
+  -> Parser src c
+  -> Parser src d
+  -> Parser [src] e
+ap3P f pb pc pd = unconsP &* (pb &=> \b -> ap2P (f b) pc pd)
+
+ap4P ::
+     Show src
+  => (b -> c -> d -> e -> f)
+  -> Parser src b
+  -> Parser src c
+  -> Parser src d
+  -> Parser src e
+  -> Parser [src] f
+ap4P f pb pc pd pe = unconsP &* (pb &=> \b -> ap3P (f b) pc pd pe)
+
+ap5P ::
+     Show src
+  => (b -> c -> d -> e -> f -> g)
+  -> Parser src b
+  -> Parser src c
+  -> Parser src d
+  -> Parser src e
+  -> Parser src f
+  -> Parser [src] g
+ap5P f pb pc pd pe pf = unconsP &* (pb &=> \b -> ap4P (f b) pc pd pe pf)
 
 filterP :: Show a => (a -> Bool) -> Parser a a
 filterP f =

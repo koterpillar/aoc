@@ -34,7 +34,7 @@ parser = linesP &** tsplitP ":" &* (part &+ part)
     part =
       pureP (terase "x=" . terase "y=" . terase "," . terase ":") &* wordsP &*
       pureP (takeEnd 2) &*
-      pairPWith Position2 integerP integerP
+      ap2P Position2 integerP integerP
 
 empties :: Int -> Position2 -> Position2 -> Set Position2
 empties y sensor@(Position2 sx sy) beacon =

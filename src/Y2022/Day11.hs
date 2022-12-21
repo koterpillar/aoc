@@ -55,11 +55,9 @@ data Monkey =
 makeLenses ''Monkey
 
 monkeyP :: Parser [Text] Monkey
-monkeyP =
-  mk <$> unconsP &* itemsP &=
-  (unconsP &* fnP &= (unconsP &* lastNumP &= (lastNumP &+ lastNumP)))
+monkeyP = ap5P mk itemsP fnP lastNumP lastNumP lastNumP
   where
-    mk (_mItems, (_mOp, (_mTestDivisor, (_mTrue, _mFalse)))) = Monkey {..}
+    mk _mItems _mOp _mTestDivisor _mTrue _mFalse = Monkey {..}
       where
         _mSeen = 0
     itemsP =

@@ -36,10 +36,12 @@ data Notes =
 
 notesP :: Parser Text Notes
 notesP =
-  (\(r, (t, ts)) -> Notes r t ts) <$>
-  lineGroupsP &* unconsP &*
-  (mapFromList <$> traverseP (tsplitP ": " &* idP &+ ruleP)) &=
-  ((pureP tail &* singleP &* ticketP) &+ (pureP tail &** ticketP))
+  lineGroupsP &*
+  ap3P
+    Notes
+    (mapFromList <$> traverseP (tsplitP ": " &* idP &+ ruleP))
+    (pureP tail &* singleP &* ticketP)
+    (pureP tail &** ticketP)
 
 valid :: Rule -> Int -> Bool
 valid (Rule bounds) x = any (\(lo, hi) -> inRange lo hi x) bounds

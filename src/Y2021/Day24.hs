@@ -250,11 +250,11 @@ srcP =
 instructionP :: Parser Text Instruction
 instructionP = wordsP &* unconsBindP instructionChoice
   where
-    instructionChoice "inp" = Inp <$> (singleP &* registerP)
-    instructionChoice "add" = pairPWith Add registerP srcP
-    instructionChoice "mul" = pairPWith Mul registerP srcP
-    instructionChoice "div" = pairPWith Div registerP srcP
-    instructionChoice "mod" = pairPWith Mod registerP srcP
-    instructionChoice "eql" = pairPWith Eql registerP srcP
+    instructionChoice "inp" = ap1P Inp registerP
+    instructionChoice "add" = ap2P Add registerP srcP
+    instructionChoice "mul" = ap2P Mul registerP srcP
+    instructionChoice "div" = ap2P Div registerP srcP
+    instructionChoice "mod" = ap2P Mod registerP srcP
+    instructionChoice "eql" = ap2P Eql registerP srcP
     instructionChoice other =
       failP $ "Unknown instruction: " <> Text.unpack other

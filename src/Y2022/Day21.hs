@@ -14,11 +14,7 @@ data Expr
   deriving (Ord, Eq, Show)
 
 exprP :: Parser Text Expr
-exprP =
-  (Const <$> integerP) &|
-  (mk <$> (wordsP &* unconsP &* (idP &= (charP &+ idP))))
-  where
-    mk (a, (o, b)) = Op o a b
+exprP = wordsP &* ap1P Const integerP &| ap3P (flip Op) idP charP idP
 
 type Exprs = Map Text Expr
 

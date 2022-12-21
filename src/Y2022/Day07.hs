@@ -37,8 +37,8 @@ type Input = [Command]
 cmdHeaderP :: Parser Text Command
 cmdHeaderP = wordsP &* unconsBindP go
   where
-    go "ls" = LS emptyDir <$ requireP []
-    go "cd" = CD <$> singleP &* idP
+    go "ls" = ap0P (LS emptyDir)
+    go "cd" = ap1P CD idP
 
 cmdBodyP :: Command -> Parser [Text] Command
 cmdBodyP c@CD {} = requireP [] &* constP c
