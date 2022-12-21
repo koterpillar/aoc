@@ -88,7 +88,7 @@ onZero f = f `on` fromMaybe 0
 -- ax + b = 0
 -- x = -b / a
 solve :: Expr2 -> Double
-solve p@(Powers [b, a]) = negate $ b / a
+solve (Powers [b, a]) = negate $ b / a
 
 part2 :: Exprs -> Int
 part2 = round . solve . mapLookupE "part2" "root" . convert . fixup
