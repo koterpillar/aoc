@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict          #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Y2022.Day22 where
@@ -43,7 +44,7 @@ makeLenses ''You
 
 move :: Grid -> Instruction -> You -> You
 move g (Forward i) =
-  \y -> y & yPosition %~ iterateNL i (step g (y ^. yDirection))
+  \y -> traceShowId $ y & yPosition %~ iterateNL i (step g (y ^. yDirection))
 move _ RotateLeft = yDirection %~ turnLeft
 move _ RotateRight = yDirection %~ turnRight
 
@@ -100,9 +101,14 @@ start g = You p E
     p = wrapWalk g E topLeft
     (topLeft, _) = boundsG g
 
-part1 (g, is) = 1000 * (pX ep + 1) + 4 * (pY ep + 1) + fromEnum ed
+facingScore E = 0
+facingScore S = 1
+facingScore W = 2
+facingScore N = 3
+
+part1 (g, is) = 1000 * (pY ep + 1) + 4 * (pX ep + 1) + facingScore ed
   where
-    p = start $ ttraceF displayG g
+    p = traceShowId $ start $ ttraceF displayG g
     (You ep ed) = foldl' (flip $ move g) p is
 
 tasks = Tasks 2022 22 (CodeBlock 0) parser [Task part1 6032]
