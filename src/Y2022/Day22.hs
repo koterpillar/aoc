@@ -3,9 +3,11 @@
 
 module Y2022.Day22 where
 
-import qualified Data.Map  as Map
-import qualified Data.Set  as Set
-import qualified Data.Text as Text
+import           Control.Monad.State.Strict
+
+import qualified Data.Map                   as Map
+import qualified Data.Set                   as Set
+import qualified Data.Text                  as Text
 
 import           AOC
 import           Grid
@@ -20,11 +22,21 @@ data GI0
 data GI
   = Wall
   | Open Position2
+  | OpenStep Direction4
   deriving (Show, Eq, Ord)
 
+giPosition :: GI -> Position2
+giPosition Wall        = error "No position for wall"
+giPosition (Open p)    = p
+giPosition OpenStep {} = error "No position for OpenStep"
+
 instance GridItem GI where
-  showInGrid Wall    = '#'
-  showInGrid Open {} = 'o'
+  showInGrid Wall         = '#'
+  showInGrid Open {}      = 'o'
+  showInGrid (OpenStep E) = '>'
+  showInGrid (OpenStep W) = '<'
+  showInGrid (OpenStep N) = '^'
+  showInGrid (OpenStep S) = 'v'
 
 itemP :: Parser Char GI0
 itemP = choiceEBP "#. "
@@ -50,19 +62,23 @@ data Face
 data Grid3 =
   Grid3
     { _gGrids :: Map Face (Grid2 GI)
+    , _g2D    :: Grid2 GI
     , _gSize  :: Int
     }
   deriving (Eq, Ord, Show)
 
 makeLenses ''Grid3
 
-class Locatable grid where
+class IsGrid grid where
+  gOriginal :: grid -> Grid2 GI
   gAt :: grid -> You -> Maybe GI
 
-instance Locatable Grid where
+instance IsGrid Grid where
+  gOriginal = _gGrid
   gAt g (You p _ _) = g ^. gGrid . at p
 
-instance Locatable Grid3 where
+instance IsGrid Grid3 where
+  gOriginal = _g2D
   gAt g (You p _ f) = g ^. gGrids . at f . non Map.empty . at p
 
 mkgrid :: [[GI0]] -> Grid
@@ -140,31 +156,37 @@ facingScore N = 3
 score :: Position2 -> Direction4 -> Int
 score (Position2 x y) d = 1000 * (y + 1) + 4 * (x + 1) + facingScore d
 
+doWalksScore ::
+     IsGrid grid => (grid -> You -> You) -> grid -> [Instruction] -> You -> Int
+doWalksScore stp g is you = ttrace (displayG g') $ score (op you') d'
+  where
+    path = doWalks stp g is you
+    you' = head path
+    op y = giPosition $ fromJustE ("doWalks op" <> show y) $ gAt g y
+    d' = you' ^. yDirection
+    g' = foldr putStep (gOriginal g) path
+    putStep y@(You _ d _) = Map.insert (op y) (OpenStep d)
+
 doWalks ::
-     Locatable grid
+     IsGrid grid
   => (grid -> You -> You)
   -> grid
   -> [Instruction]
   -> You
-  -> Int
-doWalks stp g is you = score p' d'
+  -> [You]
+doWalks stp g is you = execState (traverse_ move is) [you]
   where
-    you' = foldl' (flip move) you is
-    Open p' = fromJustE "doWalks-score" $ gAt g you'
-    d' = you' ^. yDirection
-    move :: Instruction -> You -> You
-    move (Forward i) = iterateNL i stp1
-    move RotateLeft  = yDirection %~ turnLeft
-    move RotateRight = yDirection %~ turnRight
-    stp1 y =
-      if gAt g y' == Just Wall
-        then y
-        else y'
-      where
-        y' = stp g y
+    move :: Instruction -> State [You] ()
+    move (Forward i) = replicateM_ i stp1
+    move RotateLeft  = _head . yDirection %= turnLeft
+    move RotateRight = _head . yDirection %= turnRight
+    stp1 = do
+      you <- gets head
+      let you' = stp g you
+      when (gAt g you' /= Just Wall) $ modify $ (you' :)
 
 part1 :: Input -> Int
-part1 (g, is) = doWalks step g is $ start g
+part1 (g, is) = doWalksScore step g is $ start g
 
 subgrid :: Int -> Int -> Int -> Grid2 a -> Grid2 a
 subgrid sz ix iy = Map.mapKeys shift . mapFilterMapWithKey go
@@ -193,9 +215,9 @@ chunksize :: Grid2 a -> Int
 chunksize = round . sqrt . fromIntegral . (`div` 6) . length
 
 part2 :: Input -> Int
-part2 (g, is) = doWalks step3 g3 is $ start g
+part2 (g, is) = doWalksScore step3 g3 is $ start g
   where
-    g3 = cubify $ fixupExample $ chunkify $ _gGrid g
+    g3 = cubify $ _gGrid g
 
 fixupExample :: Grid2 a -> Grid2 a
 fixupExample g
@@ -250,9 +272,11 @@ chunkify g =
     p = [0 .. 3]
     sz = traceF (prependShow "sz") $ chunksize g
 
-cubify :: Grid2 (Grid2 GI) -> Grid3
-cubify gs = Grid3 {..}
+cubify :: Grid2 GI -> Grid3
+cubify g = Grid3 {..}
   where
+    _g2D = g
+    gs = fixupExample $ chunkify g
     _gSize = chunksize $ snd $ Map.findMin gs
     _gGrids =
       Map.fromList
@@ -280,7 +304,7 @@ cubify gs = Grid3 {..}
     traceInput = ttrace (displayG $ Map.map (const ()) gs)
 
 testCubify :: Input -> Int
-testCubify = length . _gGrids . cubify . fixupExample . chunkify . _gGrid . fst
+testCubify = length . _gGrids . cubify . _gGrid . fst
 
 tasks =
   Tasks
