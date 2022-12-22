@@ -211,7 +211,45 @@ fixupExample g
   | otherwise = Map.mapKeys (\(Position2 x y) -> Position2 (pred x) y) g
 
 step3 :: Grid3 -> You -> You
-step3 g (You p d f) = error "step3"
+step3 g (You p d f)
+  | x < 0 = j W y
+  | x >= sz = j E y
+  | y < 0 = j N x
+  | y >= sz = j S x
+  | otherwise = You p' d f
+  where
+    j = jump sz f
+    sz = g ^. gSize
+    p'@(Position2 x y) = walk d p
+
+jump :: Int -> Face -> Direction4 -> Int -> You
+jump sz FBack E c  = You (Position2 (flipp sz c) 0) S FRight
+jump sz FBack W c  = You (Position2 c 0) S FLeft
+jump sz FBack S c  = You (Position2 c 0) S FDown
+jump sz FBack N c  = You (Position2 c (pred sz)) N FUp
+jump sz FFront E c = You (Position2 (flipp sz c) (pred sz)) N FRight
+jump sz FFront W c = You (Position2 c (pred sz)) N FLeft
+jump sz FFront S c = You (Position2 c 0) S FUp
+jump sz FFront N c = You (Position2 c (pred sz)) N FDown
+jump sz FRight E c = You (Position2 (pred sz) (flipp sz c)) W FUp
+jump sz FRight W c = You (Position2 (pred sz) c) W FDown
+jump sz FRight S c = You (Position2 (pred sz) c) W FFront
+jump sz FRight N c = You (Position2 (pred sz) (flipp sz c)) W FBack
+jump sz FLeft E c  = You (Position2 0 c) E FDown
+jump sz FLeft W c  = You (Position2 0 (flipp sz c)) E FUp
+jump sz FLeft S c  = You (Position2 0 c) E FFront
+jump sz FLeft N c  = You (Position2 0 (flipp sz c)) E FBack
+jump sz FDown E c  = You (Position2 0 c) E FRight
+jump sz FDown W c  = You (Position2 (pred sz) c) W FLeft
+jump sz FDown S c  = You (Position2 c 0) S FFront
+jump sz FDown N c  = You (Position2 c (pred sz)) N FBack
+jump sz FUp E c    = You (Position2 (pred sz) (flipp sz c)) W FRight
+jump sz FUp W c    = You (Position2 0 (flipp sz c)) E FLeft
+jump sz FUp S c    = You (Position2 c 0) S FBack
+jump sz FUp N c    = You (Position2 c (pred sz)) N FFront
+
+flipp :: Int -> Int -> Int
+flipp sz c = sz - c - 1
 
 chunkify :: Grid2 a -> Grid2 (Grid2 a)
 chunkify g =
@@ -237,7 +275,7 @@ cubify gs = Grid3 {..}
         , e FFront [(id, Position2 1 2)]
         , e FUp
             [ (id, Position2 1 3)
-            , (id, Position2 (-1) 1)
+            , (rotgridUD, Position2 (-1) 1)
             , (rotgridL, Position2 0 3)
             ]
         ]
