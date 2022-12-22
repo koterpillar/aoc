@@ -54,3 +54,11 @@ mapFindValueE msg fn = fromJustE msg . mapFindValue fn
 
 mapFilterValues :: (a -> Bool) -> Map k a -> [k]
 mapFilterValues fn = filterTuple fn . Map.toList
+
+mapFilterMap :: Ord k => (a -> Maybe b) -> Map k a -> Map k b
+mapFilterMap = mapFilterMapWithKey . const
+
+mapFilterMapWithKey :: Ord k => (k -> a -> Maybe b) -> Map k a -> Map k b
+mapFilterMapWithKey fn = Map.fromList . mapMaybe go . Map.toList
+  where
+    go (k, v) = (k, ) <$> fn k v
