@@ -97,20 +97,14 @@ data You =
 
 makeLenses ''You
 
-move :: Grid -> Instruction -> You -> You
-move g (Forward i) =
-  \y -> traceShowId $ y & yPosition %~ iterateNL i (step g (y ^. yDirection))
-move _ RotateLeft = yDirection %~ turnLeft
-move _ RotateRight = yDirection %~ turnRight
-
-step :: Grid -> Direction4 -> Position2 -> Position2
-step g d p =
-  if g ^. gAt p1 == Just Wall
-    then p
-    else p1
+step :: Grid -> You -> You
+step g (You p d f) = You p' d f
   where
+    p' =
+      if g ^. gAt p1 == Just Wall
+        then p
+        else p1
     p1 = wrapWalk g d p
-    (Position2 xmin ymin, Position2 xmax ymax) = g ^. gBounds
 
 wrapWalk1 :: Grid -> Direction4 -> Position2 -> Position2
 wrapWalk1 g d p = Position2 (w xmin xmax x) (w ymin ymax y)
@@ -152,15 +146,20 @@ score g (You p d _) = score0 p' d
 
 doWalks ::
      (grid -> You -> Int)
-  -> (grid -> Instruction -> You -> You)
+  -> (grid -> You -> You)
   -> grid
   -> [Instruction]
   -> You
   -> Int
-doWalks sc mv g is st = sc g $ foldl' (flip $ mv g) st is
+doWalks sc stp g is st = sc g $ foldl' (flip move) st is
+  where
+    move :: Instruction -> You -> You
+    move (Forward i) = iterateNL i $ stp g
+    move RotateLeft  = yDirection %~ turnLeft
+    move RotateRight = yDirection %~ turnRight
 
 part1 :: Input -> Int
-part1 (g, is) = doWalks score move g is $ start g
+part1 (g, is) = doWalks score step g is $ start g
 
 subgrid :: Int -> Int -> Int -> Grid2 a -> Grid2 a
 subgrid sz ix iy = Map.mapKeys shift . mapFilterMapWithKey go
@@ -194,7 +193,7 @@ score3 g (You p d f) = score0 p' d
     Open p' = g ^?! gGrids . ix f . at p . to (fromJustE "score3")
 
 part2 :: Input -> Int
-part2 (g, is) = doWalks score3 move3 g3 is $ start g
+part2 (g, is) = doWalks score3 step3 g3 is $ start g
   where
     g3 = cubify $ fixupExample $ chunkify $ _gGrid g
 
@@ -203,8 +202,8 @@ fixupExample g
   | Map.member (Position2 1 0) g = g
   | otherwise = Map.mapKeys (\(Position2 x y) -> Position2 (pred x) y) g
 
-move3 :: Grid3 -> Instruction -> You -> You
-move3 g i (You p d f) = error "move3"
+step3 :: Grid3 -> You -> You
+step3 g (You p d f) = error "step3"
 
 chunkify :: Grid2 a -> Grid2 (Grid2 a)
 chunkify g =
