@@ -29,12 +29,24 @@ instance GridItem GI where
 itemP :: Parser Char GI0
 itemP = choiceEBP "#. "
 
-type Grid = Grid2 GI
+data Grid =
+  Gr
+    { _gGrid   :: Grid2 GI
+    , _gBounds :: (Position2, Position2)
+    }
+  deriving (Eq, Ord, Show)
+
+makeLenses ''Grid
+
+grAt k = gGrid . at k
 
 mkgrid :: [[GI0]] -> Grid
-mkgrid =
-  Map.fromList . map wp . Map.toList . Map.filter (/= Blank0) . fromMatrixG
+mkgrid g0 = Gr {..}
   where
+    _gGrid =
+      Map.fromList $ map wp $ Map.toList $ Map.filter (/= Blank0) $
+      fromMatrixG g0
+    _gBounds = boundsG _gGrid
     wp (p, Wall0) = (p, Wall)
     wp (p, Open0) = (p, Open p)
 
@@ -75,17 +87,17 @@ move _ RotateRight = yDirection %~ turnRight
 
 step :: Grid -> Direction4 -> Position2 -> Position2
 step g d p =
-  if Map.lookup p1 g == Just Wall
+  if g ^. grAt p1 == Just Wall
     then p
     else p1
   where
     p1 = wrapWalk g d p
-    (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
+    (Position2 xmin ymin, Position2 xmax ymax) = g ^. gBounds
 
 wrapWalk1 :: Grid -> Direction4 -> Position2 -> Position2
 wrapWalk1 g d p = Position2 (w xmin xmax x) (w ymin ymax y)
   where
-    (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
+    (Position2 xmin ymin, Position2 xmax ymax) = g ^. gBounds
     (Position2 x y) = walk d p
     w a b c
       | c > b = c - b + a - 1
@@ -94,7 +106,7 @@ wrapWalk1 g d p = Position2 (w xmin xmax x) (w ymin ymax y)
 
 wrapWalk :: Grid -> Direction4 -> Position2 -> Position2
 wrapWalk g d p =
-  if Map.member p' g
+  if g ^. grAt p' . to isJust
     then p'
     else wrapWalk g d p'
   where
@@ -104,7 +116,7 @@ start :: Grid -> You
 start g = You p E
   where
     p = wrapWalk g E topLeft
-    (topLeft, _) = boundsG g
+    (topLeft, _) = g ^. gBounds
 
 facingScore :: Direction4 -> Int
 facingScore E = 0
@@ -115,12 +127,12 @@ facingScore N = 3
 score :: Grid -> You -> Int
 score g (You ep ed) = 1000 * (y + 1) + 4 * (x + 1) + facingScore ed
   where
-    Open (Position2 x y) = mapLookupE "score" ep g
+    Open (Position2 x y) = g ^. grAt ep . to (fromJustE "score")
 
 part1 :: (Grid, [Instruction]) -> Int
 part1 (g, is) = score g $ foldl' (flip $ move g) p is
   where
-    p = traceShowId $ start $ ttraceF displayG g
+    p = traceShowId $ start $ ttraceF (view $ gGrid . to displayG) g
 
 subgrid :: Int -> Position2 -> Grid2 a -> Grid2 a
 subgrid sz origin =
