@@ -137,24 +137,21 @@ facingScore S = 1
 facingScore W = 2
 facingScore N = 3
 
-score0 :: Position2 -> Direction4 -> Int
-score0 (Position2 x y) d = 1000 * (y + 1) + 4 * (x + 1) + facingScore d
-
-score :: Grid -> You -> Int
-score g y@(You p d _) = score0 p' d
-  where
-    Open p' = fromJustE "score" $ gAt g y
+score :: Position2 -> Direction4 -> Int
+score (Position2 x y) d = 1000 * (y + 1) + 4 * (x + 1) + facingScore d
 
 doWalks ::
      Locatable grid
-  => (grid -> You -> Int)
-  -> (grid -> You -> You)
+  => (grid -> You -> You)
   -> grid
   -> [Instruction]
   -> You
   -> Int
-doWalks sc stp g is st = sc g $ foldl' (flip move) st is
+doWalks stp g is you = score p' d'
   where
+    you' = foldl' (flip move) you is
+    Open p' = fromJustE "doWalks-score" $ gAt g you'
+    d' = you' ^. yDirection
     move :: Instruction -> You -> You
     move (Forward i) = iterateNL i stp1
     move RotateLeft  = yDirection %~ turnLeft
@@ -167,7 +164,7 @@ doWalks sc stp g is st = sc g $ foldl' (flip move) st is
         y' = stp g y
 
 part1 :: Input -> Int
-part1 (g, is) = doWalks score step g is $ start g
+part1 (g, is) = doWalks step g is $ start g
 
 subgrid :: Int -> Int -> Int -> Grid2 a -> Grid2 a
 subgrid sz ix iy = Map.mapKeys shift . mapFilterMapWithKey go
@@ -195,13 +192,8 @@ rotgridL = rotgridR . rotgridR . rotgridR
 chunksize :: Grid2 a -> Int
 chunksize = round . sqrt . fromIntegral . (`div` 6) . length
 
-score3 :: Grid3 -> You -> Int
-score3 g (You p d f) = score0 p' d
-  where
-    Open p' = g ^?! gGrids . ix f . at p . to (fromJustE "score3")
-
 part2 :: Input -> Int
-part2 (g, is) = doWalks score3 step3 g3 is $ start g
+part2 (g, is) = doWalks step3 g3 is $ start g
   where
     g3 = cubify $ fixupExample $ chunkify $ _gGrid g
 
