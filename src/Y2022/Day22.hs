@@ -217,7 +217,7 @@ chunksize = round . sqrt . fromIntegral . (`div` 6) . length
 part2 :: Input -> Int
 part2 (g, is) = doWalksScore step3 g3 is $ start g
   where
-    g3 = cubify $ _gGrid g
+    g3 = cubify g
 
 fixupExample :: Grid2 a -> Grid2 a
 fixupExample g
@@ -272,11 +272,11 @@ chunkify g =
     p = [0 .. 3]
     sz = traceF (prependShow "sz") $ chunksize g
 
-cubify :: Grid2 GI -> Grid3
+cubify :: Grid -> Grid3
 cubify g = Grid3 {..}
   where
-    _g2D = g
-    gs = fixupExample $ chunkify g
+    _g2D = gOriginal g
+    gs = fixupExample $ chunkify _g2D
     _gSize = chunksize $ snd $ Map.findMin gs
     _gGrids =
       Map.fromList
@@ -304,7 +304,7 @@ cubify g = Grid3 {..}
     traceInput = ttrace (displayG $ Map.map (const ()) gs)
 
 testCubify :: Input -> Int
-testCubify = length . _gGrids . cubify . _gGrid . fst
+testCubify = length . _gGrids . cubify . fst
 
 tasks =
   Tasks
