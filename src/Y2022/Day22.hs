@@ -56,7 +56,14 @@ data Grid3 =
 
 makeLenses ''Grid3
 
-gAt k = gGrid . at k
+class Locatable grid where
+  gAt :: grid -> You -> Maybe GI
+
+instance Locatable Grid where
+  gAt g (You p _ _) = g ^. gGrid . at p
+
+instance Locatable Grid3 where
+  gAt g (You p _ f) = g ^. gGrids . at f . non Map.empty . at p
 
 mkgrid :: [[GI0]] -> Grid
 mkgrid g0 = Gr {..}
@@ -98,13 +105,7 @@ data You =
 makeLenses ''You
 
 step :: Grid -> You -> You
-step g (You p d f) = You p' d f
-  where
-    p' =
-      if g ^. gAt p1 == Just Wall
-        then p
-        else p1
-    p1 = wrapWalk g d p
+step g (You p d f) = You (wrapWalk g d p) d f
 
 wrapWalk1 :: Grid -> Direction4 -> Position2 -> Position2
 wrapWalk1 g d p = Position2 (w xmin xmax x) (w ymin ymax y)
@@ -118,7 +119,7 @@ wrapWalk1 g d p = Position2 (w xmin xmax x) (w ymin ymax y)
 
 wrapWalk :: Grid -> Direction4 -> Position2 -> Position2
 wrapWalk g d p =
-  if g ^. gAt p' . to isJust
+  if g ^. gGrid . at p' . to isJust
     then p'
     else wrapWalk g d p'
   where
@@ -140,12 +141,13 @@ score0 :: Position2 -> Direction4 -> Int
 score0 (Position2 x y) d = 1000 * (y + 1) + 4 * (x + 1) + facingScore d
 
 score :: Grid -> You -> Int
-score g (You p d _) = score0 p' d
+score g y@(You p d _) = score0 p' d
   where
-    Open p' = g ^. gAt p . to (fromJustE "score")
+    Open p' = fromJustE "score" $ gAt g y
 
 doWalks ::
-     (grid -> You -> Int)
+     Locatable grid
+  => (grid -> You -> Int)
   -> (grid -> You -> You)
   -> grid
   -> [Instruction]
@@ -154,9 +156,15 @@ doWalks ::
 doWalks sc stp g is st = sc g $ foldl' (flip move) st is
   where
     move :: Instruction -> You -> You
-    move (Forward i) = iterateNL i $ stp g
+    move (Forward i) = iterateNL i stp1
     move RotateLeft  = yDirection %~ turnLeft
     move RotateRight = yDirection %~ turnRight
+    stp1 y =
+      if gAt g y' == Just Wall
+        then y
+        else y'
+      where
+        y' = stp g y
 
 part1 :: Input -> Int
 part1 (g, is) = doWalks score step g is $ start g
