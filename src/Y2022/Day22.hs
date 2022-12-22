@@ -21,14 +21,16 @@ data GI0
 
 data GI
   = Wall
-  | Open Position2
+  | Open Position2 Int
   | OpenStep Direction4
   deriving (Show, Eq, Ord)
 
 giPosition :: GI -> Position2
-giPosition Wall        = error "No position for wall"
-giPosition (Open p)    = p
-giPosition OpenStep {} = error "No position for OpenStep"
+giPosition (Open p _) = p
+giPosition gi         = error $ "giPosition: " ++ show gi
+
+giDirection :: GI -> Direction4 -> Direction4
+giDirection (Open _ d) = iterateNL d turnLeft
 
 instance GridItem GI where
   showInGrid Wall         = '#'
@@ -89,7 +91,7 @@ mkgrid g0 = Gr {..}
     _gGrid = mapFilterMapWithKey wp $ fromMatrixG g0
     _gBounds = boundsG _gGrid
     wp _ Wall0  = Just Wall
-    wp p Open0  = Just $ Open p
+    wp p Open0  = Just $ Open p 0
     wp _ Blank0 = Nothing
 
 type Input = (Grid, [Instruction])
@@ -121,6 +123,12 @@ data You =
   deriving (Eq, Show)
 
 makeLenses ''You
+
+giProjectBack :: GI -> You -> You
+giProjectBack c (You p d f) = You (giPosition c) (giDirection c d) f
+
+gProjectBack :: IsGrid grid => grid -> You -> You
+gProjectBack g you = giProjectBack (fromJustE "gProjectBack" $ gAt g you) you
 
 step :: Grid -> You -> You
 step g (You p d f) = You (wrapWalk g d p) d f
@@ -158,17 +166,16 @@ facingScore N = 3
 score :: Position2 -> Direction4 -> Int
 score (Position2 x y) d = 1000 * (y + 1) + 4 * (x + 1) + facingScore d
 
+yScore :: You -> Int
+yScore (You p d _) = score p d
+
 doWalksScore ::
      IsGrid grid => (grid -> You -> You) -> grid -> [Instruction] -> You -> Int
-doWalksScore stp g is you =
-  traceShow path $ ttrace (displayG g') $ score (op you') d'
+doWalksScore stp g is you = ttrace (displayG g') $ yScore $ head path
   where
-    path = doWalks stp g is you
-    you' = head path
-    op y = giPosition $ fromJustE "doWalks" $ gAt g y
-    d' = you' ^. yDirection
+    path = map (gProjectBack g) $ doWalks stp g is you
     g' = foldr putStep (gOriginal g) path
-    putStep y@(You _ d _) = Map.insert (op y) (OpenStep d)
+    putStep (You p d _) = Map.insert p (OpenStep d)
 
 doWalks ::
      IsGrid grid
@@ -202,16 +209,19 @@ subgrid sz ix iy = Map.mapKeys shift . mapFilterMapWithKey go
       pure v
     shift (Position2 x y) = Position2 (x - ix * sz) (y - iy * sz)
 
-rotgridR :: Grid2 a -> Grid2 a
-rotgridR g = Map.mapKeys (\(Position2 x y) -> Position2 (d - y) x) g
+rotgridR :: Grid2 GI -> Grid2 GI
+rotgridR g = Map.fromList $ map go $ Map.toList g
   where
+    go (Position2 x y, c) = (Position2 (d - y) x, go1 c)
+    go1 (Open p d) = Open p (succ d)
+    go1 c          = c
     (Position2 xmin _, Position2 xmax _) = boundsG g
     d = xmax - xmin
 
-rotgridUD :: Grid2 a -> Grid2 a
+rotgridUD :: Grid2 GI -> Grid2 GI
 rotgridUD = rotgridR . rotgridR
 
-rotgridL :: Grid2 a -> Grid2 a
+rotgridL :: Grid2 GI -> Grid2 GI
 rotgridL = rotgridR . rotgridR . rotgridR
 
 part2 :: Input -> Int
