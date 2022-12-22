@@ -22,6 +22,8 @@ module Utils
   , (<=<)
   , (<|>)
   , (>=>)
+  , (&&&)
+  , (***)
   , bimap
   , chr
   , first
@@ -47,6 +49,7 @@ module Utils
   ) where
 
 import           Control.Applicative       (liftA2, (<|>))
+import           Control.Arrow             ((&&&), (***))
 import           Control.Monad
 
 import           Data.Bifunctor            (bimap, first, second)

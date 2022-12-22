@@ -119,11 +119,30 @@ digitsP = charactersP &** (pureP Text.singleton &* integerP)
 position2P :: Parser Text Position2
 position2P = tsplitP "," &* ap2P Position2 integerP integerP
 
+charGridMaybeP :: Parser Char (Maybe item) -> Parser Text (Grid2 item)
+charGridMaybeP elemP =
+  Map.mapMaybe id . fromMatrixG <$> linesP &** charactersP &** elemP
+
+charGridP' :: Parser Char item -> Parser Text (Grid2 item)
+charGridP' elemP = charGridMaybeP (Just <$> elemP)
+
+gridItemP ::
+     (Bounded item, Enum item, GridItem item, Show item) => Parser Char item
+gridItemP = choiceP $ map (showInGrid &&& id) enumerate
+
+charGridP ::
+     (Bounded item, Enum item, GridItem item, Show item)
+  => Parser Text (Grid2 item)
+charGridP = charGridP' gridItemP
+
 digitGridP :: Parser Text (Grid2 Int)
-digitGridP = fromMatrixG <$> linesP &** digitsP
+digitGridP = charGridP' $ pureP Text.singleton &* integerP
 
 dotGridP :: Parser Text (Grid2 ())
-dotGridP = void . Map.filter id . fromMatrixG <$> linesP &** dotsP
+dotGridP = charGridMaybeP $ boolToMaybe <$> dotP
+  where
+    boolToMaybe True  = Just ()
+    boolToMaybe False = Nothing
 
 dotP :: Parser Char Bool
 dotP = choiceEBP ".#"

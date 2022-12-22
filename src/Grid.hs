@@ -82,6 +82,12 @@ instance GridItem Int where
     | i > 10 = '+'
     | otherwise = chr (ord '0' + i)
 
+instance GridItem Direction4 where
+  showInGrid E = '>'
+  showInGrid S = 'v'
+  showInGrid W = '<'
+  showInGrid N = '^'
+
 showInGridMaybe :: GridItem a => Maybe a -> Char
 showInGridMaybe = maybe middleDot showInGrid
 

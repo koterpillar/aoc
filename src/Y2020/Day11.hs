@@ -18,9 +18,6 @@ instance GridItem Seat where
 
 type Grid = Grid2 Seat
 
-parseGrid :: Parser Text Grid
-parseGrid = fromMatrixG <$> linesP &** charactersP &** choiceEBP ".L#"
-
 countOccupied :: [Seat] -> Int
 countOccupied = countIf (== Occupied)
 
@@ -57,5 +54,5 @@ tasks =
     2020
     11
     (CodeBlock 1)
-    parseGrid
+    charGridP
     [Task stabilizedSeats 37, Task stabilizedSeats2 26]

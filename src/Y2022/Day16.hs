@@ -2,7 +2,6 @@
 
 module Y2022.Day16 where
 
-import           Control.Arrow              ((***))
 import           Control.Monad.State.Strict
 
 import           Data.Foldable              (foldrM)

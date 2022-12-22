@@ -35,10 +35,7 @@ giDirection (Open _ d) = iterateNL d turnLeft
 instance GridItem GI where
   showInGrid Wall         = '#'
   showInGrid Open {}      = 'o'
-  showInGrid (OpenStep E) = '>'
-  showInGrid (OpenStep W) = '<'
-  showInGrid (OpenStep N) = '^'
-  showInGrid (OpenStep S) = 'v'
+  showInGrid (OpenStep d) = showInGrid d
 
 itemP :: Parser Char GI0
 itemP = choiceEBP "#. "

@@ -192,9 +192,7 @@ tasks =
     ]
 
 parse :: Parser Text Situation
-parse =
-  mkSituation . Map.mapMaybe id . fromMatrixG <$>
-  linesP &** charactersP &** parseChar
+parse = mkSituation <$> charGridMaybeP parseAmphi
 
 mkSituation :: Map Position2 Amphi -> Situation
 mkSituation grid = Situation {..}
@@ -212,7 +210,7 @@ mkSituation grid = Situation {..}
         | a <- amphis
         ]
 
-parseChar :: Parser Char (Maybe Amphi)
-parseChar =
+parseAmphi :: Parser Char (Maybe Amphi)
+parseAmphi =
   choiceP $
   map (\a -> (head $ show a, Just a)) amphis ++ [(c, Nothing) | c <- ".# "]

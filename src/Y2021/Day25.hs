@@ -32,11 +32,6 @@ step' d (g0, p@(Position2 xmax ymax)) = (foldl move g0 ps, p)
             then g
             else g & Map.delete p & mapInsert p' d
 
-instance GridItem Direction4 where
-  showInGrid E = '>'
-  showInGrid S = 'v'
-  showInGrid _ = error "showInGrid"
-
 gtrace :: Grid -> Grid
 gtrace = ttraceF (displayG . fst)
 
@@ -51,9 +46,7 @@ mkGrid g = (g, b)
     (_, b) = boundsG g
 
 parse :: Parser Text Grid
-parse =
-  mkGrid . fmap fromJust . Map.filter isJust . fromMatrixG <$>
-  linesP &** charactersP &** cucumberP
+parse = mkGrid <$> charGridMaybeP cucumberP
 
 cucumberP :: Parser Char (Maybe Direction4)
 cucumberP = choiceP [('>', Just E), ('v', Just S), ('.', Nothing)]
