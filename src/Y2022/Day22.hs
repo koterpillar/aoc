@@ -160,7 +160,8 @@ score (Position2 x y) d = 1000 * (y + 1) + 4 * (x + 1) + facingScore d
 
 doWalksScore ::
      IsGrid grid => (grid -> You -> You) -> grid -> [Instruction] -> You -> Int
-doWalksScore stp g is you = ttrace (displayG g') $ score (op you') d'
+doWalksScore stp g is you =
+  traceShow path $ ttrace (displayG g') $ score (op you') d'
   where
     path = doWalks stp g is you
     you' = head path
@@ -213,9 +214,6 @@ rotgridUD = rotgridR . rotgridR
 rotgridL :: Grid2 a -> Grid2 a
 rotgridL = rotgridR . rotgridR . rotgridR
 
-chunksize :: Grid2 a -> Int
-chunksize = round . sqrt . fromIntegral . (`div` 6) . length
-
 part2 :: Input -> Int
 part2 (g, is) = doWalksScore step3 g3 is you3
   where
@@ -260,7 +258,7 @@ jump sz FRight N c = You (Position2 (pred sz) (flipp sz c)) W FBack
 jump sz FLeft E c  = You (Position2 0 c) E FDown
 jump sz FLeft W c  = You (Position2 0 (flipp sz c)) E FUp
 jump sz FLeft S c  = You (Position2 0 c) E FFront
-jump sz FLeft N c  = You (Position2 0 (flipp sz c)) E FBack
+jump sz FLeft N c  = You (Position2 0 c) E FBack
 jump sz FDown E c  = You (Position2 0 c) E FRight
 jump sz FDown W c  = You (Position2 (pred sz) c) W FLeft
 jump sz FDown S c  = You (Position2 c 0) S FFront
@@ -273,19 +271,20 @@ jump sz FUp N c    = You (Position2 c (pred sz)) N FFront
 flipp :: Int -> Int -> Int
 flipp sz c = sz - c - 1
 
-chunkify :: Grid2 a -> Grid2 (Grid2 a)
+chunkify :: Grid2 a -> (Int, Grid2 (Grid2 a))
 chunkify g =
-  Map.filter (not . null) $ fromMatrixG [[subgrid sz x y g | x <- p] | y <- p]
+  ( sz
+  , Map.filter (not . null) $ fromMatrixG [[subgrid sz x y g | x <- p] | y <- p])
   where
     p = [0 .. 3]
-    sz = traceF (prependShow "sz") $ chunksize g
+    sz = round $ sqrt $ fromIntegral $ (`div` 6) $ length g
 
 cubify :: Grid -> Grid3
 cubify g = Grid3 {..}
   where
     _g2D = gOriginal g
-    gs = fixupExample $ chunkify _g2D
-    _gSize = chunksize $ snd $ Map.findMin gs
+    (_gSize, gs0) = chunkify _g2D
+    gs = fixupExample gs0
     _gGrids =
       Map.fromList
         [ e FBack [(id, Position2 1 0)]
