@@ -43,12 +43,11 @@ grAt k = gGrid . at k
 mkgrid :: [[GI0]] -> Grid
 mkgrid g0 = Gr {..}
   where
-    _gGrid =
-      Map.fromList $ map wp $ Map.toList $ Map.filter (/= Blank0) $
-      fromMatrixG g0
+    _gGrid = mapFilterMapWithKey wp $ fromMatrixG g0
     _gBounds = boundsG _gGrid
-    wp (p, Wall0) = (p, Wall)
-    wp (p, Open0) = (p, Open p)
+    wp _ Wall0  = Just Wall
+    wp p Open0  = Just $ Open p
+    wp _ Blank0 = Nothing
 
 type Input = (Grid, [Instruction])
 
@@ -134,10 +133,16 @@ part1 (g, is) = score g $ foldl' (flip $ move g) p is
   where
     p = traceShowId $ start $ ttraceF (view $ gGrid . to displayG) g
 
-subgrid :: Int -> Position2 -> Grid2 a -> Grid2 a
-subgrid sz origin =
-  Map.filterWithKey (\(Position2 x y) _ -> inRange 0 sz x && inRange 0 sz y) .
-  Map.mapKeys (`pointMinus` origin)
+subgrid :: Int -> Int -> Int -> Grid2 a -> Grid2 a
+subgrid sz ix iy = Map.mapKeys shift . mapFilterMapWithKey go
+  where
+    go (Position2 x y) v = do
+      let (ax, rx) = x `divMod` sz
+      guard $ ax == ix
+      let (ay, ry) = y `divMod` sz
+      guard $ ay == iy
+      pure v
+    shift (Position2 x y) = Position2 (x - ix * sz) (y - iy * sz)
 
 rotgridR :: Grid2 a -> Grid2 a
 rotgridR g = Map.mapKeys (\(Position2 x y) -> Position2 (d - y) x) g
@@ -155,6 +160,13 @@ chunksize :: Grid2 a -> Int
 chunksize = round . sqrt . fromIntegral . (`div` 6) . length
 
 part2 :: (Grid, [Instruction]) -> Int
-part2 = error . show
+part2 = error . show . fmap boundsG . chunkify . _gGrid . fst
+
+chunkify :: Grid2 a -> Grid2 (Grid2 a)
+chunkify g =
+  Map.filter (not . null) $ fromMatrixG [[subgrid sz x y g | x <- p] | y <- p]
+  where
+    p = [0 .. 3]
+    sz = traceF (prependShow "sz") $ chunksize g
 
 tasks = Tasks 2022 22 (CodeBlock 0) parser [Task part1 6032, Task part2 5031]
