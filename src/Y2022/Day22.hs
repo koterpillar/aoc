@@ -69,7 +69,9 @@ data Grid3 =
 
 makeLenses ''Grid3
 
-class IsGrid grid where
+class Show grid =>
+      IsGrid grid
+  where
   gOriginal :: grid -> Grid2 GI
   gAt :: grid -> You -> Maybe GI
 
@@ -162,7 +164,7 @@ doWalksScore stp g is you = ttrace (displayG g') $ score (op you') d'
   where
     path = doWalks stp g is you
     you' = head path
-    op y = giPosition $ fromJustE ("doWalks op" <> show y) $ gAt g y
+    op y = giPosition $ fromJustE "doWalks" $ gAt g y
     d' = you' ^. yDirection
     g' = foldr putStep (gOriginal g) path
     putStep y@(You _ d _) = Map.insert (op y) (OpenStep d)
@@ -183,7 +185,7 @@ doWalks stp g is you = execState (traverse_ move is) [you]
     stp1 = do
       you <- gets head
       let you' = stp g you
-      when (gAt g you' /= Just Wall) $ modify $ (you' :)
+      when (gAt g you' /= Just Wall) $ modify (you' :)
 
 part1 :: Input -> Int
 part1 (g, is) = doWalksScore step g is $ start g
@@ -215,9 +217,15 @@ chunksize :: Grid2 a -> Int
 chunksize = round . sqrt . fromIntegral . (`div` 6) . length
 
 part2 :: Input -> Int
-part2 (g, is) = doWalksScore step3 g3 is $ start g
+part2 (g, is) = doWalksScore step3 g3 is you3
   where
     g3 = cubify g
+    you2 = start g
+    g3back = g3 ^?! gGrids . ix FBack
+    p3 =
+      fromJustE "p3" $
+      mapFindValue (\gi -> giPosition gi == _yPosition you2) g3back
+    you3 = you2 {_yPosition = p3}
 
 fixupExample :: Grid2 a -> Grid2 a
 fixupExample g
