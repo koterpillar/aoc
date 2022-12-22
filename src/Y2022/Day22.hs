@@ -38,7 +38,25 @@ data Grid =
 
 makeLenses ''Grid
 
-grAt k = gGrid . at k
+data Face
+  = FBack
+  | FLeft
+  | FRight
+  | FFront
+  | FUp
+  | FDown
+  deriving (Eq, Ord, Show)
+
+data Grid3 =
+  Grid3
+    { _gGrids :: Map Face (Grid2 GI)
+    , _gSize  :: Int
+    }
+  deriving (Eq, Ord, Show)
+
+makeLenses ''Grid3
+
+gAt k = gGrid . at k
 
 mkgrid :: [[GI0]] -> Grid
 mkgrid g0 = Gr {..}
@@ -73,6 +91,7 @@ data You =
   You
     { _yPosition  :: Position2
     , _yDirection :: Direction4
+    , _yFace      :: Face
     }
   deriving (Eq, Show)
 
@@ -86,7 +105,7 @@ move _ RotateRight = yDirection %~ turnRight
 
 step :: Grid -> Direction4 -> Position2 -> Position2
 step g d p =
-  if g ^. grAt p1 == Just Wall
+  if g ^. gAt p1 == Just Wall
     then p
     else p1
   where
@@ -105,14 +124,14 @@ wrapWalk1 g d p = Position2 (w xmin xmax x) (w ymin ymax y)
 
 wrapWalk :: Grid -> Direction4 -> Position2 -> Position2
 wrapWalk g d p =
-  if g ^. grAt p' . to isJust
+  if g ^. gAt p' . to isJust
     then p'
     else wrapWalk g d p'
   where
     p' = wrapWalk1 g d p
 
 start :: Grid -> You
-start g = You p E
+start g = You p E FBack
   where
     p = wrapWalk g E topLeft
     (topLeft, _) = g ^. gBounds
@@ -123,15 +142,25 @@ facingScore S = 1
 facingScore W = 2
 facingScore N = 3
 
-score :: Grid -> You -> Int
-score g (You ep ed) = 1000 * (y + 1) + 4 * (x + 1) + facingScore ed
-  where
-    Open (Position2 x y) = g ^. grAt ep . to (fromJustE "score")
+score0 :: Position2 -> Direction4 -> Int
+score0 (Position2 x y) d = 1000 * (y + 1) + 4 * (x + 1) + facingScore d
 
-part1 :: (Grid, [Instruction]) -> Int
-part1 (g, is) = score g $ foldl' (flip $ move g) p is
+score :: Grid -> You -> Int
+score g (You p d _) = score0 p' d
   where
-    p = traceShowId $ start $ ttraceF (view $ gGrid . to displayG) g
+    Open p' = g ^. gAt p . to (fromJustE "score")
+
+doWalks ::
+     (grid -> You -> Int)
+  -> (grid -> Instruction -> You -> You)
+  -> grid
+  -> [Instruction]
+  -> You
+  -> Int
+doWalks sc mv g is st = sc g $ foldl' (flip $ mv g) st is
+
+part1 :: Input -> Int
+part1 (g, is) = doWalks score move g is $ start g
 
 subgrid :: Int -> Int -> Int -> Grid2 a -> Grid2 a
 subgrid sz ix iy = Map.mapKeys shift . mapFilterMapWithKey go
@@ -159,8 +188,23 @@ rotgridL = rotgridR . rotgridR . rotgridR
 chunksize :: Grid2 a -> Int
 chunksize = round . sqrt . fromIntegral . (`div` 6) . length
 
-part2 :: (Grid, [Instruction]) -> Int
-part2 = error . show . fmap boundsG . chunkify . _gGrid . fst
+score3 :: Grid3 -> You -> Int
+score3 g (You p d f) = score0 p' d
+  where
+    Open p' = g ^?! gGrids . ix f . at p . to (fromJustE "score3")
+
+part2 :: Input -> Int
+part2 (g, is) = doWalks score3 move3 g3 is $ start g
+  where
+    g3 = cubify $ fixupExample $ chunkify $ _gGrid g
+
+fixupExample :: Grid2 a -> Grid2 a
+fixupExample g
+  | Map.member (Position2 1 0) g = g
+  | otherwise = Map.mapKeys (\(Position2 x y) -> Position2 (pred x) y) g
+
+move3 :: Grid3 -> Instruction -> You -> You
+move3 g i (You p d f) = error "move3"
 
 chunkify :: Grid2 a -> Grid2 (Grid2 a)
 chunkify g =
@@ -169,4 +213,42 @@ chunkify g =
     p = [0 .. 3]
     sz = traceF (prependShow "sz") $ chunksize g
 
-tasks = Tasks 2022 22 (CodeBlock 0) parser [Task part1 6032, Task part2 5031]
+cubify :: Grid2 (Grid2 GI) -> Grid3
+cubify gs = Grid3 {..}
+  where
+    _gSize = chunksize $ snd $ Map.findMin gs
+    _gGrids =
+      Map.fromList
+        [ e FBack [(id, Position2 1 0)]
+        , e FDown [(id, Position2 1 1)]
+        , e FLeft [(id, Position2 0 1), (rotgridR, Position2 0 2)]
+        , e FRight
+            [ (id, Position2 2 1)
+            , (rotgridL, Position2 2 2)
+            , (rotgridR, Position2 2 0)
+            ]
+        , e FFront [(id, Position2 1 2)]
+        , e FUp
+            [ (id, Position2 1 3)
+            , (id, Position2 (-1) 1)
+            , (rotgridL, Position2 0 3)
+            ]
+        ]
+    e f as =
+      case catMaybes [fn <$> Map.lookup p gs | (fn, p) <- as] of
+        [] ->
+          error $ traceInput $ "Cannot find " ++ show f ++ " in " ++
+          show (Map.keys gs)
+        r:_ -> (f, r)
+    traceInput = ttrace (displayG $ Map.map (const ()) gs)
+
+testCubify :: Input -> Int
+testCubify = length . _gGrids . cubify . fixupExample . chunkify . _gGrid . fst
+
+tasks =
+  Tasks
+    2022
+    22
+    (CodeBlock 0)
+    parser
+    [Task part1 6032, Task testCubify 6, Task part2 5031]
