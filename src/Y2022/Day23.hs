@@ -16,32 +16,49 @@ proposals :: [Proposal]
 proposals =
   [(N, [N_, NE, NW]), (S, [S_, SE, SW]), (W, [W_, NW, SW]), (E, [E_, NE, SE])]
 
-proposalsCycle :: [[Proposal]]
-proposalsCycle = map (take (length proposals)) $ inits $ cycle proposals
-
 countEmpty :: Grid2 a -> Int
 countEmpty g = (xmax - xmin + 1) * (ymax - ymin + 1) - length g
   where
     (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
 
-step :: Grid -> [Proposal] -> Grid
-step g ps = ttraceF displayG $ foldr (uncurry chooseMove) g $ Map.toList g1
+type St = (Grid, [Proposal])
+
+shift xs = tail xs ++ [head xs]
+
+step :: St -> St
+step (g, ps) = (g2, shift ps)
   where
+    g2 = foldr (uncurry chooseMove) g $ Map.toList g1
     g1 =
       mapFromListWith (++) $
-      catMaybes [(, [p]) <$> elfStep g ps p | p <- Map.keys g]
+      catMaybes [(\d -> (walk d p, [p])) <$> elfStep g ps p | p <- Map.keys g]
     chooseMove p' [p] = Map.delete p . Map.insert p' ()
     chooseMove _ _    = id
 
-elfStep :: Grid -> [Proposal] -> Position2 -> Maybe Position2
+elfStep :: Grid -> [Proposal] -> Position2 -> Maybe Direction4
 elfStep g ps p =
   listToMaybe $ do
+    guard $ or [Map.member (walk d p) g | d <- allDir8]
     (d, dchecks) <- ps
     for_ dchecks $ \dcheck -> do
       let pcheck = walk dcheck p
       guard $ not $ Map.member pcheck g
-    pure $ walk d p
+    pure d
 
-part1 g = countEmpty $ foldl' step g $ take 10 proposalsCycle
+start :: Grid -> St
+start g = (g, proposals)
 
-tasks = Tasks 2022 23 (CodeBlock 0) dotGridP [Task part1 110]
+part1 g = countEmpty $ fst $ iterateNL 10 step $ start g
+
+doit :: (St -> St) -> St -> [St]
+doit f a = a : rest
+  where
+    a' = f a
+    rest =
+      if fst a == fst a'
+        then []
+        else doit f a'
+
+part2 g = length $ doit step $ start g
+
+tasks = Tasks 2022 23 (CodeBlock 0) dotGridP [Task part1 110, Task part2 20]
