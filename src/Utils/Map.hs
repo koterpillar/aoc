@@ -22,6 +22,9 @@ mapFromList = Map.fromList
 mapFromListWith :: Ord k => (a -> a -> a) -> [(k, a)] -> Map k a
 mapFromListWith = Map.fromListWith
 
+mapFromListS :: (Ord k, Semigroup a) => [(k, a)] -> Map k a
+mapFromListS = Map.fromListWith (<>)
+
 mapFromListSum :: (Ord k, Num a) => [(k, a)] -> Map k a
 mapFromListSum = Map.fromListWith (+)
 

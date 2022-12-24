@@ -15,9 +15,9 @@ data Tile
   | You
   deriving (Ord, Eq, Show)
 
-mergeTile :: Tile -> Tile -> Tile
-mergeTile (Blizzard ds1) (Blizzard ds2) = Blizzard $ ds1 ++ ds2
-mergeTile _ _                           = error "mergeTile"
+instance Semigroup Tile where
+  Blizzard ds1 <> Blizzard ds2 = Blizzard $ ds1 <> ds2
+  _ <> _                       = error "mergeTile"
 
 instance GridItem Tile where
   showInGrid (Blizzard [d]) = showInGrid d
@@ -69,10 +69,9 @@ ctxMake g = Ctx {..}
     _ctxGrids = iterateN _ctxPeriod (moveBlizzards (pmin, pmax)) g
 
 moveBlizzards :: (Position2, Position2) -> Grid -> Grid
-moveBlizzards (pmin, pmax) g =
-  mapFromListWith mergeTile $ concatMap (uncurry mt) $ Map.toList g
+moveBlizzards bounds = mapFromListS . concatMap (uncurry mt) . Map.toList
   where
-    move d = wrapBounds (pmin, pmax) . walk d
+    move d = wrapBounds bounds . walk d
     mt p Wall          = [(p, Wall)]
     mt p (Blizzard ds) = [(move d p, Blizzard [d]) | d <- ds]
 

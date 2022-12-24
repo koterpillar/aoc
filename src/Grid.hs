@@ -67,7 +67,7 @@ pointBounds ps = (Position2 xmin ymin, Position2 xmax ymax)
     ymax = maximum $ map pY ps
 
 shrinkWithG :: Int -> (a -> a -> a) -> Grid2 a -> Grid2 a
-shrinkWithG scale fn = mapFromListWith fn . map (first scalePoint) . mapToList
+shrinkWithG scale fn = Map.mapKeysWith fn scalePoint
   where
     scalePoint (Position2 x y) = Position2 (x `div` scale) (y `div` scale)
 

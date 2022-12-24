@@ -30,8 +30,8 @@ step (g, ps) = (g2, shift ps)
   where
     g2 = foldr (uncurry chooseMove) g $ Map.toList g1
     g1 =
-      mapFromListWith (++) $
-      catMaybes [(\d -> (walk d p, [p])) <$> elfStep g ps p | p <- Map.keys g]
+      mapFromListS
+        [(walk d p, [p]) | p <- Map.keys g, d <- maybeToList $ elfStep g ps p]
     chooseMove p' [p] = Map.delete p . Map.insert p' ()
     chooseMove _ _    = id
 
