@@ -41,10 +41,6 @@ tileP =
 parser :: Parser Text Grid
 parser = charGridMaybeP tileP
 
-instance Walkable2 (Maybe Direction4) where
-  walkN _ Nothing  = id
-  walkN i (Just d) = walkN i d
-
 allDir4None :: [Maybe Direction4]
 allDir4None = Nothing : map Just allDir4
 

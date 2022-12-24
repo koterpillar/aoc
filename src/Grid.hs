@@ -142,9 +142,6 @@ instance Hashable Direction8 where
 allDir8 :: [Direction8]
 allDir8 = [minBound .. maxBound]
 
-walk :: Walkable2 d => d -> Position2 -> Position2
-walk = walkN 1
-
 adjacent4 :: Position2 -> [Position2]
 adjacent4 p = [walk d p | d <- allDir4]
 
@@ -153,6 +150,16 @@ adjacent8 p = [walk d p | d <- allDir8]
 
 class Walkable2 d where
   walkN :: Int -> d -> Position2 -> Position2
+
+walk :: Walkable2 d => d -> Position2 -> Position2
+walk = walkN 1
+
+walked :: Walkable2 d => d -> Lens' Position2 Position2
+walked d = lens (walk d) (const $ walkN (-1) d)
+
+instance Walkable2 d => Walkable2 (Maybe d) where
+  walkN _ Nothing  = id
+  walkN i (Just d) = walkN i d
 
 instance Walkable2 Direction4 where
   walkN n E (Position2 x y) = Position2 (x + n) y
