@@ -9,9 +9,6 @@ import qualified Data.Text as Text
 import           AOC
 import           Utils
 
-parser :: Parser Text ()
-parser = error "parser"
-
 addMod :: Int -> Int -> Int -> Int
 addMod l a b = (a + b) `mod` l
 
