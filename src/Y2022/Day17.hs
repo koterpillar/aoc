@@ -86,9 +86,6 @@ displaySt St {..} =
   displayG $
   foldr Map.union (Map.map (const C) _stChamber) (Map.map (const R) <$> _stRock)
 
-succMod :: Int -> Int -> Int
-succMod n x = succ x `mod` n
-
 stInit :: [Direction4] -> St
 stInit _stWind = St {..}
   where

@@ -67,8 +67,6 @@ stGrid ctx t = (ctx ^. ctxGrids) !! t
 tick :: Ctx -> Int -> Int
 tick ctx = succMod (ctx ^. ctxPeriod)
 
-succMod n x = succ x `mod` n
-
 stDisplay :: Ctx -> St -> Text
 stDisplay c s@(p, t) =
   tshow t <> "\n" <> displayG (Map.insert p You (stGrid c t))
@@ -90,12 +88,6 @@ findRoute c st end =
   fromJustE "findRoute" $
   aStarDepthGoal (moves c) (manhattanDistance end . fst) st
 
-m1 :: Int -> Int -> Int -> Int
-m1 a b c
-  | c == a = b - 1
-  | c == b = a + 1
-  | otherwise = c
-
 moveBlizzards :: Grid -> Grid
 moveBlizzards g =
   mapFromListWith mergeTile $ concatMap (uncurry mt) $ Map.toList g
@@ -103,7 +95,9 @@ moveBlizzards g =
     (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
     move d p =
       let (Position2 x y) = walk d p
-       in Position2 (m1 xmin xmax x) (m1 ymin ymax y)
+       in Position2
+            (wrapRange (succ xmin) (pred xmax) x)
+            (wrapRange (succ ymin) (pred ymax) y)
     mt p Wall          = [(p, Wall)]
     mt p (Blizzard ds) = [(move d p, Blizzard [d]) | d <- ds]
 
