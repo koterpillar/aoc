@@ -49,7 +49,6 @@ data Ctx =
     { _ctxPeriod :: Int
     , _ctxGrids  :: [Grid]
     , _ctxBounds :: (Position2, Position2)
-    , _ctxEnd    :: Position2
     }
   deriving (Ord, Eq, Show, Generic, Hashable)
 
@@ -72,12 +71,14 @@ ctxMake g = Ctx {..}
   where
     _ctxBounds = boundsG g
     (Position2 xmin ymin, Position2 xmax ymax) = _ctxBounds
-    _ctxEnd = Position2 (xmax - 1) ymax
     _ctxPeriod = lcm (xmax - xmin - 1) (ymax - ymin - 1)
     _ctxGrids = iterateN _ctxPeriod moveBlizzards g
 
 ctxStart :: Ctx -> St
-ctxStart c = (walk E $ c ^. ctxBounds . _1, 0)
+ctxStart c = (c ^. ctxBounds . _1 . walked E, 0)
+
+ctxEnd :: SimpleGetter Ctx Position2
+ctxEnd = ctxBounds . _2 . walked W
 
 findRoute :: Ctx -> St -> Position2 -> [St]
 findRoute c st end =
