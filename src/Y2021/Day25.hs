@@ -12,20 +12,10 @@ step :: Grid -> Grid
 step g = g & step' E & step' S
 
 step' :: Direction4 -> Grid -> Grid
-step' d (g0, p@(Position2 xmax ymax)) = (foldl move g0 ps, p)
+step' d (g0, b) = (foldl move g0 ps, b)
   where
     ps = [p | (p, c) <- mapToList g0, c == d]
-    advance p =
-      let Position2 x' y' = walk d p
-          x'' =
-            if x' > xmax
-              then 0
-              else x'
-          y'' =
-            if y' > ymax
-              then 0
-              else y'
-       in Position2 x'' y''
+    advance = wrapBounds (Position2 0 0, b) . walk d
     move g p =
       let p' = advance p
        in if mapMember p' g0
@@ -46,7 +36,4 @@ mkGrid g = (g, b)
     (_, b) = boundsG g
 
 parse :: Parser Text Grid
-parse = mkGrid <$> charGridMaybeP cucumberP
-
-cucumberP :: Parser Char (Maybe Direction4)
-cucumberP = choiceP [('>', Just E), ('v', Just S), ('.', Nothing)]
+parse = mkGrid <$> charGridP

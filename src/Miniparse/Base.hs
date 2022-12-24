@@ -124,7 +124,8 @@ charGridMaybeP elemP =
   Map.mapMaybe id . fromMatrixG <$> linesP &** charactersP &** elemP
 
 charGridP' :: Parser Char item -> Parser Text (Grid2 item)
-charGridP' elemP = charGridMaybeP (Just <$> elemP)
+charGridP' elemP =
+  charGridMaybeP $ (Just <$> elemP) &| (Nothing <$ requireP '.')
 
 gridItemP ::
      (Bounded item, Enum item, GridItem item, Show item) => Parser Char item

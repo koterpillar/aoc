@@ -27,13 +27,11 @@ instance GridItem Tile where
 
 type Grid = Grid2 Tile
 
-tileP :: Parser Char (Maybe Tile)
-tileP =
-  choiceP $ ('.', Nothing) : ('#', Just Wall) :
-  [(showInGrid d, Just (Blizzard [d])) | d <- allDir4]
+tileP :: Parser Char Tile
+tileP = choiceP $ ('#', Wall) : [(showInGrid d, Blizzard [d]) | d <- allDir4]
 
 parser :: Parser Text Grid
-parser = charGridMaybeP tileP
+parser = charGridP' tileP
 
 allDir4None :: [Maybe Direction4]
 allDir4None = Nothing : map Just allDir4
