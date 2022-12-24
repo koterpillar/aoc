@@ -53,6 +53,10 @@ insideBounds :: (Position2, Position2) -> Position2 -> Bool
 insideBounds (Position2 xmin ymin, Position2 xmax ymax) (Position2 x y) =
   inRange xmin xmax x && inRange ymin ymax y
 
+wrapBounds :: (Position2, Position2) -> Position2 -> Position2
+wrapBounds (Position2 xmin ymin, Position2 xmax ymax) (Position2 x y) =
+  Position2 (wrapRange xmin xmax x) (wrapRange ymin ymax y)
+
 pointBounds :: [Position2] -> (Position2, Position2)
 pointBounds [] = error "No bounds for empty list"
 pointBounds ps = (Position2 xmin ymin, Position2 xmax ymax)

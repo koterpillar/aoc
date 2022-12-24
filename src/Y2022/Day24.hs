@@ -1,14 +1,8 @@
-{-# LANGUAGE DeriveAnyClass  #-}
-{-# LANGUAGE DeriveGeneric   #-}
-{-# LANGUAGE Strict          #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Y2022.Day24 where
 
-import qualified Data.Map     as Map
-import qualified Data.Set     as Set
-import qualified Data.Text    as Text
-import           GHC.Generics (Generic)
+import qualified Data.Map as Map
 
 import           AOC
 import           Grid
@@ -19,7 +13,7 @@ data Tile
   = Blizzard [Direction4]
   | Wall
   | You
-  deriving (Ord, Eq, Show, Generic, Hashable)
+  deriving (Ord, Eq, Show)
 
 mergeTile :: Tile -> Tile -> Tile
 mergeTile (Blizzard ds1) (Blizzard ds2) = Blizzard $ ds1 ++ ds2
@@ -50,7 +44,7 @@ data Ctx =
     , _ctxGrids  :: [Grid]
     , _ctxBounds :: (Position2, Position2)
     }
-  deriving (Ord, Eq, Show, Generic, Hashable)
+  deriving (Ord, Eq, Show)
 
 makeLenses ''Ctx
 
@@ -70,9 +64,19 @@ ctxMake :: Grid -> Ctx
 ctxMake g = Ctx {..}
   where
     _ctxBounds = boundsG g
-    (Position2 xmin ymin, Position2 xmax ymax) = _ctxBounds
+    (pmin'@(Position2 xmin ymin), pmax'@(Position2 xmax ymax)) = _ctxBounds
     _ctxPeriod = lcm (xmax - xmin - 1) (ymax - ymin - 1)
-    _ctxGrids = iterateN _ctxPeriod moveBlizzards g
+    pmin = walk SE pmin'
+    pmax = walk NW pmax'
+    _ctxGrids = iterateN _ctxPeriod (moveBlizzards (pmin, pmax)) g
+
+moveBlizzards :: (Position2, Position2) -> Grid -> Grid
+moveBlizzards (pmin, pmax) g =
+  mapFromListWith mergeTile $ concatMap (uncurry mt) $ Map.toList g
+  where
+    move d = wrapBounds (pmin, pmax) . walk d
+    mt p Wall          = [(p, Wall)]
+    mt p (Blizzard ds) = [(move d p, Blizzard [d]) | d <- ds]
 
 ctxStart :: Ctx -> St
 ctxStart c = (c ^. ctxBounds . _1 . walked E, 0)
@@ -84,19 +88,6 @@ findRoute :: Ctx -> St -> Position2 -> [St]
 findRoute c st end =
   fromJustE "findRoute" $
   aStarDepthGoal (moves c) (manhattanDistance end . fst) st
-
-moveBlizzards :: Grid -> Grid
-moveBlizzards g =
-  mapFromListWith mergeTile $ concatMap (uncurry mt) $ Map.toList g
-  where
-    (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
-    move d p =
-      let (Position2 x y) = walk d p
-       in Position2
-            (wrapRange (succ xmin) (pred xmax) x)
-            (wrapRange (succ ymin) (pred ymax) y)
-    mt p Wall          = [(p, Wall)]
-    mt p (Blizzard ds) = [(move d p, Blizzard [d]) | d <- ds]
 
 moves :: Ctx -> St -> [St]
 moves c (p, t) = do
@@ -117,7 +108,7 @@ part2 g = l1 + l2 + l3
     ctx = ctxMake g
     rt st end =
       let r = findRoute ctx st end
-       in (length r, traceShowId $ lastE "part2" r)
+       in (length r, lastE "part2" r)
     st0@(p1, _) = ctxStart ctx
     p2 = ctx ^. ctxEnd
     (l1, st1) = rt st0 p2
