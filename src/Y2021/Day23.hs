@@ -128,8 +128,7 @@ targetEstimate s@Situation {..} = sum estimateHallway + sum estimateRooms
     target a = Position2 (roomX a) roomHeadY
 
 moveEnergy :: Amphi -> Position2 -> Position2 -> Int
-moveEnergy a (Position2 x1 y1) (Position2 x2 y2) =
-  aEnergy a * (abs (x2 - x1) + abs (y2 - y1))
+moveEnergy a p1 p2 = aEnergy a * manhattanDistance p1 p2
 
 apositions :: Situation -> Set (Amphi, Position2)
 apositions s = setFromList (hallway ++ rooms)
