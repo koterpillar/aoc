@@ -108,6 +108,9 @@ data Direction4
   | S
   deriving (Enum, Eq, Ord, Show, Bounded)
 
+instance Hashable Direction4 where
+  hashWithSalt s = hashWithSalt s . fromEnum
+
 allDir4 :: [Direction4]
 allDir4 = [minBound .. maxBound]
 
@@ -132,6 +135,9 @@ data Direction8
   | S_
   | SE
   deriving (Eq, Ord, Show, Bounded, Enum)
+
+instance Hashable Direction8 where
+  hashWithSalt s = hashWithSalt s . fromEnum
 
 allDir8 :: [Direction8]
 allDir8 = [minBound .. maxBound]
