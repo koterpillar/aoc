@@ -83,11 +83,23 @@ succMod = succRange 0 . pred
 predMod :: Int -> Int -> Int
 predMod = predRange 0 . pred
 
+addMod :: Int -> Int -> Int -> Int
+addMod = addRange 0 . pred
+
+subMod :: Int -> Int -> Int -> Int
+subMod = subRange 0 . pred
+
 succRange :: Int -> Int -> Int -> Int
 succRange lo hi = wrapRange lo hi . succ
 
 predRange :: Int -> Int -> Int -> Int
 predRange lo hi = wrapRange lo hi . pred
+
+addRange :: Int -> Int -> Int -> Int -> Int
+addRange lo hi a b = wrapRange lo hi $ a + b
+
+subRange :: Int -> Int -> Int -> Int -> Int
+subRange lo hi a b = wrapRange lo hi $ a - b
 
 wrapRange :: Int -> Int -> Int -> Int
 wrapRange lo hi x = lo + (x - lo) `mod` (hi - lo + 1)

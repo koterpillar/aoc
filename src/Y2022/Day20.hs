@@ -9,9 +9,6 @@ import qualified Data.Text as Text
 import           AOC
 import           Utils
 
-addMod :: Int -> Int -> Int -> Int
-addMod l a b = (a + b) `mod` l
-
 withIndices :: [Int] -> [(Int, Int)]
 withIndices = flip zip [0 ..]
 
@@ -37,7 +34,7 @@ coordinates ns = sum $ map get [1000, 2000, 3000]
   where
     i0 = fromJustE "part1" $ elemIndex 0 ns
     l = length ns
-    get i = ns !! ((i0 + i) `mod` l)
+    get i = ns !! addMod l i0 i
 
 part1 = coordinates . mix 1
 
