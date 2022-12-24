@@ -9,7 +9,6 @@ import qualified Data.Set                   as Set
 import qualified Data.Text                  as Text
 
 import           AOC
-import           Data.Foldable              (foldrM)
 import           Utils
 
 import           Y2022.Lattice

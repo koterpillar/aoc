@@ -27,6 +27,8 @@ module Utils
   , bimap
   , chr
   , first
+  , foldlM
+  , foldrM
   , for
   , for_
   , guard
@@ -61,7 +63,8 @@ import           Data.Containers.ListUtils (nubInt)
 import           Data.Either
 import           Data.Either.Extra
 
-import           Data.Foldable             (for_, toList, traverse_)
+import           Data.Foldable             (foldlM, foldrM, for_, toList,
+                                            traverse_)
 
 import           Data.Functor              (($>))
 

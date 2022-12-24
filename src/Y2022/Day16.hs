@@ -4,8 +4,6 @@ module Y2022.Day16 where
 
 import           Control.Monad.State.Strict
 
-import           Data.Foldable              (foldrM)
-
 import qualified Data.Map.Strict            as Map
 import qualified Data.Set                   as Set
 import qualified Data.Text                  as Text
