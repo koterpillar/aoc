@@ -74,7 +74,7 @@ stDisplay c s@(p, t) =
   tshow t <> "\n" <> displayG (Map.insert p You (stGrid c t))
 
 ctxMake :: Grid -> Ctx
-ctxMake g = trace (show _ctxPeriod) $ Ctx {..}
+ctxMake g = Ctx {..}
   where
     _ctxBounds = boundsG g
     (Position2 xmin ymin, Position2 xmax ymax) = _ctxBounds
@@ -85,15 +85,10 @@ ctxMake g = trace (show _ctxPeriod) $ Ctx {..}
 ctxStart :: Ctx -> St
 ctxStart c = (walk E $ c ^. ctxBounds . _1, 0)
 
-stDistanceToEnd :: Ctx -> St -> Int
-stDistanceToEnd c = manhattanDistance (c ^. ctxEnd) . fst
-
-findRoute :: Grid -> [St]
-findRoute g =
+findRoute :: Ctx -> St -> Position2 -> [St]
+findRoute c st end =
   fromJustE "findRoute" $
-  aStarDepthGoal (moves c) (stDistanceToEnd c) (ctxStart c)
-  where
-    c = ctxMake g
+  aStarDepthGoal (moves c) (manhattanDistance end . fst) st
 
 m1 :: Int -> Int -> Int -> Int
 m1 a b c
@@ -114,15 +109,28 @@ moveBlizzards g =
 
 moves :: Ctx -> St -> [St]
 moves c (p, t) = do
-  when (pX p `mod` 10 == 0) $ traceShowM p
   let t' = tick c t
   d <- allDir4None
   let p' = walk d p
-  guard $ pY p' >= 0
+  guard $ insideBounds (c ^. ctxBounds) p'
   guard $ not $ Map.member p' $ stGrid c t'
   let r = (p', t')
   pure r
 
-part1 = length . findRoute
+part1 g = length $ findRoute ctx (ctxStart ctx) (ctx ^. ctxEnd)
+  where
+    ctx = ctxMake g
 
-tasks = Tasks 2022 24 (CodeBlock 6) parser [Task part1 18]
+part2 g = l1 + l2 + l3
+  where
+    ctx = ctxMake g
+    rt st end =
+      let r = findRoute ctx st end
+       in (length r, traceShowId $ lastE "part2" r)
+    st0@(p1, _) = ctxStart ctx
+    p2 = ctx ^. ctxEnd
+    (l1, st1) = rt st0 p2
+    (l2, st2) = rt st1 p1
+    (l3, _) = rt st2 p2
+
+tasks = Tasks 2022 24 (CodeBlock 6) parser [Task part1 18, Task part2 54]
