@@ -22,13 +22,19 @@ iterateWhile c fn v
 iterateWhileL :: (a -> Bool) -> ItFnL a
 iterateWhileL c f = last . iterateWhile c f
 
-iterateSettle :: Eq a => ItFn a
-iterateSettle fn v = v : vs
+iterateWhile2 :: (a -> a -> Bool) -> ItFn a
+iterateWhile2 c fn v = v : vs
   where
     v' = fn v
     vs
-      | v == v' = []
-      | otherwise = iterateSettle fn v'
+      | c v v' = iterateWhile2 c fn v'
+      | otherwise = []
+
+iterateWhile2L :: (a -> a -> Bool) -> ItFnL a
+iterateWhile2L c f = last . iterateWhile2 c f
+
+iterateSettle :: Eq a => ItFn a
+iterateSettle = iterateWhile2 (/=)
 
 iterateSettleL :: Eq a => ItFnL a
 iterateSettleL f = last . iterateSettle f

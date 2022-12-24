@@ -50,15 +50,6 @@ start g = (g, proposals)
 
 part1 g = countEmpty $ fst $ iterateNL 10 step $ start g
 
-doit :: (St -> St) -> St -> [St]
-doit f a = a : rest
-  where
-    a' = f a
-    rest =
-      if fst a == fst a'
-        then []
-        else doit f a'
-
-part2 g = length $ doit step $ start g
+part2 g = length $ iterateWhile2 ((/=) `on` fst) step $ start g
 
 tasks = Tasks 2022 23 (CodeBlock 0) dotGridP [Task part1 110, Task part2 20]
