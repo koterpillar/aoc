@@ -29,11 +29,8 @@ type Grid = Grid2 Tile
 
 parser :: Parser Text Grid
 parser =
-  charGridP' $ choiceP $ ('#', Wall) :
-  [(showInGrid d, Blizzard [d]) | d <- allDir4]
-
-allDir4None :: [Maybe Direction4]
-allDir4None = Nothing : map Just allDir4
+  charGridP' $ choiceP $ map (showInGrid &&& id) $ Wall :
+  map (Blizzard . pure) allDir4
 
 data Ctx =
   Ctx
@@ -84,6 +81,9 @@ findRoute :: Ctx -> St -> Position2 -> [St]
 findRoute c st end =
   fromJustE "findRoute" $
   aStarDepthGoal (moves c) (manhattanDistance end . fst) st
+
+allDir4None :: [Maybe Direction4]
+allDir4None = Nothing : map Just allDir4
 
 moves :: Ctx -> St -> [St]
 moves c (p, t) = do
