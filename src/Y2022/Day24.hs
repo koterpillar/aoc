@@ -27,11 +27,10 @@ instance GridItem Tile where
 
 type Grid = Grid2 Tile
 
-tileP :: Parser Char Tile
-tileP = choiceP $ ('#', Wall) : [(showInGrid d, Blizzard [d]) | d <- allDir4]
-
 parser :: Parser Text Grid
-parser = charGridP' tileP
+parser =
+  charGridP' $ choiceP $ ('#', Wall) :
+  [(showInGrid d, Blizzard [d]) | d <- allDir4]
 
 allDir4None :: [Maybe Direction4]
 allDir4None = Nothing : map Just allDir4
@@ -88,13 +87,12 @@ findRoute c st end =
 
 moves :: Ctx -> St -> [St]
 moves c (p, t) = do
-  let t' = tick c t
   d <- allDir4None
   let p' = walk d p
   guard $ insideBounds (c ^. ctxBounds) p'
+  let t' = tick c t
   guard $ not $ Map.member p' $ stGrid c t'
-  let r = (p', t')
-  pure r
+  pure (p', t')
 
 part1 g = length $ findRoute ctx (ctxStart ctx) (ctx ^. ctxEnd)
   where
