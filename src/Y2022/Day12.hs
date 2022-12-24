@@ -18,10 +18,9 @@ findPath :: Grid -> Maybe [Position2]
 findPath = findPath' <*> mapFindValueE "find start" (== 'S')
 
 findPath' :: Grid -> Position2 -> Maybe [Position2]
-findPath' g = aStarDepth moves distanceToGoal isGoal
+findPath' g = aStarDepthGoal moves distanceToGoal
   where
     endP = mapFindValueE "find end" (== 'E') g
-    isGoal = (== endP)
     distanceToGoal = manhattanDistance endP
     moves p = do
       let h = mapLookupE "moves p" p g

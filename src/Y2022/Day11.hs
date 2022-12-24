@@ -18,7 +18,7 @@ data MonkeyFn
   deriving (Ord, Eq, Show)
 
 divisor :: Int
-divisor = product $ setFromList [2, 3, 5, 7, 11, 13, 17, 19, 23]
+divisor = foldl1' lcm [2, 3, 5, 7, 11, 13, 17, 19, 23]
 
 normalize :: Item -> Item
 normalize (Item x) = Item (x `mod` divisor)

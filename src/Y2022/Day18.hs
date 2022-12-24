@@ -93,11 +93,8 @@ isOutside' c =
         False -> stinsert c Inside
       pure res
 
-condense :: [Maybe Bool] -> Maybe Bool
-condense []             = Nothing
-condense (Just True:_)  = Just True
-condense (Just False:_) = Just False
-condense (Nothing:r)    = condense r
+condense :: [Maybe a] -> Maybe a
+condense = listToMaybe . catMaybes
 
 bounds :: [Cube] -> (Cube, Cube)
 bounds cubes = (map minimum tc, map maximum tc)
