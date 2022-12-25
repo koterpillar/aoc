@@ -19,16 +19,15 @@ parser :: Parser Text [Snafu]
 parser = linesP &** (Snafu . reverse <$> charactersP &** snafuDP)
 
 toInt :: Snafu -> Int
-toInt (Snafu [])     = 0
-toInt (Snafu (x:xs)) = x + 5 * toInt (Snafu xs)
+toInt (Snafu xs) = foldr (\x r -> x + 5 * r) 0 xs
 
 fromInt :: Int -> Snafu
-fromInt 0 = Snafu []
-fromInt n = Snafu $ q : rest
+fromInt = Snafu . unfoldr f
   where
-    q = wrapRange (-2) 2 $ n `mod` 5
-    r = (n - q) `div` 5
-    (Snafu rest) = fromInt r
+    f 0 = Nothing
+    f n =
+      let q = wrapRange (-2) 2 n
+       in Just (q, (n - q) `div` 5)
 
 part1 = show . fromInt . sum . map toInt
 
