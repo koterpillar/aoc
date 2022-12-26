@@ -5,6 +5,8 @@ import           Data.Function.Memoize
 import           Data.Text             (Text)
 import qualified Data.Text             as Text
 
+import           GHC.Stack             (HasCallStack)
+
 pad :: Int -> Text -> Text
 pad sz = Text.justifyRight sz ' '
 
@@ -13,6 +15,9 @@ ttrim = Text.dropWhile (== '\n') . Text.dropWhileEnd (== '\n')
 
 tshow :: Show a => a -> Text
 tshow = Text.pack . show
+
+terror :: HasCallStack => Text -> c
+terror = error . Text.unpack
 
 treplace :: Text -> Text -> Text -> Text
 treplace = Text.replace

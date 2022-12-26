@@ -114,7 +114,7 @@ part2 (Operator _ 7 [p1, p2]) =
     else 0
 part2 _ = error "unexpected operator"
 
-assertPacket :: String -> Packet -> Text -> Task a
+assertPacket :: Text -> Packet -> Text -> Task a
 assertPacket msg packet input = Assert msg (Right packet) (runParse parse input)
 
 tasks =

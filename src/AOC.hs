@@ -159,7 +159,7 @@ showExamples page =
         [0 ..]
 
 selectExample :: ExampleScraper -> Text -> Text
-selectExample ShowExamples   = error . Text.unpack . showExamples
+selectExample ShowExamples   = terror . showExamples
 selectExample (CodeBlock n)  = (!! n) . codeBlocks
 selectExample LastCodeBlock  = last . codeBlocks
 selectExample (InlineCode n) = (!! n) . inlineCode
@@ -191,10 +191,10 @@ data Tasks where
 data Task a where
   Task :: (Eq b, Show b) => (a -> b) -> b -> Task a
   TaskScraper :: (Eq b, Show b) => ExampleScraper -> (a -> b) -> b -> Task a
-  Assert :: (Eq b, Show b) => String -> b -> b -> Task a
-  AssertExample :: (Eq b, Show b) => String -> b -> (a -> b) -> Task a
+  Assert :: (Eq b, Show b) => Text -> b -> b -> Task a
+  AssertExample :: (Eq b, Show b) => Text -> b -> (a -> b) -> Task a
 
-taskName :: Task a -> String
+taskName :: Task a -> Text
 taskName TaskScraper {}           = "Task"
 taskName Task {}                  = "Task"
 taskName (Assert name _ _)        = name
@@ -210,8 +210,8 @@ processTasks (Tasks year day scraper parser tasks) = do
     result <-
       timeout (taskTimeout * 1000000) $ processTask year day scraper parser task
     when (isNothing result) $
-      error $
-      taskName task <> ": timeout after " <> show taskTimeout <> " seconds"
+      terror $
+      taskName task <> ": timeout after " <> tshow taskTimeout <> " seconds"
 
 processTask ::
      Integer -> Int -> ExampleScraper -> Parser Text a -> Task a -> IO ()
@@ -230,9 +230,9 @@ processTask year day scraper parser (AssertExample message expected fn) = do
   example <- justParse parser <$> getExample year day scraper
   assertEqual ("Example " <> message) expected $ fn example
 
-assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
+assertEqual :: (Eq a, Show a) => Text -> a -> a -> IO ()
 assertEqual message expected actual
-  | expected == actual = putStrLn $ message <> " OK"
+  | expected == actual = Text.putStrLn $ message <> " OK"
   | otherwise =
-    error $
-    message <> " is " <> show actual <> ", but expected " <> show expected
+    terror $
+    message <> " is " <> tshow actual <> ", but expected " <> tshow expected
