@@ -72,20 +72,30 @@ simpleRequest url = do
 class CacheFileName a where
   cacheFileName :: a -> Text
 
-withCacheFile :: CacheFileName a => Integer -> Int -> a -> IO Text -> IO Text
-withCacheFile year day cacheKey action = do
+withCacheFile' ::
+     CacheFileName a
+  => Integer
+  -> Int
+  -> a
+  -> (Maybe Text -> IO Text)
+  -> IO Text
+withCacheFile' year day cacheKey action = do
   let fileName =
         ".cache/" <>
         tshow year <> "/" <> tshow day <> "/" <> cacheFileName cacheKey
-  existing <- readIfExists fileName
-  case existing of
-    Just contents -> pure contents
-    Nothing -> do
-      contents <- action
-      let fileName' = Text.unpack fileName
-      createDirectoryIfMissing True $ takeDirectory fileName'
-      Text.writeFile fileName' contents
-      pure contents
+  cached <- readIfExists fileName
+  result <- action cached
+  when (Just result /= cached) $ do
+    let fileName' = Text.unpack fileName
+    createDirectoryIfMissing True $ takeDirectory fileName'
+    Text.writeFile fileName' result
+  pure result
+
+withCacheFile :: CacheFileName a => Integer -> Int -> a -> IO Text -> IO Text
+withCacheFile year day cacheKey action =
+  withCacheFile' year day cacheKey $ \case
+    Nothing     -> action
+    Just cached -> pure cached
 
 dropAfterAll :: Text -> Text -> [Text]
 dropAfterAll marker =
