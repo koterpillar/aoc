@@ -20,6 +20,7 @@ dependencies:
 - containers
 - directory
 - extra
+- filepath
 - hashable
 - html-entities
 - http-conduit

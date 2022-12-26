@@ -28,7 +28,9 @@ import           HTMLEntities.Decoder        (htmlEncodedText)
 import           Network.HTTP.Client.Conduit (Request (..))
 import           Network.HTTP.Simple
 
-import           System.Directory            (doesFileExist)
+import           System.Directory            (createDirectoryIfMissing,
+                                              doesFileExist)
+import           System.FilePath             (takeDirectory)
 import           System.IO                   (isEOF)
 import           System.Timeout
 
@@ -38,6 +40,14 @@ import           Utils
 -- | https://www.reddit.com/r/adventofcode/comments/z9dhtd/please_include_your_contact_info_in_the_useragent/
 userAgent :: Text
 userAgent = "github.com/koterpillar/aoc by a@koterpillar.com"
+
+readIfExists :: Text -> IO (Maybe Text)
+readIfExists fileName = do
+  let fileName' = Text.unpack fileName
+  exists <- doesFileExist fileName'
+  if exists
+    then Just <$> Text.readFile fileName'
+    else pure Nothing
 
 readSession :: IO (Maybe Text)
 readSession = fmap ttrim <$> readIfExists ".session-cookie"
@@ -58,6 +68,24 @@ simpleRequest url = do
         foldr (addHeader "Cookie" . ("session=" <>)) request session
   response <- getResponseBody <$> httpBS request'
   pure $ Text.decodeUtf8 response
+
+class CacheFileName a where
+  cacheFileName :: a -> Text
+
+withCacheFile :: CacheFileName a => Integer -> Int -> a -> IO Text -> IO Text
+withCacheFile year day cacheKey action = do
+  let fileName =
+        ".cache/" <>
+        tshow year <> "/" <> tshow day <> "/" <> cacheFileName cacheKey
+  existing <- readIfExists fileName
+  case existing of
+    Just contents -> pure contents
+    Nothing -> do
+      contents <- action
+      let fileName' = Text.unpack fileName
+      createDirectoryIfMissing True $ takeDirectory fileName'
+      Text.writeFile fileName' contents
+      pure contents
 
 dropAfterAll :: Text -> Text -> [Text]
 dropAfterAll marker =
@@ -108,14 +136,12 @@ data ExampleScraper
   | Inline Text
   deriving (Show)
 
-scraperCacheName :: ExampleScraper -> Text
-scraperCacheName = Text.replace " " "-" . Text.replace "\"" "" . tshow
+instance CacheFileName ExampleScraper where
+  cacheFileName = ("example-" <>) . Text.replace " " "-" . terase "\"" . tshow
 
 getExample :: Integer -> Int -> ExampleScraper -> IO Text
 getExample year day scraper =
-  withCacheFile
-    (".example-" <>
-     tshow year <> "-" <> tshow day <> "-" <> scraperCacheName scraper) $ do
+  withCacheFile year day scraper $ do
     page <-
       simpleRequest $
       "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
@@ -145,29 +171,18 @@ currentYear = do
   (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
   pure y
 
+data Input =
+  Input
+  deriving (Eq, Ord, Show)
+
+instance CacheFileName Input where
+  cacheFileName Input = "input"
+
 getInput :: Integer -> Int -> IO Text
 getInput year day =
-  withCacheFile (".input-" <> tshow year <> "-" <> tshow day) $
+  withCacheFile year day Input $
   simpleRequest $
   "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day <> "/input"
-
-readIfExists :: Text -> IO (Maybe Text)
-readIfExists fileName = do
-  let fileName' = Text.unpack fileName
-  exists <- doesFileExist fileName'
-  if exists
-    then Just <$> Text.readFile fileName'
-    else pure Nothing
-
-withCacheFile :: Text -> IO Text -> IO Text
-withCacheFile fileName action = do
-  existing <- readIfExists fileName
-  case existing of
-    Just contents -> pure contents
-    Nothing -> do
-      contents <- action
-      Text.writeFile (Text.unpack fileName) contents
-      pure contents
 
 data Tasks where
   Tasks

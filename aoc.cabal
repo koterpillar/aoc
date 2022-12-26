@@ -141,6 +141,7 @@ library
     , containers
     , directory
     , extra
+    , filepath
     , hashable
     , html-entities
     , http-conduit
@@ -181,6 +182,7 @@ executable main
     , containers
     , directory
     , extra
+    , filepath
     , hashable
     , html-entities
     , http-conduit
