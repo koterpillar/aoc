@@ -16,6 +16,8 @@ import qualified Data.Text.IO                as Text
 import qualified Data.Text.Lazy              as LazyText
 import qualified Data.Text.Lazy.Builder      as LazyText
 
+import           Data.String                 (IsString (..))
+
 import           Data.Time                   (UTCTime (..), getCurrentTime,
                                               toGregorian)
 
@@ -33,18 +35,27 @@ import           System.Timeout
 import           Miniparse
 import           Utils
 
+-- | https://www.reddit.com/r/adventofcode/comments/z9dhtd/please_include_your_contact_info_in_the_useragent/
+userAgent :: Text
+userAgent = "github.com/koterpillar/aoc by a@koterpillar.com"
+
 readSession :: IO (Maybe Text)
 readSession = fmap ttrim <$> readIfExists ".session-cookie"
+
+addHeader :: String -> Text -> Request -> Request
+addHeader name value request =
+  request
+    { requestHeaders =
+        (fromString name, Text.encodeUtf8 value) : requestHeaders request
+    }
 
 simpleRequest :: Text -> IO Text
 simpleRequest url = do
   request <- parseRequestThrow $ Text.unpack url
-  request' <-
-    flip fmap readSession $ \case
-      Nothing -> request
-      Just session ->
-        request
-          {requestHeaders = [("Cookie", "session=" <> Text.encodeUtf8 session)]}
+  session <- readSession
+  let request' =
+        addHeader "User-Agent" userAgent $
+        foldr (addHeader "Cookie" . ("session=" <>)) request session
   response <- getResponseBody <$> httpBS request'
   pure $ Text.decodeUtf8 response
 
