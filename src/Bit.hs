@@ -1,5 +1,7 @@
 module Bit where
 
+import           Data.List (unfoldr)
+
 data Bit
   = O
   | I
@@ -21,16 +23,14 @@ type BitString = [Bit]
 bitsValue :: BitString -> Int
 bitsValue = foldl bitMult 0
   where
-    bitMult n O = n * 2
-    bitMult n I = n * 2 + 1
+    bitMult n b = n * 2 + fromEnum b
 
 toBitString :: Int -> BitString
-toBitString i
-  | i < 0 = error "toBitString: negative number"
-  | i == 0 = []
-  | otherwise =
-    toBitString (i `div` 2) ++
-    [ if even i
-        then O
-        else I
-    ]
+toBitString = reverse . unfoldr bitDiv
+  where
+    bitDiv n
+      | n < 0 = error "toBitString: negative number"
+      | n == 0 = Nothing
+      | otherwise =
+        let (q, r) = n `divMod` 2
+         in Just (toEnum r, q)
