@@ -52,4 +52,4 @@ part1 g = countEmpty $ fst $ iterateNL 10 step $ start g
 
 part2 g = length $ iterateWhile2 ((/=) `on` fst) step $ start g
 
-tasks = Tasks 2022 23 (CodeBlock 0) dotGridP [Task part1 110, Task part2 20]
+tasks = Tasks 2022 23 (CodeBlock 0) dotGridP [task part1 110, task part2 20]

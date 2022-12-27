@@ -43,4 +43,4 @@ tasks =
     2
     LastCodeBlock
     (linesP &** movementP)
-    [Task part1 150, Task part2 900]
+    [task part1 150, task part2 900]

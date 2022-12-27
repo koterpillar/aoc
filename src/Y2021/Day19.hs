@@ -191,8 +191,8 @@ tasks =
     parse
     [ let p1 = mkPosition 1 2 3
           p2 = mkPosition 10 20 30
-       in Assert "translationT" p2 $ multiplyPT p1 (translationT $ subP p2 p1)
-    , Assert "rotationsT" 24 $
+       in assert "translationT" p2 $ multiplyPT p1 (translationT $ subP p2 p1)
+    , assert "rotationsT" 24 $
       length $ sort $ map (multiplyPT $ mkPosition 1 2 3) rotationsT
     , let canon = testBasis
           candidate =
@@ -203,16 +203,16 @@ tasks =
               , mkPosition 3 10 0
               , mkPosition 30 20 20
               ]
-       in Assert
+       in assert
             "unify 1"
             (Just (mkPosition (-10) 0 0, setInsert (mkPosition 10 20 30) canon)) $
           first transformOrigin <$> unify' 4 canon candidate
-    , AssertExample "unify 0 and 1" True $
+    , assertExample "unify 0 and 1" True $
       (\(v1:v2:_) -> isJust $ unify v1 v2) . toList
-    , Assert "orientation 1" basis $
+    , assert "orientation 1" basis $
       (map $ flip multiplyPT $ head rotationsT) basis
-    , Task part1 79
-    , Task part2 3621
+    , task part1 79
+    , task part2 3621
     ]
 
 parse :: Parser Text Scene

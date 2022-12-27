@@ -111,12 +111,12 @@ tasks =
     17
     (CodeBlock 0)
     targetAreaP
-    [ Task part1 45
-    , AssertExample
+    [ task part1 45
+    , assertExample
         "8,1 hits"
         True
         (\a ->
            let v = Position2 8 1
             in ttrace (displayScene 1 a v) doesHit a v)
-    , Task part2 112
+    , task part2 112
     ]

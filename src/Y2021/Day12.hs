@@ -66,4 +66,4 @@ part1 = solve False
 
 part2 = solve True
 
-tasks = Tasks 2021 12 (CodeBlock 0) parseCaves [Task part1 10, Task part2 36]
+tasks = Tasks 2021 12 (CodeBlock 0) parseCaves [task part1 10, task part2 36]

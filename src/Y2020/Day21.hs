@@ -80,4 +80,4 @@ tasks =
     21
     (CodeBlock 0)
     (linesP &** parseFood)
-    [Task part1 5, Task part2 "mxmxvkd,sqjhc,fvjkl"]
+    [task part1 5, task part2 "mxmxvkd,sqjhc,fvjkl"]

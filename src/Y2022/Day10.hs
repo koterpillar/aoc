@@ -90,4 +90,4 @@ tasks =
     10
     (CodeBlock 1)
     (linesP &** instrP)
-    [TaskScraper (CodeBlock 0) part1test (-1), Task part1 13140, Task part2 ()]
+    [taskScraper (CodeBlock 0) part1test (-1), task part1 13140, task part2 ()]

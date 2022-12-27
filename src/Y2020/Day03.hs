@@ -34,4 +34,4 @@ countTrees2 g =
     [Position2 1 1, Position2 3 1, Position2 5 1, Position2 7 1, Position2 1 2]
 
 tasks =
-  Tasks 2020 3 (CodeBlock 0) dotGridP [Task countTrees1 7, Task countTrees2 336]
+  Tasks 2020 3 (CodeBlock 0) dotGridP [task countTrees1 7, task countTrees2 336]

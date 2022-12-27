@@ -159,14 +159,14 @@ tasks =
     19
     (CodeBlock 4)
     parser
-    [ Task countValid 3
-    , Task (structure . convert . fst) (r2dummy 15)
-    , Task
+    [ task countValid 3
+    , task (structure . convert . fst) (r2dummy 15)
+    , task
         (structure . convert . doFixups . fst)
         (R2Magic (r2dummy 5) (r2dummy 5))
-    , Task (countValid2 id) 3
-    , Task
+    , task (countValid2 id) 3
+    , task
         (\(rs, msgs) -> filter (matches2 (doFixups rs)) msgs)
         testGoodMessages
-    , Task (countValid2 doFixups) 12
+    , task (countValid2 doFixups) 12
     ]

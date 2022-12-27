@@ -95,4 +95,4 @@ part2 input =
     invisibleTo p (sensor, beacon) =
       manhattanDistance p sensor > manhattanDistance beacon sensor
 
-tasks = Tasks 2022 15 (CodeBlock 0) parser [Task part1 26, Task part2 56000011]
+tasks = Tasks 2022 15 (CodeBlock 0) parser [task part1 26, task part2 56000011]

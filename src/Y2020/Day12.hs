@@ -66,4 +66,4 @@ tasks =
     12
     (CodeBlock 0)
     (linesP &** parseInstruction)
-    [Task part1 25, Task part2 286]
+    [task part1 25, task part2 286]

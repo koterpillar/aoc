@@ -23,4 +23,4 @@ part1 = countIf (uncurry subsumes)
 
 part2 = countIf (uncurry overlaps)
 
-tasks = Tasks 2022 4 (CodeBlock 0) parser [Task part1 2, Task part2 4]
+tasks = Tasks 2022 4 (CodeBlock 0) parser [task part1 2, task part2 4]

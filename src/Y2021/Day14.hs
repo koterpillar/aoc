@@ -60,15 +60,15 @@ tasks =
     14
     (CodeBlock 0)
     parse
-    [ AssertExample "step" (toPairs "NCNBCHB") (\(p, i) -> step i $ toPairs p)
-    , AssertExample
+    [ assertExample "step" (toPairs "NCNBCHB") (\(p, i) -> step i $ toPairs p)
+    , assertExample
         "step"
         (toPairs "NBBNBNBBCCNBCNCCNBBNBBNBBBNBBNBBCBHCBHHNHCBBCBHCB")
         (\(p, i) -> iterateNL 4 (step i) $ toPairs p)
-    , Assert
+    , assert
         "countMap"
         (mapFromList [('A', 2), ('B', 2)])
         (countMap $ toPairs "ABAB")
-    , Task part1 1588
-    , Task part2 2188189693529
+    , task part1 1588
+    , task part2 2188189693529
     ]

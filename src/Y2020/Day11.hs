@@ -55,4 +55,4 @@ tasks =
     11
     (CodeBlock 1)
     charGridP
-    [Task stabilizedSeats 37, Task stabilizedSeats2 26]
+    [task stabilizedSeats 37, task stabilizedSeats2 26]

@@ -218,9 +218,9 @@ tasks =
     24
     (Inline "")
     parse
-    [ Assert "part1" (Just [7]) $
+    [ assert "part1" (Just [7]) $
       part1 [Inp Z, Add Z (SrcValue 2), Mod Z (SrcValue 3)]
-    , Assert "part1 two inputs" (Just [7, 8]) $
+    , assert "part1 two inputs" (Just [7, 8]) $
       part1
         [ Inp Z
         , Add Z (SrcValue 2)
@@ -230,8 +230,8 @@ tasks =
         , Mod X (SrcValue 3)
         , Add Z (SrcRegister X)
         ]
-    , Task (traceShowIt part1) ()
-    , Task (traceShowIt part2) ()
+    , task (traceShowIt part1) ()
+    , task (traceShowIt part2) ()
     ]
 
 parse :: Parser Text [Instruction]

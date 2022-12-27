@@ -27,4 +27,4 @@ tasks =
     10
     (CodeBlock 1)
     (linesP &** integerP)
-    [Task oneAndThree 220, Task countChains 19208]
+    [task oneAndThree 220, task countChains 19208]

@@ -85,12 +85,12 @@ tasks =
     4
     (CodeBlock 0)
     parsePlayP
-    [ Assert "Expected win" True $ bWin drawn board
-    , Assert "Board score" 3 $ bScore drawn board
-    , AssertExample "Parsed numbers count" 27 $ length . pNumbers
-    , AssertExample "Parsed board count" 3 $ length . pBoards
-    , Task part1 4512
-    , Task part2 1924
+    [ assert "Expected win" True $ bWin drawn board
+    , assert "Board score" 3 $ bScore drawn board
+    , assertExample "Parsed numbers count" 27 $ length . pNumbers
+    , assertExample "Parsed board count" 3 $ length . pBoards
+    , task part1 4512
+    , task part2 1924
     ]
   where
     board = fromMatrixG [[1, 2], [3, 1]]

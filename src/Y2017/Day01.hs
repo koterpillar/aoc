@@ -30,4 +30,4 @@ tasks =
     1
     (Inline "91212129")
     (linesP &* singleP &* charactersP)
-    [Task go 9, Task go2 6]
+    [task go 9, task go2 6]

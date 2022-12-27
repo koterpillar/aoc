@@ -55,4 +55,4 @@ tasks =
     7
     (CodeBlock 0)
     parseRules
-    [Task findContainers 4, Task findCost 32]
+    [task findContainers 4, task findCost 32]

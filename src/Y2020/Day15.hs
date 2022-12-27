@@ -59,4 +59,4 @@ tasks =
     15
     (Inline "0,3,6")
     (tsplitP "," &** integerP)
-    [Task (part1 2020) 436, Task (part1 30000000) 175594]
+    [task (part1 2020) 436, task (part1 30000000) 175594]

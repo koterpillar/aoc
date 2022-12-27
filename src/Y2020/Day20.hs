@@ -314,22 +314,22 @@ tasks =
     20
     (CodeBlock 0)
     parseTiles
-    [ Task (product . findCorners) 20899048083289
-    , Task findTileSize tileSize
-    , Task (fixupExample . mergeIds) exampleMergedIds
-    , Task (displayG . fixupExampleGrid . mergeT) exampleMerged
-    , Assert "monster counts itself" [Position2 0 0] (monsterOrigins monster)
-    , Assert
+    [ task (product . findCorners) 20899048083289
+    , task findTileSize tileSize
+    , task (fixupExample . mergeIds) exampleMergedIds
+    , task (displayG . fixupExampleGrid . mergeT) exampleMerged
+    , assert "monster counts itself" [Position2 0 0] (monsterOrigins monster)
+    , assert
         "monster counts itself plus dot"
         [Position2 0 0]
         (monsterOrigins $ Map.insert (Position2 100 100) () monster)
-    , Assert
+    , assert
         "monster counts itself shifted"
         [Position2 2 2]
         (monsterOrigins (shiftG (Position2 2 2) monster))
-    , Task (countMonsters . fixupGrid fixupExample . mergeT) 2
-    , Task
+    , task (countMonsters . fixupGrid fixupExample . mergeT) 2
+    , task
         (setFromList . map countMonsters . flips . mergeT)
         (setFromList [0, 2])
-    , Task (subtractMonstersFlips . mergeT) 273
+    , task (subtractMonstersFlips . mergeT) 273
     ]

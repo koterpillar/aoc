@@ -30,6 +30,6 @@ tasks =
     1
     (CodeBlock 0)
     (linesP &** integerP)
-    [ Task (product . findSum 2 2020) 514579
-    , Task (product . findSum 3 2020) 241861950
+    [ task (product . findSum 2 2020) 514579
+    , task (product . findSum 3 2020) 241861950
     ]

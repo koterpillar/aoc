@@ -35,4 +35,4 @@ part2 =
     (sum . Set.map priority . foldl1 Set.intersection . map (uncurry Set.union)) .
   chunksOf 3
 
-tasks = Tasks 2022 3 (CodeBlock 0) parser [Task part1 157, Task part2 70]
+tasks = Tasks 2022 3 (CodeBlock 0) parser [task part1 157, task part2 70]

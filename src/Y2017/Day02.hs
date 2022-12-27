@@ -21,4 +21,4 @@ tasks =
     2
     (CodeBlock 0)
     (linesP &** integersSpaceP)
-    [Task checksum 18, TaskScraper (CodeBlock 1) (sum . map divideDivisible) 9]
+    [task checksum 18, taskScraper (CodeBlock 1) (sum . map divideDivisible) 9]

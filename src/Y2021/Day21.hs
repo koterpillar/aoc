@@ -159,9 +159,9 @@ tasks =
     21
     LastCodeBlock
     parse
-    [ Task part1 739785
-    , Assert "normal counts" (3 ^ 6) $ ctotal testDirac
-    , Task part2 444356092776315
+    [ task part1 739785
+    , assert "normal counts" (3 ^ 6) $ ctotal testDirac
+    , task part2 444356092776315
     ]
 
 parse :: Parser Text Positions

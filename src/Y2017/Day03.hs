@@ -41,4 +41,4 @@ tasks =
     3
     (Inline "")
     integerP
-    [TaskScraper (Inline "1024") part1 31, TaskScraper (Inline "800") part2 806]
+    [taskScraper (Inline "1024") part1 31, taskScraper (Inline "800") part2 806]

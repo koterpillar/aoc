@@ -335,4 +335,4 @@ tasks =
     22
     (CodeBlock 0)
     parser
-    [Task part1 6032, Task testCubify 6, Task part2 5031]
+    [task part1 6032, task testCubify 6, task part2 5031]

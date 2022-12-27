@@ -40,4 +40,4 @@ findPaths = map <$> findPath' <*> starts
 
 part2 = minimum . map length . catMaybes . findPaths
 
-tasks = Tasks 2022 12 (CodeBlock 0) charGridP [Task part1 31, Task part2 29]
+tasks = Tasks 2022 12 (CodeBlock 0) charGridP [task part1 31, task part2 29]

@@ -44,4 +44,4 @@ part2 :: Map Position2 Int -> Int
 part2 =
   product . map length . take 3 . sortBy (flip compare `on` length) . basins
 
-tasks = Tasks 2021 9 (CodeBlock 0) digitGridP [Task part1 15, Task part2 1134]
+tasks = Tasks 2021 9 (CodeBlock 0) digitGridP [task part1 15, task part2 1134]

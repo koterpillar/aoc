@@ -41,10 +41,10 @@ tasks =
     18
     (InlineCode 4)
     (linesP &** parseExpr)
-    [ Assert
+    [ assert
         "normalEvaluate"
         (1 * 2 + 3 * 4)
         (normalEvaluate $ justParse parseExpr "1 * 2 + 3 * 4")
-    , Task part1 12240
-    , Task part2 669060
+    , task part1 12240
+    , task part2 669060
     ]

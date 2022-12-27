@@ -88,12 +88,12 @@ tasks =
     14
     (CodeBlock 0)
     (linesP &** parseInstruction)
-    [ Task part1 165
-    , Assert
+    [ task part1 165
+    , assert
         "amb"
         [26, 27, 58, 59]
         (applyMask2
            (justParse parseBitMask "000000000000000000000000000000X1001X")
            42)
-    , TaskScraper (CodeBlock 4) part2 208
+    , taskScraper (CodeBlock 4) part2 208
     ]

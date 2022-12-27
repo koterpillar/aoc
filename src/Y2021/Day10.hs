@@ -66,8 +66,8 @@ tasks =
     10
     LastCodeBlock
     (linesP &** stringP)
-    [ Assert "incomplete" (Left $ Incomplete ")]}") (parseBR "{[(")
-    , Assert "median" 5 (median [5, 100, 0, 200, 1, 300, 3])
-    , Task part1 26397
-    , Task part2 288957
+    [ assert "incomplete" (Left $ Incomplete ")]}") (parseBR "{[(")
+    , assert "median" 5 (median [5, 100, 0, 200, 1, 300, 3])
+    , task part1 26397
+    , task part2 288957
     ]

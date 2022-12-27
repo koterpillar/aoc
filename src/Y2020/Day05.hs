@@ -32,4 +32,4 @@ tasks =
     5
     (Inline "FBFBBFFRLR\nFBFBBFFLRR")
     parseCodes
-    [Task maximum 357, Task missing 356]
+    [task maximum 357, task missing 356]

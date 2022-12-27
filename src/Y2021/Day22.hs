@@ -150,15 +150,15 @@ tasks =
     22
     (CodeBlock 2)
     parse
-    [ Assert "split range" (Just $ mkRangeLT 10, Just $ mkRangeGE 10) $
+    [ assert "split range" (Just $ mkRangeLT 10, Just $ mkRangeGE 10) $
       splitRangeAt 10 nullRange
-    , Assert "count in one cube" (101 ^ 3) $ dtCountIn I part1cuboid $ Value I
-    , Assert "count example 0 step 1" 27 $
+    , assert "count in one cube" (101 ^ 3) $ dtCountIn I part1cuboid $ Value I
+    , assert "count example 0 step 1" 27 $
       dtCount I $ traceShowId $ applyInput (take 1 example0) initial
-    , Assert "count example 0 step 2" (27 + 19) $
+    , assert "count example 0 step 2" (27 + 19) $
       dtCount I $ traceShowId $ applyInput (take 2 example0) initial
-    , Task part1 474140
-    , Task part2 2758514936282235
+    , task part1 474140
+    , task part2 2758514936282235
     ]
 
 type Input = [(Bit, Cuboid)]

@@ -63,4 +63,4 @@ tasks =
     22
     (CodeBlock 0)
     gameP
-    [Task (score . play) 306, Task (score . winHand . play2) 291]
+    [task (score . play) 306, task (score . winHand . play2) 291]

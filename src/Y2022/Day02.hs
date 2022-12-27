@@ -42,4 +42,4 @@ part1 = sum . map (uncurry score)
 
 part2 = sum . map (uncurry score . uncurry modifyShape)
 
-tasks = Tasks 2022 2 (CodeBlock 0) parser [Task part1 15, Task part2 12]
+tasks = Tasks 2022 2 (CodeBlock 0) parser [task part1 15, task part2 12]

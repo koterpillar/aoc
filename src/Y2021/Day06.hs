@@ -26,4 +26,4 @@ part1 = countAfter 80
 part2 = countAfter 256
 
 tasks =
-  Tasks 2021 6 (CodeBlock 0) pondP [Task part1 5934, Task part2 26984457539]
+  Tasks 2021 6 (CodeBlock 0) pondP [task part1 5934, task part2 26984457539]

@@ -68,4 +68,4 @@ tasks =
     5
     (CodeBlock 0)
     parser
-    [Task (solve applyInstruction) "CMZ", Task (solve applyInstruction2) "MCD"]
+    [task (solve applyInstruction) "CMZ", task (solve applyInstruction2) "MCD"]

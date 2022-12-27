@@ -130,4 +130,4 @@ start2 minutes input =
 -- Takes around 5 minutes
 part2 = start2 26
 
-tasks = Tasks 2022 16 (CodeBlock 0) parser [Task part1 1651, Task part2 1707]
+tasks = Tasks 2022 16 (CodeBlock 0) parser [task part1 1651, task part2 1707]

@@ -44,4 +44,4 @@ tasks =
     9
     (CodeBlock 0)
     (linesP &** integerP)
-    [Task findInvalid 127, Task findSum 62]
+    [task findInvalid 127, task findSum 62]

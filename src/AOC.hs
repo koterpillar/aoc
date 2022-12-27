@@ -5,7 +5,11 @@ module AOC
   , getInput
   , ExampleScraper(..)
   , Tasks(..)
-  , Task(..)
+  , Task
+  , assert
+  , assertExample
+  , task
+  , taskScraper
   , processTasks
   , module Miniparse
   ) where
@@ -203,6 +207,18 @@ data Task a where
   TaskScraper :: (Eq b, Show b) => ExampleScraper -> (a -> b) -> b -> Task a
   Assert :: (Eq b, Show b) => Text -> b -> b -> Task a
   AssertExample :: (Eq b, Show b) => Text -> b -> (a -> b) -> Task a
+
+task :: (Eq b, Show b) => (a -> b) -> b -> Task a
+task = Task
+
+taskScraper :: (Eq b, Show b) => ExampleScraper -> (a -> b) -> b -> Task a
+taskScraper = TaskScraper
+
+assert :: (Eq b, Show b) => Text -> b -> b -> Task a
+assert = Assert
+
+assertExample :: (Eq b, Show b) => Text -> b -> (a -> b) -> Task a
+assertExample = AssertExample
 
 taskName :: Task a -> Text
 taskName TaskScraper {}           = "Task"

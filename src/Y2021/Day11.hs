@@ -71,4 +71,4 @@ tasks =
     11
     (CodeBlock 0)
     (mkGrid <$> digitGridP)
-    [Task part1 1656, Task part2 195]
+    [task part1 1656, task part2 195]

@@ -38,4 +38,4 @@ tasks =
     2
     (CodeBlock 0)
     parsePolicy
-    [Task (countValid isValid1) 2, Task (countValid isValid2) 1]
+    [task (countValid isValid1) 2, task (countValid isValid2) 1]

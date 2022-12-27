@@ -65,4 +65,4 @@ tasks =
     4
     (CodeBlock 0)
     parsePassports
-    [Task (countIf isValid) 2, Task (countIf betterValid) 2]
+    [task (countIf isValid) 2, task (countIf betterValid) 2]

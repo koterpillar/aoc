@@ -118,22 +118,22 @@ tasks =
     18
     (CodeBlock 7)
     (linesP &** snailIntP)
-    [ Assert "split 9" Nothing (snsplit $ PNumber 9)
-    , Assert "split 11" (Just $ parse "[5,6]") (snsplit $ PNumber 11)
-    , Assert "split 12" (Just $ parse "[6,6]") (snsplit $ PNumber 12)
-    , Assert
+    [ assert "split 9" Nothing (snsplit $ PNumber 9)
+    , assert "split 11" (Just $ parse "[5,6]") (snsplit $ PNumber 11)
+    , assert "split 12" (Just $ parse "[6,6]") (snsplit $ PNumber 12)
+    , assert
         "explode"
         (Just $ parse "[[[[0,9],2],3],4]")
         (snexplode $ parse "[[[[[9,8],1],2],3],4]")
-    , Assert
+    , assert
         "explode 2"
         (Just $ parse "[7,[6,[5,[7,0]]]]")
         (snexplode $ parse "[7,[6,[5,[4,[3,2]]]]]")
-    , Assert
+    , assert
         "explode 3"
         (Just $ parse "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")
         (snexplode $ parse "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]")
-    , Assert
+    , assert
         "explode 4"
         (Just $
          parse
@@ -141,28 +141,28 @@ tasks =
         (snexplode $
          parse
            "[[[[4,0],[5,0]],[[[4,5],[2,6]],[9,5]]],[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]]")
-    , Assert "magnitude" 1384 $
+    , assert "magnitude" 1384 $
       magnitude $ parse "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]"
-    , Assert "sum example 1" (parse "[[[[1,1],[2,2]],[3,3]],[4,4]]") $
+    , assert "sum example 1" (parse "[[[[1,1],[2,2]],[3,3]],[4,4]]") $
       snsum [PPair (PNumber x) (PNumber x) | x <- [1 .. 4]]
-    , Assert "sum example 2" (parse "[[[[3,0],[5,3]],[4,4]],[5,5]]") $
+    , assert "sum example 2" (parse "[[[[3,0],[5,3]],[4,4]],[5,5]]") $
       snsum [PPair (PNumber x) (PNumber x) | x <- [1 .. 5]]
-    , Assert "sum example 3" (parse "[[[[5,0],[7,4]],[5,5]],[6,6]]") $
+    , assert "sum example 3" (parse "[[[[5,0],[7,4]],[5,5]],[6,6]]") $
       snsum [PPair (PNumber x) (PNumber x) | x <- [1 .. 6]]
-    , Assert "add example 1" (parse "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]") $
+    , assert "add example 1" (parse "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]") $
       snadd (parse "[[[[4,3],4],4],[7,[[8,4],9]]]") (parse "[1,1]")
-    , Assert
+    , assert
         "add example 2"
         (parse "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]") $
       snadd
         (parse "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]")
         (parse "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]")
-    , AssertExample
+    , assertExample
         "sum"
         (parse "[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]")
         snsum
-    , Task part1 4140
-    , Task part2 3993
+    , task part1 4140
+    , task part2 3993
     ]
 
 instance FromJSON SnailInt where

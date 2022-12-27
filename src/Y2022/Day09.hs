@@ -59,14 +59,14 @@ tasks =
     9
     (CodeBlock 3)
     parser
-    [ Assert
+    [ assert
         "drag rope 1"
         [Position2 2 0, Position2 1 0]
         (dragRope E [Position2 1 0, Position2 0 0])
-    , Assert
+    , assert
         "drag rope 2"
         [Position2 2 1, Position2 1 1]
         (dragRope E [Position2 1 1, Position2 0 0])
-    , Task part1 13
-    , TaskScraper (CodeBlock 7) part2 36
+    , task part1 13
+    , taskScraper (CodeBlock 7) part2 36
     ]

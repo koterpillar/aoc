@@ -48,7 +48,7 @@ tasks =
     20
     (CodeBlock 0)
     (linesP &** integerP)
-    [ AssertExample "mix 1" [2, 1, -3, 3, -2, 0, 4] assert1
-    , Task part1 3
-    , Task part2 1623178306
+    [ assertExample "mix 1" [2, 1, -3, 3, -2, 0, 4] assert1
+    , task part1 3
+    , task part2 1623178306
     ]

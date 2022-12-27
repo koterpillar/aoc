@@ -101,4 +101,4 @@ part2 input = dmin
     dmin = minimum $ map dirSize $ findDirs enough root
 
 tasks =
-  Tasks 2022 7 (CodeBlock 1) parser [Task part1 95437, Task part2 24933642]
+  Tasks 2022 7 (CodeBlock 1) parser [task part1 95437, task part2 24933642]

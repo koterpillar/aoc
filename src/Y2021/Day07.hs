@@ -41,9 +41,9 @@ tasks =
     7
     LastCodeBlock
     crabsP
-    [ Assert "groupPositions" [2, 0, 1] $ groupPositions [0, 2, 0]
-    , Assert "Fuel consumption 2 for 1" 1 $ fuelConsumption2 1
-    , Assert "Fuel consumption 2 for 4" (1 + 2 + 3 + 4) $ fuelConsumption2 4
-    , Task part1 37
-    , Task part2 168
+    [ assert "groupPositions" [2, 0, 1] $ groupPositions [0, 2, 0]
+    , assert "Fuel consumption 2 for 1" 1 $ fuelConsumption2 1
+    , assert "Fuel consumption 2 for 4" (1 + 2 + 3 + 4) $ fuelConsumption2 4
+    , task part1 37
+    , task part2 168
     ]

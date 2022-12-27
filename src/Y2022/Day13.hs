@@ -48,11 +48,11 @@ tasks =
     13
     (CodeBlock 0)
     parser
-    [ Assert
+    [ assert
         "nesting matters"
         LT
         (let x = PNum 2
           in compare (PList [x, PList [x, x]]) (PList [PList [x, x], x]))
-    , Task part1 13
-    , Task part2 140
+    , task part1 13
+    , task part2 140
     ]

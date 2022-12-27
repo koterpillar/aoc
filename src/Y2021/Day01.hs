@@ -16,4 +16,4 @@ slidingSum n = map sum . chunks n
 part2 = countTrue . zipWithTail (<) . slidingSum 3
 
 tasks =
-  Tasks 2021 1 (CodeBlock 0) (linesP &** integerP) [Task part1 7, Task part2 5]
+  Tasks 2021 1 (CodeBlock 0) (linesP &** integerP) [task part1 7, task part2 5]

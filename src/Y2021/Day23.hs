@@ -185,9 +185,9 @@ tasks =
     23
     (CodeBlock 0)
     parse
-    [ AssertExample "top in room" (Just (B, 2)) (`topInRoom` A)
-    , Task part1 12521
-    , Task part2 44169
+    [ assertExample "top in room" (Just (B, 2)) (`topInRoom` A)
+    , task part1 12521
+    , task part2 44169
     ]
 
 parse :: Parser Text Situation
