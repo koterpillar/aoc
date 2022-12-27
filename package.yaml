@@ -21,6 +21,7 @@ dependencies:
 - directory
 - extra
 - filepath
+- free
 - hashable
 - html-entities
 - http-conduit
