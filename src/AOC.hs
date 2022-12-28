@@ -1,10 +1,10 @@
-{-# LANGUAGE GADTs           #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveFunctor    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs            #-}
+{-# LANGUAGE TemplateHaskell  #-}
 
 module AOC
-  ( getExample
-  , getInput
-  , ExampleScraper(..)
+  ( ExampleScraper(..)
   , Tasks(..)
   , Task
   , assert
@@ -154,17 +154,6 @@ data ExampleScraper
   | Inline Text
   deriving (Show)
 
-instance CacheFileName ExampleScraper where
-  cacheFileName = ("example-" <>) . Text.replace " " "-" . terase "\"" . tshow
-
-ioGetExample :: Integer -> Int -> ExampleScraper -> IO Text
-ioGetExample year day scraper =
-  withCacheFile year day scraper $ do
-    page <-
-      simpleRequest $
-      "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
-    pure $! selectExample scraper page
-
 showExamples :: Text -> Text
 showExamples page =
   Text.unlines $ "Examples found:" : codeBlocksMsg ++ inlineCodeMsg
@@ -202,11 +191,26 @@ ioGetInput year day =
   simpleRequest $
   "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day <> "/input"
 
+data Instructions =
+  Instructions
+  deriving (Eq, Ord, Show)
+
+instance CacheFileName Instructions where
+  cacheFileName Instructions = "instructions"
+
+ioGetInstructions :: Integer -> Int -> IO Text
+ioGetInstructions year day =
+  withCacheFile year day Instructions $
+  simpleRequest $
+  "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
+
 data TaskF a param
   = GetParser (Parser Text a -> param)
+  | GetScraper (ExampleScraper -> param)
   | GetInput (Text -> param)
-  | GetExample (Maybe ExampleScraper) (Text -> param)
-  | LiftIO (IO () -> param)
+  | GetInstructions (Text -> param)
+  | TLiftIO (IO ()) param
+  deriving (Functor)
 
 makeFree ''TaskF
 
@@ -222,44 +226,50 @@ task = task' Nothing
 taskScraper :: (Eq b, Show b) => ExampleScraper -> (a -> b) -> b -> Task a
 taskScraper = task' . Just
 
+getExample :: Maybe ExampleScraper -> Free (TaskF a) Text
+getExample maybeScraper = do
+  scraper <- maybe getScraper pure maybeScraper
+  selectExample scraper <$> getInstructions
+
 task' :: (Eq b, Show b) => Maybe ExampleScraper -> (a -> b) -> b -> Task a
 task' scraper solve expected = do
   parser <- getParser
   example <- justParse parser <$> getExample scraper
   let exampleResult = solve example
-  assertEqual "Example result" expected exampleResult
+  tLiftIO $ assertEqual "Example result" expected exampleResult
   input <- justParse parser <$> getInput
   let result = solve input
-  print result
+  tLiftIO $ print result
 
 assert :: (Eq b, Show b) => Text -> b -> b -> Task a
-assert message expected actual = do
-  assertEqual message expected actual
+assert message expected actual = tLiftIO $ assertEqual message expected actual
 
 assertExample :: (Eq b, Show b) => Text -> b -> (a -> b) -> Task a
 assertExample message expected fn = do
   parser <- getParser
-  example <- justParse parser <$> getExample scraper
-  assertEqual ("Example " <> message) expected $ fn example
+  example <- justParse parser <$> getExample Nothing
+  tLiftIO $ assertEqual ("Example " <> message) expected $ fn example
 
 taskTimeout :: Int -- seconds
 taskTimeout = 40
 
-processTask :: Tasks -> TaskF a (IO param) -> IO param
-processTask (Tasks _ _ _ parser _) (GetParser f) = f parser
-processTask (Tasks year day _ _ _) (GetInput f) = f $ getInput year day
-processTask (Tasks year day originalScraper _ _) (GetExample scraper f) =
-  f $ getExample year day $ fromMaybe originalScraper scraper
+processTask ::
+     Integer -> Int -> ExampleScraper -> Parser Text a -> TaskF a (IO b) -> IO b
+processTask _ _ _ parser (GetParser f)       = f parser
+processTask _ _ scraper _ (GetScraper f)     = f scraper
+processTask year day _ _ (GetInput f)        = ioGetInput year day >>= f
+processTask year day _ _ (GetInstructions f) = ioGetInstructions year day >>= f
+processTask _ _ _ _ (TLiftIO act f)          = act >> f
 
 processTasks :: Tasks -> IO ()
 processTasks (Tasks year day scraper parser tasks) = do
   Text.putStrLn $ "Year " <> tshow year <> ", day " <> tshow day
   for_ tasks $ \task -> do
     result <-
-      timeout (taskTimeout * 1000000) $ processTask year day scraper parser task
+      timeout (taskTimeout * 1000000) $
+      iterM (processTask year day scraper parser) task
     when (isNothing result) $
-      terror $
-      taskName task <> ": timeout after " <> tshow taskTimeout <> " seconds"
+      terror $ "Task: timeout after " <> tshow taskTimeout <> " seconds"
 
 assertEqual :: (Eq a, Show a) => Text -> a -> a -> IO ()
 assertEqual message expected actual
