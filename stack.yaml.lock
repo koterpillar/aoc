@@ -20,7 +20,7 @@ packages:
     hackage: memoize-1.1.2
 snapshots:
 - completed:
-    sha256: afd5ba64ab602cabc2d3942d3d7e7dd6311bc626dcb415b901eaf576cb62f0ea
-    size: 640060
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/21/22.yaml
-  original: lts-21.22
+    sha256: a684cdbdf9304b325a503e0fe1d9648e9c18155ce4c7cfebbe8a7f93674e6295
+    size: 649106
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/5.yaml
+  original: lts-20.5
