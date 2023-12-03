@@ -113,8 +113,11 @@ charP = charactersP &* singleP
 stringP :: Parser Text String
 stringP = charactersP
 
+digitP :: Parser Char Int
+digitP = pureP Text.singleton &* integerP
+
 digitsP :: Parser Text [Int]
-digitsP = charactersP &** (pureP Text.singleton &* integerP)
+digitsP = charactersP &** digitP
 
 position2P :: Parser Text Position2
 position2P = tsplitP "," &* ap2P Position2 integerP integerP
@@ -137,7 +140,7 @@ charGridP ::
 charGridP = charGridP' gridItemP
 
 digitGridP :: Parser Text (Grid2 Int)
-digitGridP = charGridP' $ pureP Text.singleton &* integerP
+digitGridP = charGridP' digitP
 
 dotGridP :: Parser Text (Grid2 ())
 dotGridP = charGridMaybeP $ boolToMaybe <$> dotP
