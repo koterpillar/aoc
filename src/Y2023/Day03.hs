@@ -10,13 +10,13 @@ import           Utils
 
 data GI
   = GN Int
-  | GS
+  | GS Char
   deriving (Ord, Eq, Show)
 
 parser :: Parser Text (Grid2 GI)
 parser =
   charGridMaybeP $
-  (Just . GN <$> digitP) &| (Nothing <$ requireP '.') &| constP (Just GS)
+  (Just . GN <$> digitP) &| (Nothing <$ requireP '.') &| pureP (Just . GS)
 
 numberAt :: Position2 -> Grid2 GI -> Maybe Int
 numberAt p g =
@@ -46,9 +46,26 @@ symbolAdjacent (_, ps) g =
     p <- ps
     d <- allDir8
     let p' = walk d p
-    guard $ Map.lookup p' g == Just GS
-    pure True
+    pure $
+      case Map.lookup p' g of
+        Just (GS _) -> True
+        _           -> False
 
 part1 g = sum $ map fst $ filter (`symbolAdjacent` g) $ numbers g
 
-tasks = Tasks 2023 3 (CodeBlock 0) parser [Task part1 4361]
+part2 g = sum $ mapMaybe (gearRatio . grabNs) gps
+  where
+    ns = numbers g
+    gps = Map.keys $ Map.filter (== GS '*') g
+    grabNs gp = filter (adjacentTo gp) ns
+
+adjacentTo :: Position2 -> Number -> Bool
+adjacentTo p = any (`elem` ps) . snd
+  where
+    ps = adjacent8 p
+
+gearRatio :: [Number] -> Maybe Int
+gearRatio [(n1, _), (n2, _)] = Just $ n1 * n2
+gearRatio _                  = Nothing
+
+tasks = Tasks 2023 3 (CodeBlock 0) parser [Task part1 4361, Task part2 467835]
