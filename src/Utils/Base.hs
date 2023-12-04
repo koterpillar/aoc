@@ -151,3 +151,6 @@ findTuple fn = fmap fst . find (fn . snd)
 
 filterTuple :: (a -> Bool) -> [(k, a)] -> [k]
 filterTuple fn = fmap fst . filter (fn . snd)
+
+uncurryAgain :: (a -> b -> c -> d) -> (a, (b, c)) -> d
+uncurryAgain f (a, (b, c)) = f a b c
