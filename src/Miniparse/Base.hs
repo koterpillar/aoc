@@ -78,10 +78,13 @@ unconsP :: Parser [a] (a, [a])
 unconsP =
   Parser $ \case
     (x:xs) -> Right (x, xs)
-    []     -> Left "unconsP: unexpected empty list"
+    [] -> Left "unconsP: unexpected empty list"
 
 tsplitP :: Text -> Parser Text [Text]
 tsplitP sep = pureP $ Text.splitOn sep
+
+tsplitSpacesP :: Parser Text [Text]
+tsplitSpacesP = tsplitP " " &* pureP (filter $ not . Text.null)
 
 tspanP :: (Char -> Bool) -> Parser Text (Text, Text)
 tspanP = pureP . Text.span
@@ -204,14 +207,14 @@ pa &| pb = Parser $ \a -> runParse pa a <|> runParse pb a
 singleP :: Show a => Parser [a] a
 singleP =
   Parser $ \case
-    [x]   -> Right x
+    [x] -> Right x
     other -> Left $ "singleP: expected 1 element, got " ++ show other
 
 pairP :: Show a => Parser [a] (a, a)
 pairP =
   Parser $ \case
     [x, y] -> Right (x, y)
-    other  -> Left $ "pairP: expected 2 elements, got " ++ show other
+    other -> Left $ "pairP: expected 2 elements, got " ++ show other
 
 ap0P :: Show src => b -> Parser [src] b
 ap0P f = f <$ filterP null

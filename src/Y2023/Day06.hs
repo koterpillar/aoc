@@ -17,9 +17,7 @@ data Race =
 parser :: Parser Text [Race]
 parser =
   uncurry (zipWith Race) <$>
-  ((linesP &** tsplitP " " &* pureP (filter $ not . Text.null) &* pureP tail &**
-    integerP) &*
-   pairP)
+  ((linesP &** tsplitSpacesP &* pureP tail &** integerP) &* pairP)
 
 waysToWin :: Race -> Int
 waysToWin (Race t d) = length $ [hold | hold <- [0 .. t], distance hold t > d]
