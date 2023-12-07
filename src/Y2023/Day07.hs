@@ -23,6 +23,7 @@ data Card
   | C4
   | C3
   | C2
+  | CL
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 cardP :: Parser Char Card
@@ -37,9 +38,9 @@ newtype Hand =
 instance Show Hand where
   show (Hand h) = "Hand " <> map (head . tail . show) h
 
-parser :: Parser Text [(Hand, Integer)]
+parser :: Parser Text [(Hand, Int)]
 parser =
-  linesP &** tsplitSpacesP &* ap2P (,) (Hand <$> (charactersP &** cardP)) readP
+  linesP &** tsplitSpacesP &* ap2P (,) (Hand <$> (charactersP &** cardP)) integerP
 
 data HandType
   = FiveK
@@ -63,11 +64,21 @@ hType (Hand h) =
     [5]             -> FiveK
     r               -> terror $ "Invalid hand" <> tshow r <> ": " <> tshow h
 
-instance Ord Hand where
-  compare = compare `on` (\h -> (hType h, hCards h))
+cExpand :: Card -> [Card]
+cExpand CL = [CA .. C2]
+cExpand c  = [c]
 
-part1 = sum . zipWith winning [1 ..] . sortOn (Down . fst)
+hExpand :: Hand -> [Hand]
+hExpand (Hand h) = Hand <$> traverse cExpand h
+
+hType2 :: Hand -> HandType
+hType2 (Hand [CJ, CJ, CJ, CJ, _]) = FiveK
+hType2 h = minimum $ hType <$> hExpand h
+
+totals :: (Hand -> HandType) -> [(Hand, Int)] -> Int
+totals ht = sum . zipWith winning [1 ..] . sortOn (Down . fallback ht . fst)
   where
+    fallback ht h = (ht h, hCards h)
     winning rank (h, bid) =
       traceShowF
         (\r ->
@@ -75,6 +86,14 @@ part1 = sum . zipWith winning [1 ..] . sortOn (Down . fst)
            " type " <>
            tshow (hType h) <>
            " rank " <> tshow rank <> " bid " <> tshow bid <> " = " <> tshow r)
-        (rank * bid * 1)
+        (rank * bid)
 
-tasks = Tasks 2023 7 (CodeBlock 0) parser [Task part1 6440]
+part1 = totals hType
+
+part2 = totals hType2 . map (first jokers)
+  where
+    jokers (Hand h) = Hand $ map joker1 h
+    joker1 CJ = CL
+    joker1 c  = c
+
+tasks = Tasks 2023 7 (CodeBlock 0) parser [Task part1 6440, Task part2 5905]
