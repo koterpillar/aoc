@@ -40,7 +40,8 @@ instance Show Hand where
 
 parser :: Parser Text [(Hand, Int)]
 parser =
-  linesP &** tsplitSpacesP &* ap2P (,) (Hand <$> (charactersP &** cardP)) integerP
+  linesP &** tsplitSpacesP &*
+  ap2P (,) (Hand <$> (charactersP &** cardP)) integerP
 
 data HandType
   = FiveK
@@ -72,21 +73,20 @@ hExpand :: Hand -> [Hand]
 hExpand (Hand h) = Hand <$> traverse cExpand h
 
 hType2 :: Hand -> HandType
-hType2 (Hand [CJ, CJ, CJ, CJ, _]) = FiveK
 hType2 h = minimum $ hType <$> hExpand h
+
+traceHand :: Int -> (Hand, Int) -> Int -> Text
+traceHand rank (h, bid) r =
+  tshow h <>
+  " type " <>
+  tshow (hType h) <>
+  " rank " <> tshow rank <> " bid " <> tshow bid <> " = " <> tshow r
 
 totals :: (Hand -> HandType) -> [(Hand, Int)] -> Int
 totals ht = sum . zipWith winning [1 ..] . sortOn (Down . fallback ht . fst)
   where
     fallback ht h = (ht h, hCards h)
-    winning rank (h, bid) =
-      traceShowF
-        (\r ->
-           tshow h <>
-           " type " <>
-           tshow (hType h) <>
-           " rank " <> tshow rank <> " bid " <> tshow bid <> " = " <> tshow r)
-        (rank * bid)
+    winning rank (h, bid) = traceShowF (traceHand rank (h, bid)) (rank * bid)
 
 part1 = totals hType
 
