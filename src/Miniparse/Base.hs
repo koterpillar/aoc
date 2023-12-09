@@ -83,9 +83,6 @@ unconsP =
 tsplitP :: Text -> Parser Text [Text]
 tsplitP sep = pureP $ Text.splitOn sep
 
-tsplitSpacesP :: Parser Text [Text]
-tsplitSpacesP = tsplitP " " &* pureP (filter $ not . Text.null)
-
 tspanP :: (Char -> Bool) -> Parser Text (Text, Text)
 tspanP = pureP . Text.span
 

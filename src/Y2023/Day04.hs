@@ -22,7 +22,7 @@ parser =
    ((pureP (Text.drop 5) &* integerP) &+
     (tsplitP " | " &* (numbersP &+ numbersP))))
 
-numbersP = tsplitSpacesP &** integerP
+numbersP = wordsP &** integerP
 
 countWinning (Card _ w y) =
   Set.size $ Set.intersection (Set.fromList w) (Set.fromList y)

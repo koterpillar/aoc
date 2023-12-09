@@ -7,7 +7,7 @@ import qualified Data.Text as Text
 import           AOC
 import           Utils
 
-parser = linesP &** integersP " "
+parser = linesP &** integersSpaceP
 
 diff :: [Int] -> [Int]
 diff xs = zipWith (-) (tail xs) xs

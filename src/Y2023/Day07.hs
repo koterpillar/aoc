@@ -39,9 +39,7 @@ instance Show Hand where
   show (Hand h) = "Hand " <> map (head . tail . show) h
 
 parser :: Parser Text [(Hand, Int)]
-parser =
-  linesP &** tsplitSpacesP &*
-  ap2P (,) (Hand <$> (charactersP &** cardP)) integerP
+parser = linesP &** wordsP &* ((Hand <$> (charactersP &** cardP)) &+ integerP)
 
 data HandType
   = FiveK
