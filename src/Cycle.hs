@@ -3,6 +3,7 @@ module Cycle
   , cycleFind
   , cycleMap
   , cycleMerge
+  , cycleMergeWith
   , cycleGenerate
   ) where
 
@@ -72,6 +73,14 @@ cycleMerge c1@(Cycle s1 l1) c2@(Cycle s2 l2) = cycleZip c1' c2'
     newLoopLen = lcm (length l1) (length l2)
     c1' = alignStart newStartLen $ alignLoop newLoopLen c1
     c2' = alignStart newStartLen $ alignLoop newLoopLen c2
+
+cycleMergeWith ::
+     (Show a, Show b, Show c, Ord c)
+  => (a -> b -> c)
+  -> Cycle a
+  -> Cycle b
+  -> Cycle c
+cycleMergeWith f c1 c2 = cycleMap (uncurry f) $ cycleMerge c1 c2
 
 cycleGenerate :: Cycle st -> [st]
 cycleGenerate (Cycle start loop) = start ++ cycle loop
