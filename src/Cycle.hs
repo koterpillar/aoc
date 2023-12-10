@@ -2,6 +2,7 @@ module Cycle
   ( Cycle(..)
   , cycleFind
   , cycleMap
+  , cycleMerge
   , cycleGenerate
   ) where
 
@@ -31,8 +32,11 @@ optimizeLoop long = fromMaybe long $ findTuple (isPrefixOf long . cycle) splits
   where
     splits = map (`splitAt` long) [1 .. length long - 1]
 
+cycleOptimize :: (Eq st, Show st) => Cycle st -> Cycle st
+cycleOptimize (Cycle start loop) = Cycle start $ optimizeLoop loop
+
 cycleMap :: (Ord b, Show b) => (a -> b) -> Cycle a -> Cycle b
-cycleMap f (Cycle start loop) = Cycle (map f start) (optimizeLoop $ map f loop)
+cycleMap f (Cycle start loop) = cycleOptimize $ Cycle (map f start) (map f loop)
 
 alignStart :: Show st => Int -> Cycle st -> Cycle st
 alignStart len c@(Cycle start loop)
@@ -48,6 +52,26 @@ alignLoop len c@(Cycle start loop) =
   case divMod len (length loop) of
     (n, 0) -> Cycle start $ join $ replicate n loop
     _      -> terror $ "cannot align loop to " <> tshow len <> ": " <> tshow c
+
+cycleZip :: Cycle a -> Cycle b -> Cycle (a, b)
+cycleZip (Cycle s1 l1) (Cycle s2 l2) = Cycle (zip s1 s2) (zip l1 l2)
+
+findStartLen :: Int -> Int -> Int -> Int -> Int
+findStartLen s1 l1 s2 l2
+  | s1 == s2 = s1
+  | s1' < s2' = findStartLen s1' l1 s2 l2
+  | otherwise = findStartLen s1 l1 s2' l2
+  where
+    s1' = s1 + l1
+    s2' = s2 + l2
+
+cycleMerge :: (Show a, Show b) => Cycle a -> Cycle b -> Cycle (a, b)
+cycleMerge c1@(Cycle s1 l1) c2@(Cycle s2 l2) = cycleZip c1' c2'
+  where
+    newStartLen = findStartLen (length s1) (length l1) (length s2) (length l2)
+    newLoopLen = lcm (length l1) (length l2)
+    c1' = alignStart newStartLen $ alignLoop newLoopLen c1
+    c2' = alignStart newStartLen $ alignLoop newLoopLen c2
 
 cycleGenerate :: Cycle st -> [st]
 cycleGenerate (Cycle start loop) = start ++ cycle loop
