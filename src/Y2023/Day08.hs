@@ -5,6 +5,7 @@ import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
+import           Cycle
 import           Utils
 
 data Dir2
@@ -45,55 +46,34 @@ cFollow p d cm =
         then l
         else r
 
-cInstruction :: Int -> CamelMap -> Dir2
-cInstruction i cm = cInstructions cm !! (i `mod` length (cInstructions cm))
+type St = (Text, Int)
 
-looper :: (Ord st, Show st) => (st -> st) -> (st -> Bool) -> st -> [Int]
-looper next win = go 0
-  where
-    go i s
-      | win s = i : go (i + 1) (next s)
-      | otherwise = go (i + 1) (next s)
+cMove :: CamelMap -> St -> St
+cMove cm (p, l) =
+  ( cFollow p (cInstructions cm !! l) cm
+  , (l + 1) `mod` length (cInstructions cm))
 
-cMove :: CamelMap -> (Text, Int) -> (Text, Int)
-cMove cm (p, l) = (cFollow p (cInstruction l cm) cm, l + 1)
-
-cWin1 :: (Text, Int) -> Bool
+cWin1, cWin2 :: St -> Bool
 cWin1 (p, _) = p == "ZZZ"
-
-data Period =
-  Period
-    { pStart :: Int
-    , pStep  :: Int
-    }
-  deriving (Show, Eq, Ord)
-
-pOf :: [Int] -> Period
-pOf (x:y:_) = Period x (y - x)
-
-pGenerate :: Period -> [Int]
-pGenerate (Period s st) = [s,s + st ..]
-
-pHits :: Int -> Period -> Bool
-pHits i (Period s st) = (i - s) `mod` st == 0
-
-pMerge :: Period -> Period -> Period
-pMerge p1 p2 = Period s st
-  where
-    s = fromJustE "find what hits" $ find (`pHits` p1) $ pGenerate p2
-    st = lcm (pStep p1) (pStep p2)
-
-part1 cm = pStart $ pOf $ looper (cMove cm) cWin1 ("AAA", 0)
-
-cStarts2 cm = [(p, 0) | p <- Map.keys (cPlaces cm), Text.takeEnd 1 p == "A"]
 
 cWin2 (p, _) = Text.takeEnd 1 p == "Z"
 
+cStart1 :: St
+cStart1 = ("AAA", 0)
+
+cStarts2 :: CamelMap -> [St]
+cStarts2 cm = [(p, 0) | p <- Map.keys (cPlaces cm), Text.takeEnd 1 p == "A"]
+
+untilTrue :: Cycle Bool -> Int
+untilTrue = length . takeWhile not . cycleGenerate
+
+part1 cm = untilTrue $ cycleMap cWin1 $ cycleFind (cMove cm) cStart1
+
 part2 cm =
-  pStart $
+  untilTrue $
   traceShowId $
-  foldl1 pMerge $
-  traceShowId $ map (pOf . looper (cMove cm) cWin2) $ cStarts2 cm
+  foldl1 (cycleMergeWith (&&)) $
+  traceShowId $ map (cycleMap cWin2 . cycleFind (cMove cm)) $ cStarts2 cm
 
 tasks =
   Tasks
