@@ -39,4 +39,14 @@ part2 = distances 1000000
 part1 :: Grid -> Int
 part1 = distances 2
 
-tasks = Tasks 2023 11 (CodeBlock 0) parser [Task part1 374, Task part2 82000210]
+tasks =
+  Tasks
+    2023
+    11
+    (CodeBlock 0)
+    parser
+    [ Task part1 374
+    , AssertExample "expand 10" 1030 (distances 10)
+    , AssertExample "expand 100" 8410 (distances 100)
+    , TaskBlind part2
+    ]
