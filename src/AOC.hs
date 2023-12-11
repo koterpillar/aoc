@@ -94,7 +94,7 @@ withCacheFile' year day cacheKey action = do
 withCacheFile :: CacheFileName a => Integer -> Int -> a -> IO Text -> IO Text
 withCacheFile year day cacheKey action =
   withCacheFile' year day cacheKey $ \case
-    Nothing     -> action
+    Nothing -> action
     Just cached -> pure cached
 
 dropAfterAll :: Text -> Text -> [Text]
@@ -201,12 +201,14 @@ data Tasks where
 data Task a where
   Task :: (Eq b, Show b) => (a -> b) -> b -> Task a
   TaskScraper :: (Eq b, Show b) => ExampleScraper -> (a -> b) -> b -> Task a
+  TaskBlind :: Show b => (a -> b) -> Task a
   Assert :: (Eq b, Show b) => Text -> b -> b -> Task a
   AssertExample :: (Eq b, Show b) => Text -> b -> (a -> b) -> Task a
 
 taskName :: Task a -> Text
 taskName TaskScraper {}           = "Task"
 taskName Task {}                  = "Task"
+taskName TaskBlind {}             = "Task"
 taskName (Assert name _ _)        = name
 taskName (AssertExample name _ _) = name
 
@@ -231,6 +233,13 @@ processTask year day scraper parser (Task solve expected) = do
   example <- justParse parser <$> getExample year day scraper
   let exampleResult = solve example
   assertEqual "Example result" expected exampleResult
+  input <- justParse parser <$> getInput year day
+  let result = solve input
+  print result
+processTask year day scraper parser (TaskBlind solve) = do
+  example <- justParse parser <$> getExample year day scraper
+  let exampleResult = solve example
+  putStrLn $ "Example result " <> show exampleResult
   input <- justParse parser <$> getInput year day
   let result = solve input
   print result
