@@ -31,6 +31,9 @@ mapFromListSum = Map.fromListWith (+)
 mapFromListCount :: (Ord k, Num a) => [k] -> Map k a
 mapFromListCount = mapFromListSum . map (, 1)
 
+mapSum :: (Ord k, Num a) => Map k a -> Map k a -> Map k a
+mapSum = Map.unionWith (+)
+
 mapToList :: Map k a -> [(k, a)]
 mapToList = Map.toList
 
