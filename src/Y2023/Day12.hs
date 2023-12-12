@@ -49,13 +49,13 @@ type MF1 a b = (a -> b) -> a -> b
 
 type MF2 a b c = (a -> b -> c) -> a -> b -> c
 
-groupCounts :: Group -> Map Counts Int
-groupCounts = memoFix gc1
+gc1 :: Group -> Map Counts Int
+gc1 = memoFix gc1m
 
-gc1 :: MF1 Group (Map Counts Int)
-gc1 _ [] = Map.singleton [] 1
-gc1 f (Uk:ps) = f (Da : ps) `mapSum` f ps
-gc1 f p@(Da:_)
+gc1m :: MF1 Group (Map Counts Int)
+gc1m _ [] = Map.singleton [] 1
+gc1m f (Uk:ps) = f (Da : ps) `mapSum` f ps
+gc1m f p@(Da:_)
   | null rest = Map.singleton [must] 1
   | otherwise =
     Map.mapKeys (must :) (f $ tail rest) `mapSum`
@@ -65,30 +65,30 @@ gc1 f p@(Da:_)
     rest = drop must p
     restR = f $ tail rest
 
-addToFirst :: Num a => a -> [a] -> Maybe [a]
-addToFirst a (b:c) = Just $ (a + b) : c
-addToFirst _ _     = Nothing
+gcMerge :: Map Counts Int -> Map Counts Int -> Map Counts Int
+gcMerge a b =
+  Map.fromList $ do
+    (ka, va) <- Map.toList a
+    (kb, vb) <- Map.toList b
+    pure (ka ++ kb, va * vb)
+
+gc3 :: Row -> Map Counts Int
+gc3 gs = foldr1 gcMerge $ map gc1 gs
 
 possibilities :: Line -> Int
-possibilities (p1s, cs) = poss (groupP p1s) cs
+possibilities (p1s, cs) = fromMaybe 0 $ Map.lookup cs m
   where
-    poss = poss1 poss
-
-poss1 :: MF2 [Group] Counts Int
-poss1 _ [] [] = 1
-poss1 _ [] _ = 0
-poss1 f (g:gs) cs =
-  sum $ do
-    (c, p) <- Map.toList $ groupCounts g
-    guard $ c `isPrefixOf` cs
-    let cs' = drop (length c) cs
-    pure $ p * f gs cs'
+    gs = groupP p1s
+    m = gc3 gs
 
 part1 :: [Line] -> Int
 part1 = sum . map possibilities
 
+part2unfold :: Line -> Line
+part2unfold = intercalate [Uk1] . replicate 5 *** join . replicate 5
+
 part2 :: [Line] -> Int
-part2 = part1 . map (intercalate [Uk1] . replicate 5 *** join . replicate 5)
+part2 = part1 . map part2unfold
 
 tasks =
   Tasks
@@ -97,11 +97,11 @@ tasks =
     (CodeBlock 1)
     parser
     [ Assert "gc1 ?##?" (Map.fromList [([2], 1), ([3], 2), ([4], 1)]) $
-      groupCounts [Uk, Da, Da, Uk]
+      gc1 [Uk, Da, Da, Uk]
     , Assert
         "gc1 ???"
         (Map.fromList [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)]) $
-      groupCounts $ replicate 3 Uk
+      gc1 $ replicate 3 Uk
     , Assert
         "gc1 ????"
         (Map.fromList
@@ -114,7 +114,7 @@ tasks =
            , ([3], 2)
            , ([4], 1)
            ]) $
-      groupCounts $ replicate 4 Uk
+      gc1 $ replicate 4 Uk
     , Assert
         "gc1 ?????"
         (Map.fromList
@@ -132,9 +132,13 @@ tasks =
            , ([4], 2)
            , ([5], 1)
            ]) $
-      groupCounts $ replicate 5 Uk
+      gc1 $ replicate 5 Uk
     , AssertExample "second last line" 4 $ possibilities . head . tail . reverse
     , AssertExample "each line" [1, 4, 1, 1, 4, 10] $ map possibilities
     , Task part1 21
+    , AssertExample "first line 2" 1 $ possibilities . part2unfold . head
+    , AssertExample "second line 2" 16384 $ possibilities . part2unfold . head . tail
+    , AssertExample "each line 2" [1, 16384, 1, 16, 2500, 506250] $
+      map (possibilities . part2unfold)
     , Task part2 525152
     ]
