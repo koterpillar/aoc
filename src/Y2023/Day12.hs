@@ -7,51 +7,80 @@ import qualified Data.Text as Text
 import           AOC
 import           Utils
 
+data Pos1
+  = Op1
+  | Da1
+  | Uk1
+  deriving (Eq, Ord, Show, Bounded, Enum)
+
+type Counts = [Int]
+
+type Line = ([Pos1], Counts)
+
+parser :: Parser Text [Line]
+parser =
+  linesP &** wordsP &* ((charactersP &** choiceEBP ".#?") &+ integersP ",")
+
 data Pos
-  = Op
-  | Da
+  = Da
   | Uk
   deriving (Eq, Ord, Show, Bounded, Enum)
 
 instance Memoizable Pos where
   memoize f t = memoize (f . toEnum) (fromEnum t)
 
-type Row = ([Pos], [Int])
+pos1 :: Pos1 -> Pos
+pos1 Op1 = error "Op1"
+pos1 Da1 = Da
+pos1 Uk1 = Uk
 
-parser :: Parser Text [Row]
-parser =
-  linesP &** (wordsP &* ((charactersP &** choiceEBP ".#?") &+ integersP ","))
+type Group = [Pos]
 
-possibilities :: [Pos] -> [Int] -> Int
-possibilities = memoFix3 possibilities' False
+type Row = [Group]
 
-rz :: [Int] -> [Int]
-rz = dropWhile (== 0)
+groupP :: [Pos1] -> Row
+groupP = map (map pos1) . filter (not . null) . splitOn [Op1]
 
-possibilities' ::
-     (Bool -> [Pos] -> [Int] -> Int) -> Bool -> [Pos] -> [Int] -> Int
----
-possibilities' _ False [] []        = 1
-possibilities' _ True [] [0]        = 1
-possibilities' _ _ [] _             = 0
----
-possibilities' f v (Uk:r) c         = f v (Op : r) c + f v (Da : r) c
----
-possibilities' f False (Op:r) c     = f False r c
-possibilities' f True (Op:r) (0:c)  = f False r c
-possibilities' _ True (Op:_) _      = 0
----
-possibilities' f False (Da:r) c     = f True (Da : r) c
-possibilities' f True (Da:r) []     = 0
-possibilities' f True (Da:r) (0:_)  = 0
-possibilities' f True (Da:r) (c:cs) = f True r (pred c : cs)
+groupL :: Line -> (Row, Counts)
+groupL = first groupP
 
-part1 = sum . map (uncurry possibilities)
+type MF2 a b c = (a -> b -> c) -> a -> b -> c
 
-fivetimes :: [Pos] -> [Pos]
-fivetimes = intercalate [Uk] . replicate 5
+nullableGroup :: Group -> Bool
+nullableGroup = all (== Uk)
 
-part2 = part1 . map (fivetimes *** join . replicate 5)
+matchGroup :: Group -> Int -> [Maybe Group]
+matchGroup = memoFix2 matchGroup1
+
+matchGroup1 :: MF2 Group Int [Maybe Group]
+matchGroup1 _ [] n = []
+matchGroup1 _ g@(Da:_) n
+  | length g < n = []
+  | length g <= n + 1 = [Nothing]
+  | otherwise = [Just gr | d == Uk]
+  where
+    (gl, d:gr) = splitAt n g
+matchGroup1 f (Uk:gs) n = f (Da : gs) n ++ f gs n
+
+possibilities :: Line -> Int
+possibilities = uncurry (memoFix2 poss1) . groupL
+
+poss1 :: MF2 Row Counts Int
+poss1 _ gs []
+  | all nullableGroup gs = 1
+  | otherwise = 0
+poss1 _ [] _ = 0
+poss1 f (g:gs) (c:cs) =
+  sum [f (maybeToList g' ++ gs) cs | g' <- g1s] +
+  sum [f gs (c : cs) | nullableGroup g]
+  where
+    g1s = matchGroup g c
+
+part1 :: [Line] -> Int
+part1 = sum . map possibilities
+
+part2 :: [Line] -> Int
+part2 = part1 . map (intercalate [Uk1] . replicate 5 *** join . replicate 5)
 
 tasks =
   Tasks
@@ -59,11 +88,8 @@ tasks =
     12
     (CodeBlock 1)
     parser
-    [ Assert "###." 1 (possibilities [Da, Da, Da, Op] [3])
-    , Assert "##" 1 (possibilities [Da, Da] [2])
-    , Assert ".##." 0 (possibilities [Op, Da, Da, Op] [3])
-    , Assert "?##." 1 (possibilities [Uk, Da, Da, Op] [3])
-    , AssertExample "second line" 4 (uncurry possibilities . head . tail)
+    [ AssertExample "second last line" 4 (possibilities . head . tail . reverse)
+    , AssertExample "each line" [1, 4, 1, 1, 4, 10] (map possibilities)
     , Task part1 21
     , Task part2 525152
     ]
