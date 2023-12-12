@@ -1,25 +1,26 @@
 module Y2023.Day12 where
 
+import           Control.Monad.State
+
 import qualified Data.Map            as Map
 import qualified Data.Set            as Set
 import qualified Data.Text           as Text
 
 import           AOC
-import           GHC.IO.Handle.Types (Handle__)
 import           Utils
 
 data Pos
-  = Op
-  | Da
-  | Uk
+  = N
+  | Y
+  | Q
   deriving (Eq, Ord, Show, Bounded, Enum)
 
 instance Memoizable Pos where
   memoize f t = memoize (f . toEnum) (fromEnum t)
 
-type Counts = [Int]
+type Springs = [Int]
 
-type Line = ([Pos], Counts)
+type Line = ([Pos], Springs)
 
 parser :: Parser Text [Line]
 parser =
@@ -30,47 +31,74 @@ posSplit ps
   | null ixs = Nothing
   | otherwise = Just (pl, pr)
   where
-    ixs = elemIndices Uk ps
+    ixs = elemIndices Q ps
     ixm = ixs !! (length ixs `div` 2)
     (pl, _:pr) = splitAt ixm ps
 
-countsAppend :: Map Counts Int -> Map Counts Int -> Map Counts Int
+type Counts = Map Springs Int
+
+countsAppend :: Counts -> Counts -> Counts
 countsAppend a b =
   mapFromListSum $ do
     (ka, va) <- Map.toList a
     (kb, vb) <- Map.toList b
     pure (ka ++ kb, va * vb)
 
-counts :: [Pos] -> Map Counts Int
-counts =
-  memoFix $ \f ps ->
-    case posSplit ps of
-      Nothing -> Map.singleton (knownCounts ps) 1
-      Just (pl, pr) -> (cl `countsAppend` cr) `mapSum` ca
-        where cl = f pl
-              cr = f pr
-              pa = pl ++ (Da : pr)
-              ca = f pa
+optimizePos :: [Pos] -> [Pos]
+optimizePos []     = []
+optimizePos (N:ps) = N : optimizePos (dropWhile (== N) ps)
+optimizePos (p:ps) = p : optimizePos ps
 
-knownCounts :: [Pos] -> Counts
+counts :: [Pos] -> Counts
+counts = runMemo . countsM . optimizePos
+
+type MemoState i o = i -> State (Map i o) o
+
+memoState :: Ord i => i -> State (Map i o) o -> State (Map i o) o
+memoState k a = do
+  existing <- gets (Map.lookup k)
+  case existing of
+    Just result -> pure result
+    Nothing -> do
+      calculated <- a
+      modify $ Map.insert k calculated
+      pure calculated
+
+runMemo :: State (Map i o) r -> r
+runMemo = flip evalState Map.empty
+
+countsM :: MemoState [Pos] Counts
+countsM ps =
+  memoState ps $
+  case posSplit ps of
+    Nothing -> pure $ Map.singleton (knownCounts ps) 1
+    Just (pl, pr) -> do
+      cl <- countsM pl
+      cr <- countsM pr
+      let pa = pl ++ (Y : pr)
+      ca <- countsM pa
+      pure $ (cl `countsAppend` cr) `mapSum` ca
+
+knownCounts :: [Pos] -> Springs
 knownCounts ps = unfoldr kc1 ps
   where
     kc1 ps
       | null p1 = Nothing
       | otherwise = Just (l2, p3)
       where
-        p1 = dropWhile (== Op) ps
-        l2 = length $ takeWhile (== Da) p1
+        p1 = dropWhile (== N) ps
+        l2 = length $ takeWhile (== Y) p1
         p3 = drop l2 p1
 
 possibilities :: Line -> Int
-possibilities (ps, cs) = fromMaybe 0 $ Map.lookup cs $ counts ps
+possibilities (ps, cs) =
+  fromMaybe 0 $ Map.lookup cs $ counts $ traceShowF (, cs) ps
 
 part1 :: [Line] -> Int
 part1 = sum . map (traceShowId . possibilities)
 
 part2unfold :: Line -> Line
-part2unfold = intercalate [Uk] . replicate 5 *** join . replicate 5
+part2unfold = intercalate [Q] . replicate 5 *** join . replicate 5
 
 part2 :: [Line] -> Int
 part2 = part1 . map part2unfold
@@ -81,11 +109,11 @@ tasks =
     let m = Map.fromList [([], 1), ([1], 1)]
      in countsAppend m m
   , Assert "counts ?##?" (Map.fromList [([2], 1), ([3], 2), ([4], 1)]) $
-    counts [Uk, Da, Da, Uk]
+    counts [Q, Y, Y, Q]
   , Assert
       "counts ???"
       (Map.fromList [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)]) $
-    counts $ replicate 3 Uk
+    counts $ replicate 3 Q
   , Assert
       "counts ????"
       (Map.fromList
@@ -98,7 +126,7 @@ tasks =
          , ([3], 2)
          , ([4], 1)
          ]) $
-    counts $ replicate 4 Uk
+    counts $ replicate 4 Q
   , Assert
       "counts ?????"
       (Map.fromList
@@ -116,7 +144,7 @@ tasks =
          , ([4], 2)
          , ([5], 1)
          ]) $
-    counts $ replicate 5 Uk
+    counts $ replicate 5 Q
   ] ++
   [ AssertExample ("part 1 line " <> tshow i) r $ possibilities . flip (!!) i
   | (i, r) <- zip [0 ..] [1, 4, 1, 1, 4, 10]
