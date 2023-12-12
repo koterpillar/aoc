@@ -17,10 +17,6 @@ data Pos
 instance Memoizable Pos where
   memoize f t = memoize (f . toEnum) (fromEnum t)
 
-type MF1 a b = (a -> b) -> a -> b
-
-type MF2 a b c = (a -> b -> c) -> a -> b -> c
-
 type Counts = [Int]
 
 type Line = ([Pos], Counts)
@@ -80,58 +76,54 @@ part2 :: [Line] -> Int
 part2 = part1 . map part2unfold
 
 tasks =
-  Tasks
-    2023
-    12
-    (CodeBlock 1)
-    parser
-    [ Assert "countsAppend" (Map.fromList [([], 1), ([1], 2), ([1, 1], 1)]) $
-      let m = Map.fromList [([], 1), ([1], 1)]
-       in countsAppend m m
-    , Assert "counts ?##?" (Map.fromList [([2], 1), ([3], 2), ([4], 1)]) $
-      counts [Uk, Da, Da, Uk]
-    , Assert
-        "counts ???"
-        (Map.fromList [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)]) $
-      counts $ replicate 3 Uk
-    , Assert
-        "counts ????"
-        (Map.fromList
-           [ ([], 1)
-           , ([1], 4)
-           , ([1, 1], 3)
-           , ([1, 2], 1)
-           , ([2], 3)
-           , ([2, 1], 1)
-           , ([3], 2)
-           , ([4], 1)
-           ]) $
-      counts $ replicate 4 Uk
-    , Assert
-        "counts ?????"
-        (Map.fromList
-           [ ([], 1)
-           , ([1], 5)
-           , ([1, 1], 6)
-           , ([1, 1, 1], 1)
-           , ([1, 2], 3)
-           , ([1, 3], 1)
-           , ([2], 4)
-           , ([2, 1], 3)
-           , ([2, 2], 1)
-           , ([3], 3)
-           , ([3, 1], 1)
-           , ([4], 2)
-           , ([5], 1)
-           ]) $
-      counts $ replicate 5 Uk
-    , AssertExample "second last line" 4 $ possibilities . head . tail . reverse
-    , AssertExample "each line" [1, 4, 1, 1, 4, 10] $ map possibilities
-    , Task part1 21
-    , AssertExample "first line 2" 1 $ possibilities . part2unfold . head
-    , AssertExample "second line 2" 16384 $
-      possibilities . part2unfold . head . tail
-    , AssertExample "each line 2" [1, 16384, 1, 16, 2500, 506250] $
-      map (possibilities . part2unfold)
-    , Task part2 525152
-    ]
+  Tasks 2023 12 (CodeBlock 1) parser $
+  [ Assert "countsAppend" (Map.fromList [([], 1), ([1], 2), ([1, 1], 1)]) $
+    let m = Map.fromList [([], 1), ([1], 1)]
+     in countsAppend m m
+  , Assert "counts ?##?" (Map.fromList [([2], 1), ([3], 2), ([4], 1)]) $
+    counts [Uk, Da, Da, Uk]
+  , Assert
+      "counts ???"
+      (Map.fromList [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)]) $
+    counts $ replicate 3 Uk
+  , Assert
+      "counts ????"
+      (Map.fromList
+         [ ([], 1)
+         , ([1], 4)
+         , ([1, 1], 3)
+         , ([1, 2], 1)
+         , ([2], 3)
+         , ([2, 1], 1)
+         , ([3], 2)
+         , ([4], 1)
+         ]) $
+    counts $ replicate 4 Uk
+  , Assert
+      "counts ?????"
+      (Map.fromList
+         [ ([], 1)
+         , ([1], 5)
+         , ([1, 1], 6)
+         , ([1, 1, 1], 1)
+         , ([1, 2], 3)
+         , ([1, 3], 1)
+         , ([2], 4)
+         , ([2, 1], 3)
+         , ([2, 2], 1)
+         , ([3], 3)
+         , ([3, 1], 1)
+         , ([4], 2)
+         , ([5], 1)
+         ]) $
+    counts $ replicate 5 Uk
+  ] ++
+  [ AssertExample ("part 1 line " <> tshow i) r $ possibilities . flip (!!) i
+  | (i, r) <- zip [0 ..] [1, 4, 1, 1, 4, 10]
+  ] ++
+  [Task part1 21] ++
+  [ AssertExample ("part 2 line " <> tshow i) r $
+  possibilities . part2unfold . flip (!!) i
+  | (i, r) <- zip [0 ..] [1, 16384, 1, 16, 2500, 506250]
+  ] ++
+  [Task part2 525152]
