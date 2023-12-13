@@ -50,7 +50,7 @@ optimizePos (N:ps) = N : optimizePos (dropWhile (== N) ps)
 optimizePos (p:ps) = p : optimizePos ps
 
 counts :: [Pos] -> Counts
-counts = runMemo . countsM . optimizePos
+counts = runMemo . countsM
 
 type MemoState i o = i -> State (Map i o) o
 
@@ -90,9 +90,56 @@ knownCounts ps = unfoldr kc1 ps
         l2 = length $ takeWhile (== Y) p1
         p3 = drop l2 p1
 
-possibilities :: Line -> Int
-possibilities (ps, cs) =
+possibilities3 :: [Pos] -> Springs -> Int
+possibilities3 ps cs =
   fromMaybe 0 $ Map.lookup cs $ counts $ traceShowF (, cs) ps
+
+possibilities2 :: [Pos] -> Springs -> Int
+possibilities2 ps cs =
+  fromMaybe (possibilities3 ps cs) $ do
+    guard $ notNull cs
+    let cmax = maximum cs
+    let cparts = splitOn [cmax] cs
+    let pparts = splitOn (replicate cmax Y) (surround ps)
+    guard $ length pparts == length cparts
+    pseared <- traverse sear pparts
+    traceShowM ("max", cs, cmax, zip pseared cparts)
+    pure $ product $ zipWith possibilities0 pseared cparts
+  where
+    surround x = N : (x ++ [N])
+    sear :: [Pos] -> Maybe [Pos]
+    sear = s1 >=> (pure . reverse) >=> s1 >=> (pure . reverse)
+    s1 []    = Nothing
+    s1 (Y:_) = Nothing
+    s1 (_:t) = Just t
+
+possibilities1 :: [Pos] -> Springs -> Int
+possibilities1 (Y:_) [] = 0
+possibilities1 ps@(Y:_) (c:cs)
+  | length ps1 == c && notElem N ps1 =
+    case psr of
+      []      -> possibilities0 [] cs
+      (Y:_)   -> 0
+      (_:ps3) -> possibilities0 ps3 cs
+  | otherwise = 0
+  where
+    (ps1, psr) = splitAt c ps
+possibilities1 p0@(Q:ps@(Y:_)) c0@(c:cs)
+  | length ps1 == c && all (== Y) ps1 =
+    case psr of
+      []      -> possibilities0 [] cs
+      (Y:_)   -> 0
+      (_:ps3) -> possibilities0 ps3 cs
+  | otherwise = possibilities2 p0 c0
+  where
+    (ps1, psr) = splitAt c ps
+possibilities1 ps cs = possibilities2 ps cs
+
+possibilities0 :: [Pos] -> Springs -> Int
+possibilities0 ps = possibilities1 (optimizePos ps)
+
+possibilities :: Line -> Int
+possibilities = uncurry possibilities0
 
 part1 :: [Line] -> Int
 part1 = sum . map (traceShowId . possibilities)
