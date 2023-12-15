@@ -18,38 +18,51 @@ instance GridItem Rock where
   showInGrid O = 'O'
   showInGrid X = '#'
 
-type Grid = Grid2 Rock
+type Grid1 = Grid2 Rock
 
-parser :: Parser Text Grid
-parser = charGridP
+data RockGrid =
+  RockGrid
+    { rgBounds :: (Position2, Position2)
+    , rgX      :: Grid2 ()
+    , rgO      :: Grid2 ()
+    }
+  deriving (Eq, Ord, Show)
 
-roll :: Direction4 -> Grid -> Grid
-roll d g = gx <> osNew
+toRockGrid :: Grid1 -> RockGrid
+toRockGrid g = RockGrid {..}
   where
-    gx = Map.filter (== X) g
-    os = [p | (p, O) <- Map.toList g]
-    stops = mapFromListCount $ map (findStop d gx) os
-    osNew =
+    rgX = Map.fromList [(p, ()) | (p, X) <- Map.toList g]
+    rgO = Map.fromList [(p, ()) | (p, O) <- Map.toList g]
+    rgBounds = boundsG g
+
+parser :: Parser Text RockGrid
+parser = charGridP &* pureP toRockGrid
+
+roll :: Direction4 -> RockGrid -> RockGrid
+roll d (RockGrid b gx go) = RockGrid b gx go'
+  where
+    stops = mapFromListCount $ map findStop $ Map.keys go
+    go' =
       Map.fromList
-        [(walkN i d' p, O) | (p, n) <- Map.toList stops, i <- [1 .. n]]
+        [(walkN i d' p, ()) | (p, n) <- Map.toList stops, i <- [1 .. n]]
     d' = reverse4 d
+    findStop p =
+      fromJustE "findStop" $
+      find (\p' -> not (insideBounds b p') || Map.member p' gx) $
+      iterate (walk d) p
 
-findStop :: Direction4 -> Grid -> Position2 -> Position2
-findStop d g p =
-  fromJustE "findStop" $
-  find (\p' -> not (insideBounds b p') || Map.member p' g) $ iterate (walk d) p
-  where
-    b = boundsG g
-
-northLoad :: Grid -> Int
-northLoad g = sum [ymax - y + 1 | (Position2 _ y, O) <- Map.toList g]
-  where
-    (_, Position2 _ ymax) = boundsG g
+northLoad :: RockGrid -> Int
+northLoad (RockGrid (_, Position2 _ ymax) _ go) =
+  sum [ymax - y + 1 | Position2 _ y <- Map.keys go]
 
 part1 = northLoad . roll N
 
-rollCycle = roll E . roll S . roll W . roll N
+rollCycle = iterateNL 1 $ roll E . roll S . roll W . roll N
 
-part2 = northLoad . cycleElement 1000000000 . cycleFind rollCycle
+part2 =
+  northLoad .
+  cycleElement 1000000000 .
+  traceShowF (\c -> (length (cycleStart c), length (cycleLoop c))) .
+  cycleFind rollCycle
 
 tasks = Tasks 2023 14 (CodeBlock 0) parser [Task part1 136, Task part2 64]
