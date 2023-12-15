@@ -5,6 +5,7 @@ import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
+import           Cycle
 import           Grid
 import           Utils
 
@@ -22,29 +23,33 @@ type Grid = Grid2 Rock
 parser :: Parser Text Grid
 parser = charGridP
 
-rollN :: Grid -> Grid
-rollN g = gx <> osNew
+roll :: Direction4 -> Grid -> Grid
+roll d g = gx <> osNew
   where
     gx = Map.filter (== X) g
     os = [p | (p, O) <- Map.toList g]
-    stops = mapFromListCount $ map (findStopN gx) os
+    stops = mapFromListCount $ map (findStop d gx) os
     osNew =
       Map.fromList
-        [(walkN i S p, O) | (p, n) <- Map.toList stops, i <- [1 .. n]]
+        [(walkN i d' p, O) | (p, n) <- Map.toList stops, i <- [1 .. n]]
+    d' = reverse4 d
 
-findStopN :: Grid -> Position2 -> Position2
-findStopN g p =
-  if pY p <= 0 || Map.member p' g
-    then p'
-    else findStopN g p'
+findStop :: Direction4 -> Grid -> Position2 -> Position2
+findStop d g p =
+  fromJustE "findStop" $
+  find (\p' -> not (insideBounds b p') || Map.member p' g) $ iterate (walk d) p
   where
-    p' = walk N p
+    b = boundsG g
 
 northLoad :: Grid -> Int
 northLoad g = sum [ymax - y + 1 | (Position2 _ y, O) <- Map.toList g]
   where
     (_, Position2 _ ymax) = boundsG g
 
-part1 = northLoad . rollN
+part1 = northLoad . roll N
 
-tasks = Tasks 2023 14 (CodeBlock 0) parser [Task part1 136]
+rollCycle = roll E . roll S . roll W . roll N
+
+part2 = northLoad . cycleElement 1000000000 . cycleFind rollCycle
+
+tasks = Tasks 2023 14 (CodeBlock 0) parser [Task part1 136, Task part2 64]

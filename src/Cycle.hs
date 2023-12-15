@@ -5,6 +5,7 @@ module Cycle
   , cycleMerge
   , cycleMergeWith
   , cycleGenerate
+  , cycleElement
   ) where
 
 import qualified Data.Map as Map
@@ -84,3 +85,8 @@ cycleMergeWith f c1 c2 = cycleMap (uncurry f) $ cycleMerge c1 c2
 
 cycleGenerate :: Cycle st -> [st]
 cycleGenerate (Cycle start loop) = start ++ cycle loop
+
+cycleElement :: Int -> Cycle st -> st
+cycleElement i (Cycle start loop)
+  | i < length start = start !! i
+  | otherwise = loop !! ((i - length start) `mod` length loop)
