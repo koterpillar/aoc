@@ -131,6 +131,7 @@ library
       Y2023.Day11
       Y2023.Day12
       Y2023.Day13
+      Y2023.Day14
       Y2023.Day15
   other-modules:
       Paths_aoc
