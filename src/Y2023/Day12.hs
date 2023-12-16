@@ -126,18 +126,55 @@ lineFirstCount ps = first lineLength <$> lineFirst ps
 knownCounts :: Line -> Springs
 knownCounts = unfoldr lineFirstCount
 
+multiplyZ :: Int -> Int -> Int
+multiplyZ 0 _ = 0
+multiplyZ x y = x * y
+
+productZ :: [Int] -> Int
+productZ = foldl' multiplyZ 1
+
 type PFT r = Line -> Springs -> r
 
-fallback :: PFT (Maybe r) -> PFT r -> PFT r
-fallback heuristic slow p c = fromMaybe (slow p c) $ heuristic p c
+fallback2 :: (a -> b -> Maybe c) -> (a -> b -> c) -> (a -> b -> c)
+fallback2 heuristic slow a b = fromMaybe (slow a b) $ heuristic a b
 
-infixr 1 `fallback`
+infixr 1 `fallback2`
+
+fallback2V ::
+     (Eq c, Show a, Show b, Show c)
+  => (a -> b -> Maybe c)
+  -> (a -> b -> c)
+  -> (a -> b -> c)
+fallback2V heuristic slow a b =
+  case heuristic a b of
+    Nothing -> slow a b
+    Just r ->
+      let r' = slow a b
+       in if r == r'
+            then r
+            else error $
+                 "heuristic failed on " <>
+                 show a <> ", " <> show b <> ": " <> show r <> " != " <> show r'
+
+infixr 1 `fallback2V`
 
 possibilitiesCounts :: PFT Int
 possibilitiesCounts ps cs =
   fromMaybe 0 $
   Map.lookup cs $
   counts $ traceF (\l -> "brute force " <> lineShow l <> " " <> show cs) ps
+
+possibilitiesLargestAll :: PFT (Maybe Int)
+possibilitiesLargestAll ps cs = do
+  c <- maybeMaximum cs
+  let (c1, _:c2) = span (/= c) cs
+  let ks = filter (fits c ps) $ Map.keys ps
+  pure $
+    sum
+      [ let [p1, p2] = cutParts c [k] ps
+         in multiplyZ (possibilities0 p1 c1) (possibilities0 p2 c2)
+      | k <- ks
+      ]
 
 isNeedle :: Int -> [Maybe Pos] -> Bool
 isNeedle n xs =
@@ -161,18 +198,10 @@ possibilitiesLargestOnlyFit ps cs = do
   c <- maybeMaximum cs
   let cparts = splitOn [c] cs
   let ks = filter (fits c ps) $ Map.keys ps
+  guard $ and $ zipWithTail (\k1 k2 -> k1 + c < k2) ks
   guard $ length cparts == succ (length ks)
   let pparts = cutParts c ks ps
-  traceM $
-    "largest only " <>
-    lineShow ps <>
-    " at " <>
-    show c <>
-    ": " <>
-    intercalate
-      ", "
-      (zipWith (\p c -> lineShow p <> " -> " <> show c) pparts cparts)
-  pure $ product $ zipWith possibilities0 pparts cparts
+  pure $ productZ $ zipWith possibilities0 pparts cparts
 
 -- If all the largest numbers fit each into a an undamaged ### block, put them
 -- there and deal with the intervals in between separately.
@@ -189,16 +218,7 @@ possibilitiesLargestExactFit ps cs = do
         Map.keys ps
   guard $ length cparts == succ (length ks)
   let pparts = cutParts c ks ps
-  traceM $
-    "largest exact " <>
-    lineShow ps <>
-    " at " <>
-    show c <>
-    ": " <>
-    intercalate
-      ", "
-      (zipWith (\p c -> lineShow p <> " -> " <> show c) pparts cparts)
-  pure $ product $ zipWith possibilities0 pparts cparts
+  pure $ productZ $ zipWith possibilities0 pparts cparts
 
 -- Does the interval fit onto the line in the specified position?
 fits :: Int -> Line -> Int -> Bool
@@ -235,10 +255,7 @@ possibilitiesAlignFirst :: PFT (Maybe Int)
 possibilitiesAlignFirst ps cs = do
   (c1, crest) <- uncons cs
   (kMin, kMax) <- lineBounds ps
-  kMaxY <- find (\k -> Map.lookup k ps == Just Y) [kMin .. kMax]
-  [k] <- Just $ filter (fitsAsFirst c1 ps) [kMin .. kMaxY]
-  traceM $
-    "first " <> lineShow ps <> " can only put " <> show c1 <> " at: " <> show k
+  [k] <- Just $ filter (fitsAsFirst c1 ps) [kMin .. kMax]
   let p1 = Map.dropWhileAntitone (<= k + c1) ps
   pure $ possibilities0 p1 crest
 
@@ -247,22 +264,29 @@ possibilitiesAlignLast :: PFT (Maybe Int)
 possibilitiesAlignLast ps cs = do
   (crest, c1) <- unsnoc cs
   (kMin, kMax) <- lineBounds ps
-  kMinY <-
-    flip subtract (pred c1) <$>
-    find (\k -> Map.lookup k ps == Just Y) [kMax,kMax - 1 .. kMin]
-  let ks = filter (fitsAsLast c1 ps) [kMinY .. kMax]
+  let ks = filter (fitsAsLast c1 ps) [kMin .. kMax]
   [k] <- Just ks
-  traceM $
-    "last " <> lineShow ps <> " can only put " <> show c1 <> " at: " <> show k
-  let p1 = Map.takeWhileAntitone (< k) ps
+  let p1 = Map.takeWhileAntitone (< k - 1) ps
   pure $ possibilities0 p1 crest
+
+possibilitiesEmpty :: PFT (Maybe Int)
+possibilitiesEmpty ps cs
+  | null cs =
+    Just $
+    if Y `elem` ps
+      then 0
+      else 1
+  | Map.null ps = Just 0
+  | otherwise = Nothing
 
 possibilities0 :: PFT Int
 possibilities0 =
-  possibilitiesAlignFirst `fallback`
-  possibilitiesAlignLast `fallback`
-  possibilitiesLargestExactFit `fallback`
-  possibilitiesLargestOnlyFit `fallback` possibilitiesCounts
+  possibilitiesEmpty `fallback2`
+  possibilitiesAlignFirst `fallback2`
+  possibilitiesAlignLast `fallback2`
+  possibilitiesLargestExactFit `fallback2`
+  possibilitiesLargestOnlyFit `fallback2`
+  possibilitiesLargestAll `fallback2` possibilitiesCounts
 
 possibilities :: InputLine -> Int
 possibilities =
@@ -329,6 +353,8 @@ tasks =
         counts l
   , Assert "possibilitiesAlignLast" (Just 1) $
     possibilitiesAlignLast (mkLine [Y, Y, Y, Y]) [4]
+  , Assert "possibilitiesAlignLast" Nothing $
+    possibilitiesAlignLast (mkLine [Q, Y, Q, Q]) [3]
   ] ++
   [ AssertExample ("part 1 line " <> tshow i) r $ possibilities . flip (!!) i
   | (i, r) <- zip [0 ..] [1, 4, 1, 1, 4, 10]
