@@ -151,18 +151,20 @@ cutParts n (k:ks) l = l1 : cutParts n ks l2
     l1 = Map.takeWhileAntitone (< k - 1) l
     l2 = Map.dropWhileAntitone (<= k + n) l
 
-possibilitiesLargestSplit :: PFT (Maybe Int)
-possibilitiesLargestSplit ps cs = do
+-- If there's only a single way to fit the largest numbers into blocks, put them
+-- there and deal with the intervals in between separately.
+-- This doesn't require fit points to be undamaged.
+-- Examples:
+-- ???..?##?..??? 1,4,1
+possibilitiesLargestOnlyFit :: PFT (Maybe Int)
+possibilitiesLargestOnlyFit ps cs = do
   c <- maybeMaximum cs
   let cparts = splitOn [c] cs
-  let needle = replicate c (Just Y)
-  let ks =
-        filter (\k -> isNeedle c $ lineInterval (k - 1) (k + c) ps) $
-        Map.keys ps
+  let ks = filter (fits c ps) $ Map.keys ps
   guard $ length cparts == succ (length ks)
   let pparts = cutParts c ks ps
   traceM $
-    "split " <>
+    "largest only " <>
     lineShow ps <>
     " at " <>
     show c <>
@@ -172,20 +174,60 @@ possibilitiesLargestSplit ps cs = do
       (zipWith (\p c -> lineShow p <> " -> " <> show c) pparts cparts)
   pure $ product $ zipWith possibilities0 pparts cparts
 
-lineFits :: Int -> Line -> Int -> Bool
-lineFits n ps k0 =
+-- If all the largest numbers fit each into a an undamaged ### block, put them
+-- there and deal with the intervals in between separately.
+-- Note that there might be other places where the largest numbers fit, but
+-- that's irrelevant because of the undamaged blocks.
+-- Examples:
+-- ????###????###???? 1,3,1,3,1
+possibilitiesLargestExactFit :: PFT (Maybe Int)
+possibilitiesLargestExactFit ps cs = do
+  c <- maybeMaximum cs
+  let cparts = splitOn [c] cs
+  let ks =
+        filter (\k -> isNeedle c $ lineInterval (k - 1) (k + c) ps) $
+        Map.keys ps
+  guard $ length cparts == succ (length ks)
+  let pparts = cutParts c ks ps
+  traceM $
+    "largest exact " <>
+    lineShow ps <>
+    " at " <>
+    show c <>
+    ": " <>
+    intercalate
+      ", "
+      (zipWith (\p c -> lineShow p <> " -> " <> show c) pparts cparts)
+  pure $ product $ zipWith possibilities0 pparts cparts
+
+-- Does the interval fit onto the line in the specified position?
+fits :: Int -> Line -> Int -> Bool
+fits n ps k0 =
   Map.lookup (pred k0) ps /= Just Y &&
   Map.lookup (succ k1) ps /= Just Y && notElem Nothing (lineInterval k0 k1 ps)
   where
     k1 = k0 + n - 1
-    needle = replicate n (Just Y)
 
+-- Does the interval fit onto the line in the specified position, assuming it's
+-- the first one?
+fitsAsFirst :: Int -> Line -> Int -> Bool
+fitsAsFirst n ps k0 =
+  notElem (Just Y) (lineInterval kMin (pred k0) ps) && fits n ps k0
+  where
+    kMin = fromMaybe k0 $ lineMin ps
+
+-- If there's only one place where the first part fits, put it there and deal
+-- with the rest recursively.
+-- Examples:
+-- #?. 1
+-- ?#. 1
+-- ?##. 3
 possibilitiesAlignFirst :: PFT (Maybe Int)
 possibilitiesAlignFirst ps cs = do
   (c1:crest) <- Just cs
   (kMin, kMax) <- lineBounds ps
   kMaxY <- find (\k -> Map.lookup k ps == Just Y) [kMin .. kMax]
-  [k] <- Just $ filter (lineFits c1 ps) [kMin .. kMaxY]
+  [k] <- Just $ filter (fitsAsFirst c1 ps) [kMin .. kMaxY]
   traceM $
     "first " <> lineShow ps <> " can only put " <> show c1 <> " at: " <> show k
   let p1 = Map.dropWhileAntitone (<= k + c1) ps
@@ -194,7 +236,8 @@ possibilitiesAlignFirst ps cs = do
 possibilities0 :: PFT Int
 possibilities0 =
   possibilitiesAlignFirst `fallback`
-  possibilitiesLargestSplit `fallback` possibilitiesCounts
+  possibilitiesLargestExactFit `fallback`
+  possibilitiesLargestOnlyFit `fallback` possibilitiesCounts
 
 possibilities :: InputLine -> Int
 possibilities =
