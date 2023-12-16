@@ -15,6 +15,11 @@ data Pos
   | Q
   deriving (Eq, Ord, Show, Bounded, Enum)
 
+posShow :: Maybe Pos -> Char
+posShow (Just Y) = '#'
+posShow (Just Q) = '?'
+posShow Nothing  = middleDot
+
 type Line = Map Int Pos
 
 lineMin :: Line -> Maybe Int
@@ -23,17 +28,17 @@ lineMin = fmap fst . Map.lookupMin
 lineMax :: Line -> Maybe Int
 lineMax = fmap fst . Map.lookupMax
 
+lineBounds :: Line -> Maybe (Int, Int)
+lineBounds l = liftA2 (,) (lineMin l) (lineMax l)
+
+lineInterval :: Int -> Int -> Line -> [Maybe Pos]
+lineInterval k0 k1 ps = map (`Map.lookup` ps) [k0 .. k1]
+
 lineShow :: Line -> String
-lineShow l
-  | Map.null l = ""
-  | otherwise =
-    map
-      (item . (`Map.lookup` l))
-      [fromJustE "lineShow" $ lineMin l .. fromJustE "lineShow" $ lineMax l]
-  where
-    item (Just Y) = '#'
-    item (Just Q) = '?'
-    item Nothing  = middleDot
+lineShow l =
+  case lineBounds l of
+    Nothing       -> ""
+    Just (k0, k1) -> map posShow $ lineInterval k0 k1 l
 
 type Springs = [Int]
 
@@ -100,7 +105,10 @@ countsM ps =
       pure $ (cl `countsAppend` cr) `mapSum` ca
 
 lineLength :: Line -> Int
-lineLength ps = fromMaybe 0 $ (-) <$> lineMax ps <*> lineMin ps
+lineLength ps =
+  fromMaybe 0 $ do
+    (k0, k1) <- lineBounds ps
+    pure $ k1 - k0 + 1
 
 lineFirst :: Line -> Maybe (Line, Line)
 lineFirst ps = do
@@ -113,15 +121,7 @@ lineFirstCount :: Line -> Maybe (Int, Line)
 lineFirstCount ps = first lineLength <$> lineFirst ps
 
 knownCounts :: Line -> Springs
-knownCounts = unfoldr go
-  where
-    go :: Line -> Maybe (Int, Line)
-    go ps = do
-      kmin <- lineMin ps
-      let kend =
-            fromJustE "knownCounts: kend" $
-            find (`Map.notMember` ps) [succ kmin ..]
-      pure (kend - kmin, Map.dropWhileAntitone (< kend) ps)
+knownCounts = unfoldr lineFirstCount
 
 type PFT r = Line -> Springs -> r
 
@@ -134,14 +134,47 @@ possibilitiesCounts :: PFT Int
 possibilitiesCounts ps cs =
   fromMaybe 0 $
   Map.lookup cs $
-  counts $ traceF (\l -> "last resort " <> lineShow l <> " " <> show cs) ps
+  counts $ traceF (\l -> "brute force " <> lineShow l <> " " <> show cs) ps
+
+isNeedle :: Int -> [Maybe Pos] -> Bool
+isNeedle n xs =
+  head xs /= Just Y &&
+  last xs /= Just Y && drop 1 (dropEnd 1 xs) == replicate n (Just Y)
+
+cutParts :: Int -> [Int] -> Line -> [Line]
+cutParts _ [] l = [l]
+cutParts n (k:ks) l = l1 : cutParts n ks l2
+  where
+    l1 = Map.takeWhileAntitone (< k - 1) l
+    l2 = Map.dropWhileAntitone (<= k + n) l
+
+possibilitiesLargestSplit :: PFT (Maybe Int)
+possibilitiesLargestSplit ps cs = do
+  c <- maybeMaximum cs
+  let cparts = splitOn [c] cs
+  let needle = replicate c (Just Y)
+  let ks =
+        filter (\k -> isNeedle c $ lineInterval (k - 1) (k + c) ps) $
+        Map.keys ps
+  guard $ length cparts == succ (length ks)
+  let pparts = cutParts c ks ps
+  traceM $
+    "split " <>
+    lineShow ps <>
+    " at " <>
+    show c <>
+    ": " <>
+    intercalate
+      ", "
+      (zipWith (\p c -> lineShow p <> " -> " <> show c) pparts cparts)
+  pure $ product $ zipWith possibilities0 pparts cparts
 
 possibilitiesAlignFirst :: PFT (Maybe Int)
 possibilitiesAlignFirst ps cs = do
   (c1:crest) <- Just cs
   k0 <- lineMin ps
   let k1 = k0 + c1
-  let p1 = map (`Map.lookup` ps) [k0 .. k1]
+  let p1 = lineInterval k0 k1 ps
   case p1 of
     (Just Y:_) -> cutAt crest k1
     (Just Q:Just Y:_) ->
@@ -155,10 +188,15 @@ possibilitiesAlignFirst ps cs = do
       pure $ possibilities0 (Map.dropWhileAntitone (<= k) ps) cs
 
 possibilities0 :: PFT Int
-possibilities0 = possibilitiesAlignFirst `fallback` possibilitiesCounts
+possibilities0 =
+  possibilitiesAlignFirst `fallback`
+  possibilitiesLargestSplit `fallback` possibilitiesCounts
 
 possibilities :: InputLine -> Int
-possibilities = uncurry possibilities0 . first mkLine' . traceShowF ("input", )
+possibilities =
+  uncurry possibilities0 .
+  first mkLine' .
+  traceF (\(l, cs) -> "input " <> map posShow l <> " " <> show cs)
 
 part1 :: [InputLine] -> Int
 part1 = sum . map (traceShowId . possibilities)
@@ -174,43 +212,49 @@ tasks =
   [ Assert "countsAppend" (Map.fromList [([], 1), ([1], 2), ([1, 1], 1)]) $
     let m = Map.fromList [([], 1), ([1], 1)]
      in countsAppend m m
-  , Assert "counts ?##?" (Map.fromList [([2], 1), ([3], 2), ([4], 1)]) $
-    counts $ mkLine [Q, Y, Y, Q]
-  , Assert
-      "counts ???"
-      (Map.fromList [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)]) $
-    counts $ mkLine $ replicate 3 Q
-  , Assert
-      "counts ????"
-      (Map.fromList
-         [ ([], 1)
-         , ([1], 4)
-         , ([1, 1], 3)
-         , ([1, 2], 1)
-         , ([2], 3)
-         , ([2, 1], 1)
-         , ([3], 2)
-         , ([4], 1)
-         ]) $
-    counts $ mkLine $ replicate 4 Q
-  , Assert
-      "counts ?????"
-      (Map.fromList
-         [ ([], 1)
-         , ([1], 5)
-         , ([1, 1], 6)
-         , ([1, 1, 1], 1)
-         , ([1, 2], 3)
-         , ([1, 3], 1)
-         , ([2], 4)
-         , ([2, 1], 3)
-         , ([2, 2], 1)
-         , ([3], 3)
-         , ([3, 1], 1)
-         , ([4], 2)
-         , ([5], 1)
-         ]) $
-    counts $ mkLine $ replicate 5 Q
+  , let l = mkLine [Q, Y, Y, Q]
+     in Assert
+          ("counts " <> Text.pack (lineShow l))
+          (Map.fromList [([2], 1), ([3], 2), ([4], 1)]) $
+        counts l
+  , let l = mkLine $ replicate 3 Q
+     in Assert
+          ("counts " <> Text.pack (lineShow l))
+          (Map.fromList [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)]) $
+        counts l
+  , let l = mkLine $ replicate 4 Q
+     in Assert
+          ("counts " <> Text.pack (lineShow l))
+          (Map.fromList
+             [ ([], 1)
+             , ([1], 4)
+             , ([1, 1], 3)
+             , ([1, 2], 1)
+             , ([2], 3)
+             , ([2, 1], 1)
+             , ([3], 2)
+             , ([4], 1)
+             ]) $
+        counts l
+  , let l = mkLine $ replicate 5 Q
+     in Assert
+          ("counts " <> Text.pack (lineShow l))
+          (Map.fromList
+             [ ([], 1)
+             , ([1], 5)
+             , ([1, 1], 6)
+             , ([1, 1, 1], 1)
+             , ([1, 2], 3)
+             , ([1, 3], 1)
+             , ([2], 4)
+             , ([2, 1], 3)
+             , ([2, 2], 1)
+             , ([3], 3)
+             , ([3, 1], 1)
+             , ([4], 2)
+             , ([5], 1)
+             ]) $
+        counts l
   ] ++
   [ AssertExample ("part 1 line " <> tshow i) r $ possibilities . flip (!!) i
   | (i, r) <- zip [0 ..] [1, 4, 1, 1, 4, 10]
