@@ -216,6 +216,15 @@ fitsAsFirst n ps k0 =
   where
     kMin = fromMaybe k0 $ lineMin ps
 
+-- Does the interval fit onto the line in the specified position, assuming it's
+-- the last one?
+fitsAsLast :: Int -> Line -> Int -> Bool
+fitsAsLast n ps k0 =
+  notElem (Just Y) (lineInterval (succ k1) kMax ps) && fits n ps k0
+  where
+    kMax = fromMaybe k1 $ lineMax ps
+    k1 = k0 + n - 1
+
 -- If there's only one place where the first part fits, put it there and deal
 -- with the rest recursively.
 -- Examples:
@@ -224,7 +233,7 @@ fitsAsFirst n ps k0 =
 -- ?##. 3
 possibilitiesAlignFirst :: PFT (Maybe Int)
 possibilitiesAlignFirst ps cs = do
-  (c1:crest) <- Just cs
+  (c1, crest) <- uncons cs
   (kMin, kMax) <- lineBounds ps
   kMaxY <- find (\k -> Map.lookup k ps == Just Y) [kMin .. kMax]
   [k] <- Just $ filter (fitsAsFirst c1 ps) [kMin .. kMaxY]
@@ -233,9 +242,25 @@ possibilitiesAlignFirst ps cs = do
   let p1 = Map.dropWhileAntitone (<= k + c1) ps
   pure $ possibilities0 p1 crest
 
+-- Same as above, but consider the last element.
+possibilitiesAlignLast :: PFT (Maybe Int)
+possibilitiesAlignLast ps cs = do
+  (crest, c1) <- unsnoc cs
+  (kMin, kMax) <- lineBounds ps
+  kMinY <-
+    flip subtract (pred c1) <$>
+    find (\k -> Map.lookup k ps == Just Y) [kMax,kMax - 1 .. kMin]
+  let ks = filter (fitsAsLast c1 ps) [kMinY .. kMax]
+  [k] <- Just ks
+  traceM $
+    "last " <> lineShow ps <> " can only put " <> show c1 <> " at: " <> show k
+  let p1 = Map.takeWhileAntitone (< k) ps
+  pure $ possibilities0 p1 crest
+
 possibilities0 :: PFT Int
 possibilities0 =
   possibilitiesAlignFirst `fallback`
+  possibilitiesAlignLast `fallback`
   possibilitiesLargestExactFit `fallback`
   possibilitiesLargestOnlyFit `fallback` possibilitiesCounts
 
@@ -302,6 +327,8 @@ tasks =
              , ([5], 1)
              ]) $
         counts l
+  , Assert "possibilitiesAlignLast" (Just 1) $
+    possibilitiesAlignLast (mkLine [Y, Y, Y, Y]) [4]
   ] ++
   [ AssertExample ("part 1 line " <> tshow i) r $ possibilities . flip (!!) i
   | (i, r) <- zip [0 ..] [1, 4, 1, 1, 4, 10]
