@@ -172,23 +172,24 @@ possibilitiesLargestSplit ps cs = do
       (zipWith (\p c -> lineShow p <> " -> " <> show c) pparts cparts)
   pure $ product $ zipWith possibilities0 pparts cparts
 
+lineFits :: Int -> Line -> Int -> Bool
+lineFits n ps k0 =
+  Map.lookup (pred k0) ps /= Just Y &&
+  Map.lookup (succ k1) ps /= Just Y && notElem Nothing (lineInterval k0 k1 ps)
+  where
+    k1 = k0 + n - 1
+    needle = replicate n (Just Y)
+
 possibilitiesAlignFirst :: PFT (Maybe Int)
 possibilitiesAlignFirst ps cs = do
   (c1:crest) <- Just cs
-  k0 <- lineMin ps
-  let k1 = k0 + c1
-  let p1 = lineInterval k0 k1 ps
-  case p1 of
-    (Just Y:_) -> cutAt crest k1
-    (Just Q:Just Y:_) ->
-      if last p1 == Just Y
-        then cutAt crest $ succ k1
-        else Nothing
-    _ -> Nothing
-  where
-    cutAt cs k = do
-      guard $ Map.lookup k ps /= Just Y
-      pure $ possibilities0 (Map.dropWhileAntitone (<= k) ps) cs
+  (kMin, kMax) <- lineBounds ps
+  kMaxY <- find (\k -> Map.lookup k ps == Just Y) [kMin .. kMax]
+  [k] <- Just $ filter (lineFits c1 ps) [kMin .. kMaxY]
+  traceM $
+    "first " <> lineShow ps <> " can only put " <> show c1 <> " at: " <> show k
+  let p1 = Map.dropWhileAntitone (<= k + c1) ps
+  pure $ possibilities0 p1 crest
 
 possibilities0 :: PFT Int
 possibilities0 =
