@@ -7,49 +7,70 @@ import qualified Data.Set            as Set
 import qualified Data.Text           as Text
 
 import           AOC
+import           Grid                (middleDot)
 import           Utils
 
 data Pos
-  = N
-  | Y
+  = Y
   | Q
   deriving (Eq, Ord, Show, Bounded, Enum)
 
-instance Memoizable Pos where
-  memoize f t = memoize (f . toEnum) (fromEnum t)
+type Line = Map Int Pos
+
+lineMin :: Line -> Maybe Int
+lineMin = fmap fst . Map.lookupMin
+
+lineMax :: Line -> Maybe Int
+lineMax = fmap fst . Map.lookupMax
+
+lineShow :: Line -> String
+lineShow l
+  | Map.null l = ""
+  | otherwise =
+    map
+      (item . (`Map.lookup` l))
+      [fromJustE "lineShow" $ lineMin l .. fromJustE "lineShow" $ lineMax l]
+  where
+    item (Just Y) = '#'
+    item (Just Q) = '?'
+    item Nothing  = middleDot
 
 type Springs = [Int]
 
-type Line = ([Pos], Springs)
+type InputLine = ([Maybe Pos], Springs)
 
-parser :: Parser Text [Line]
+parser :: Parser Text [InputLine]
 parser =
-  linesP &** wordsP &* ((charactersP &** choiceEBP ".#?") &+ integersP ",")
+  linesP &** wordsP &*
+  ((charactersP &** choiceP [('.', Nothing), ('#', Just Y), ('?', Just Q)]) &+
+   integersP ",")
 
-posSplit :: [Pos] -> Maybe ([Pos], [Pos])
+mkLine' :: [Maybe Pos] -> Line
+mkLine' p = Map.fromList [(i, c) | (i, Just c) <- zip [0 ..] p]
+
+mkLine :: [Pos] -> Line
+mkLine = mkLine' . map Just
+
+posSplit :: Line -> Maybe (Line, Int, Line)
 posSplit ps
-  | null ixs = Nothing
-  | otherwise = Just (pl, pr)
+  | null ks = Nothing
+  | otherwise = Just (pl, k, pr)
   where
-    ixs = elemIndices Q ps
-    ixm = ixs !! (length ixs `div` 2)
-    (pl, _:pr) = splitAt ixm ps
+    ks = Map.keys $ Map.filter (== Q) ps
+    k = ks !! (length ks `div` 2)
+    (pl, p1) = Map.spanAntitone (< k) ps
+    pr = Map.delete k p1
 
-type Counts = Map Springs Int
+type PossibleCounts = Map Springs Int
 
-countsAppend :: Counts -> Counts -> Counts
+countsAppend :: PossibleCounts -> PossibleCounts -> PossibleCounts
 countsAppend a b =
   mapFromListSum $ do
     (ka, va) <- Map.toList a
     (kb, vb) <- Map.toList b
     pure (ka ++ kb, va * vb)
 
-optimizePos :: [Pos] -> [Pos]
-optimizePos []     = []
-optimizePos (N:ps) = N : optimizePos (dropWhile (== N) ps)
-optimizePos (p:ps) = p : optimizePos ps
-
-counts :: [Pos] -> Counts
+counts :: Line -> PossibleCounts
 counts = runMemo . countsM
 
 type MemoState i o = i -> State (Map i o) o
@@ -67,88 +88,85 @@ memoState k a = do
 runMemo :: State (Map i o) r -> r
 runMemo = flip evalState Map.empty
 
-countsM :: MemoState [Pos] Counts
+countsM :: MemoState Line PossibleCounts
 countsM ps =
   memoState ps $
   case posSplit ps of
     Nothing -> pure $ Map.singleton (knownCounts ps) 1
-    Just (pl, pr) -> do
+    Just (pl, k, pr) -> do
       cl <- countsM pl
       cr <- countsM pr
-      let pa = pl ++ (Y : pr)
-      ca <- countsM pa
+      ca <- countsM $ Map.insert k Y ps
       pure $ (cl `countsAppend` cr) `mapSum` ca
 
-knownCounts :: [Pos] -> Springs
-knownCounts ps = unfoldr kc1 ps
+lineLength :: Line -> Int
+lineLength ps = fromMaybe 0 $ (-) <$> lineMax ps <*> lineMin ps
+
+lineFirst :: Line -> Maybe (Line, Line)
+lineFirst ps = do
+  kmin <- lineMin ps
+  let kend =
+        fromJustE "lineFirst: kend" $ find (`Map.notMember` ps) [succ kmin ..]
+  pure $ Map.spanAntitone (< kend) ps
+
+lineFirstCount :: Line -> Maybe (Int, Line)
+lineFirstCount ps = first lineLength <$> lineFirst ps
+
+knownCounts :: Line -> Springs
+knownCounts = unfoldr go
   where
-    kc1 ps
-      | null p1 = Nothing
-      | otherwise = Just (l2, p3)
-      where
-        p1 = dropWhile (== N) ps
-        l2 = length $ takeWhile (== Y) p1
-        p3 = drop l2 p1
+    go :: Line -> Maybe (Int, Line)
+    go ps = do
+      kmin <- lineMin ps
+      let kend =
+            fromJustE "knownCounts: kend" $
+            find (`Map.notMember` ps) [succ kmin ..]
+      pure (kend - kmin, Map.dropWhileAntitone (< kend) ps)
 
-type PFT r = [Pos] -> Springs -> r
+type PFT r = Line -> Springs -> r
 
-fallback :: PFT r -> PFT (Maybe r) -> PFT r
-fallback slow heuristic p c = fromMaybe (slow p c) $ heuristic p c
+fallback :: PFT (Maybe r) -> PFT r -> PFT r
+fallback heuristic slow p c = fromMaybe (slow p c) $ heuristic p c
 
-possibilities3 :: PFT Int
-possibilities3 ps cs =
-  fromMaybe 0 $ Map.lookup cs $ counts $ traceShowF ("last resort", , cs) ps
+infixr 1 `fallback`
 
-possibilities2 :: PFT Int
-possibilities2 =
-  fallback possibilities3 $ \ps cs -> do
-    guard $ notNull cs
-    let cmax = maximum cs
-    let cparts = splitOn [cmax] cs
-    let pparts = splitOn (replicate cmax Y) (surround ps)
-    guard $ length pparts == length cparts
-    pseared <- traverse sear pparts
-    -- traceShowM ("p2 -> ", cmax, zip pseared cparts)
-    pure $ product $ zipWith possibilities0 pseared cparts
+possibilitiesCounts :: PFT Int
+possibilitiesCounts ps cs =
+  fromMaybe 0 $
+  Map.lookup cs $
+  counts $ traceF (\l -> "last resort " <> lineShow l <> " " <> show cs) ps
+
+possibilitiesAlignFirst :: PFT (Maybe Int)
+possibilitiesAlignFirst ps cs = do
+  (c1:crest) <- Just cs
+  k0 <- lineMin ps
+  let k1 = k0 + c1
+  let p1 = map (`Map.lookup` ps) [k0 .. k1]
+  case p1 of
+    (Just Y:_) -> cutAt crest k1
+    (Just Q:Just Y:_) ->
+      if last p1 == Just Y
+        then cutAt crest $ succ k1
+        else Nothing
+    _ -> Nothing
   where
-    surround x = N : (x ++ [N])
-
-sear :: [Pos] -> Maybe [Pos]
-sear = searStart >=> (pure . reverse) >=> searStart >=> (pure . reverse)
-
-searStart :: [Pos] -> Maybe [Pos]
-searStart []    = Nothing
-searStart (Y:_) = Nothing
-searStart (_:t) = Just t
-
-anchorFor :: Int -> [Pos] -> Maybe (Int, [Pos])
-anchorFor c ps = do
-  let pfirst = takeWhile (/= N) ps
-  guard $ elem Y pfirst
-  guard $ length pfirst <= c
-  let prest = drop (succ $ length pfirst) ps
-  Just (length pfirst - c + 1, prest)
-
-possibilities1 :: PFT Int
-possibilities1 =
-  fallback possibilities2 $ \ps cs -> do
-    (c:cs1) <- pure cs
-    (r1, prest) <- anchorFor c ps
-    Just $ r1 * possibilities0 prest cs1
+    cutAt cs k = do
+      guard $ Map.lookup k ps /= Just Y
+      pure $ possibilities0 (Map.dropWhileAntitone (<= k) ps) cs
 
 possibilities0 :: PFT Int
-possibilities0 ps = possibilities1 (optimizePos ps)
+possibilities0 = possibilitiesAlignFirst `fallback` possibilitiesCounts
 
-possibilities :: Line -> Int
-possibilities = uncurry possibilities0 . traceShowF ("input", )
+possibilities :: InputLine -> Int
+possibilities = uncurry possibilities0 . first mkLine' . traceShowF ("input", )
 
-part1 :: [Line] -> Int
+part1 :: [InputLine] -> Int
 part1 = sum . map (traceShowId . possibilities)
 
-part2unfold :: Line -> Line
-part2unfold = intercalate [Q] . replicate 5 *** join . replicate 5
+part2unfold :: InputLine -> InputLine
+part2unfold = intercalate [Just Q] . replicate 5 *** join . replicate 5
 
-part2 :: [Line] -> Int
+part2 :: [InputLine] -> Int
 part2 = part1 . map part2unfold
 
 tasks =
@@ -157,11 +175,11 @@ tasks =
     let m = Map.fromList [([], 1), ([1], 1)]
      in countsAppend m m
   , Assert "counts ?##?" (Map.fromList [([2], 1), ([3], 2), ([4], 1)]) $
-    counts [Q, Y, Y, Q]
+    counts $ mkLine [Q, Y, Y, Q]
   , Assert
       "counts ???"
       (Map.fromList [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)]) $
-    counts $ replicate 3 Q
+    counts $ mkLine $ replicate 3 Q
   , Assert
       "counts ????"
       (Map.fromList
@@ -174,7 +192,7 @@ tasks =
          , ([3], 2)
          , ([4], 1)
          ]) $
-    counts $ replicate 4 Q
+    counts $ mkLine $ replicate 4 Q
   , Assert
       "counts ?????"
       (Map.fromList
@@ -192,7 +210,7 @@ tasks =
          , ([4], 2)
          , ([5], 1)
          ]) $
-    counts $ replicate 5 Q
+    counts $ mkLine $ replicate 5 Q
   ] ++
   [ AssertExample ("part 1 line " <> tshow i) r $ possibilities . flip (!!) i
   | (i, r) <- zip [0 ..] [1, 4, 1, 1, 4, 10]
