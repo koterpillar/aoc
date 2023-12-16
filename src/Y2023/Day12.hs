@@ -34,11 +34,14 @@ lineBounds l = liftA2 (,) (lineMin l) (lineMax l)
 lineInterval :: Int -> Int -> Line -> [Maybe Pos]
 lineInterval k0 k1 ps = map (`Map.lookup` ps) [k0 .. k1]
 
+lineList :: Line -> [Maybe Pos]
+lineList ps =
+  case lineBounds ps of
+    Nothing       -> []
+    Just (k0, k1) -> lineInterval k0 k1 ps
+
 lineShow :: Line -> String
-lineShow l =
-  case lineBounds l of
-    Nothing       -> ""
-    Just (k0, k1) -> map posShow $ lineInterval k0 k1 l
+lineShow = map posShow . lineList
 
 type Springs = [Int]
 
