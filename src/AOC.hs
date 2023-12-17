@@ -6,6 +6,9 @@ module AOC
   , ExampleScraper(..)
   , Tasks(..)
   , Task(..)
+  , task
+  , taskBlind
+  , taskScraper
   , processTasks
   , module Miniparse
   ) where
@@ -64,8 +67,8 @@ simpleRequest url = do
   request <- parseRequestThrow $ Text.unpack url
   session <- readSession
   let request' =
-        addHeader "User-Agent" userAgent $
-        foldr (addHeader "Cookie" . ("session=" <>)) request session
+        addHeader "User-Agent" userAgent
+          $ foldr (addHeader "Cookie" . ("session=" <>)) request session
   response <- getResponseBody <$> httpBS request'
   pure $ Text.decodeUtf8 response
 
@@ -81,8 +84,12 @@ withCacheFile' ::
   -> IO Text
 withCacheFile' year day cacheKey action = do
   let fileName =
-        ".cache/" <>
-        tshow year <> "/" <> tshow day <> "/" <> cacheFileName cacheKey
+        ".cache/"
+          <> tshow year
+          <> "/"
+          <> tshow day
+          <> "/"
+          <> cacheFileName cacheKey
   cached <- readIfExists fileName
   result <- action cached
   when (Just result /= cached) $ do
@@ -106,9 +113,11 @@ dropBefore marker contents =
   case Text.breakOn marker contents of
     (result, rest)
       | Text.null rest ->
-        error $
-        "Could not find marker: " <>
-        Text.unpack marker <> " in contents: " <> Text.unpack contents
+        error
+          $ "Could not find marker: "
+              <> Text.unpack marker
+              <> " in contents: "
+              <> Text.unpack contents
       | otherwise -> result
 
 htmlDecode :: Text -> Text
@@ -125,14 +134,15 @@ codeBlockEnd = "</code></pre>"
 
 codeBlocks :: Text -> [Text]
 codeBlocks =
-  map (removeTags . htmlDecode . dropBefore codeBlockEnd) .
-  dropAfterAll codeBlockBegin
+  map (removeTags . htmlDecode . dropBefore codeBlockEnd)
+    . dropAfterAll codeBlockBegin
 
 inlineCode :: Text -> [Text]
 inlineCode =
-  filter ((<) 10 . Text.length) .
-  map (removeTags . htmlDecode . dropBefore exampleEnd) .
-  dropAfterAll inlineCodeBegin . Text.replace codeBlockBegin ""
+  filter ((<) 10 . Text.length)
+    . map (removeTags . htmlDecode . dropBefore exampleEnd)
+    . dropAfterAll inlineCodeBegin
+    . Text.replace codeBlockBegin ""
   where
     inlineCodeBegin = "<code>"
     exampleEnd = "</code>"
@@ -153,8 +163,8 @@ getExample :: Integer -> Int -> ExampleScraper -> IO Text
 getExample year day scraper =
   withCacheFile year day scraper $ do
     page <-
-      simpleRequest $
-      "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
+      simpleRequest
+        $ "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
     pure $! selectExample scraper page
 
 showExamples :: Text -> Text
@@ -190,9 +200,13 @@ instance CacheFileName Input where
 
 getInput :: Integer -> Int -> IO Text
 getInput year day =
-  withCacheFile year day Input $
-  simpleRequest $
-  "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day <> "/input"
+  withCacheFile year day Input
+    $ simpleRequest
+    $ "https://adventofcode.com/"
+        <> tshow year
+        <> "/day/"
+        <> tshow day
+        <> "/input"
 
 data Tasks where
   Tasks
@@ -200,15 +214,33 @@ data Tasks where
 
 data Task a where
   Task :: (Eq b, Show b) => (a -> b) -> b -> Task a
-  TaskScraper :: (Eq b, Show b) => ExampleScraper -> (a -> b) -> b -> Task a
-  TaskBlind :: Show b => (a -> b) -> Task a
+  Task'
+    :: (Eq b, Show b)=> { _taskFn :: a -> b
+                        , _taskExampleAnswer :: Maybe b
+                        , _taskScraper :: Maybe ExampleScraper}
+    -> Task a
   Assert :: (Eq b, Show b) => Text -> b -> b -> Task a
   AssertExample :: (Eq b, Show b) => Text -> b -> (a -> b) -> Task a
 
+task :: (Eq b, Show b) => (a -> b) -> b -> Task a
+task _taskFn a = Task' {..}
+  where
+    _taskExampleAnswer = Just a
+    _taskScraper = Nothing
+
+taskBlind :: (Eq b, Show b) => (a -> b) -> Task a
+taskBlind _taskFn = Task' {..}
+  where
+    _taskExampleAnswer = Nothing
+    _taskScraper = Nothing
+
+taskScraper :: ExampleScraper -> Task a -> Task a
+taskScraper scraper t@Task' {} = t {_taskScraper = Just scraper}
+taskScraper _ t = terror $ "Cannot override scraper for: " <> taskName t
+
 taskName :: Task a -> Text
-taskName TaskScraper {}           = "Task"
 taskName Task {}                  = "Task"
-taskName TaskBlind {}             = "Task"
+taskName Task' {}                 = "Task"
 taskName (Assert name _ _)        = name
 taskName (AssertExample name _ _) = name
 
@@ -221,25 +253,26 @@ processTasks (Tasks year day scraper parser tasks) = do
   for_ tasks $ \task -> do
     result <-
       timeout (taskTimeout * 1000000) $ processTask year day scraper parser task
-    when (isNothing result) $
-      terror $
-      taskName task <> ": timeout after " <> tshow taskTimeout <> " seconds"
+    when (isNothing result)
+      $ terror
+      $ taskName task <> ": timeout after " <> tshow taskTimeout <> " seconds"
 
 processTask ::
      Integer -> Int -> ExampleScraper -> Parser Text a -> Task a -> IO ()
-processTask year day _ parser (TaskScraper scraper solve expected) =
-  processTask year day scraper parser (Task solve expected)
-processTask year day scraper parser (Task solve expected) = do
+processTask year day globalScraper parser (Task solve expected) =
+  processTask
+    year
+    day
+    globalScraper
+    parser
+    (Task' solve (Just expected) Nothing)
+processTask year day globalScraper parser (Task' solve expected taskScraper) = do
+  let scraper = fromMaybe globalScraper taskScraper
   example <- justParse parser <$> getExample year day scraper
   let exampleResult = solve example
-  assertEqual "Example result" expected exampleResult
-  input <- justParse parser <$> getInput year day
-  let result = solve input
-  print result
-processTask year day scraper parser (TaskBlind solve) = do
-  example <- justParse parser <$> getExample year day scraper
-  let exampleResult = solve example
-  putStrLn $ "Example result " <> show exampleResult
+  case expected of
+    Just expected' -> assertEqual "Example result" expected' exampleResult
+    Nothing        -> putStrLn $ "Example result " <> show exampleResult
   input <- justParse parser <$> getInput year day
   let result = solve input
   print result
@@ -253,5 +286,5 @@ assertEqual :: (Eq a, Show a) => Text -> a -> a -> IO ()
 assertEqual message expected actual
   | expected == actual = Text.putStrLn $ message <> " OK"
   | otherwise =
-    terror $
-    message <> " is " <> tshow actual <> ", but expected " <> tshow expected
+    terror
+      $ message <> " is " <> tshow actual <> ", but expected " <> tshow expected

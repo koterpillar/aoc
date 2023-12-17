@@ -11,9 +11,11 @@ checksum = sum . map lineChecksum
 
 divideDivisible :: [Int] -> Int
 divideDivisible lst =
-  fromJustE "divideDivisible" $
-  findTuple (== 0) $
-  map (uncurry divMod) $ filter (uncurry (/=)) $ liftA2 (,) lst lst
+  fromJustE "divideDivisible"
+    $ findTuple (== 0)
+    $ map (uncurry divMod)
+    $ filter (uncurry (/=))
+    $ liftA2 (,) lst lst
 
 tasks =
   Tasks
@@ -21,4 +23,6 @@ tasks =
     2
     (CodeBlock 0)
     (linesP &** integersSpaceP)
-    [Task checksum 18, TaskScraper (CodeBlock 1) (sum . map divideDivisible) 9]
+    [ task checksum 18
+    , task (sum . map divideDivisible) 9 & taskScraper (CodeBlock 1)
+    ]

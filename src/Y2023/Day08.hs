@@ -12,19 +12,15 @@ data Dir2
   | R
   deriving (Show, Eq, Ord, Bounded, Enum)
 
-data Place =
-  Place
-    { pLeft  :: Text
-    , pRight :: Text
-    }
-  deriving (Show, Eq, Ord)
+data Place = Place
+  { pLeft  :: Text
+  , pRight :: Text
+  } deriving (Show, Eq, Ord)
 
-data CamelMap =
-  CamelMap
-    { cInstructions :: [Dir2]
-    , cPlaces       :: Map Text Place
-    }
-  deriving (Show, Eq, Ord)
+data CamelMap = CamelMap
+  { cInstructions :: [Dir2]
+  , cPlaces       :: Map Text Place
+  } deriving (Show, Eq, Ord)
 
 placeP :: Parser Text Place
 placeP =
@@ -32,11 +28,11 @@ placeP =
 
 parser :: Parser Text CamelMap
 parser =
-  lineGroupsP &*
-  ap2P
-    CamelMap
-    (singleP &* charactersP &** choiceEBP "LR")
-    (Map.fromList <$> traverseP (tsplitP " = " &* (idP &+ placeP)))
+  lineGroupsP
+    &* ap2P
+         CamelMap
+         (singleP &* charactersP &** choiceEBP "LR")
+         (Map.fromList <$> traverseP (tsplitP " = " &* (idP &+ placeP)))
 
 cFollow :: Text -> Dir2 -> CamelMap -> Text
 cFollow p d cm =
@@ -61,12 +57,10 @@ cMove cm (p, l) = (cFollow p (cInstruction l cm) cm, l + 1)
 cWin1 :: (Text, Int) -> Bool
 cWin1 (p, _) = p == "ZZZ"
 
-data Period =
-  Period
-    { pStart :: Int
-    , pStep  :: Int
-    }
-  deriving (Show, Eq, Ord)
+data Period = Period
+  { pStart :: Int
+  , pStep  :: Int
+  } deriving (Show, Eq, Ord)
 
 pOf :: [Int] -> Period
 pOf (x:y:_) = Period x (y - x)
@@ -90,10 +84,12 @@ cStarts2 cm = [(p, 0) | p <- Map.keys (cPlaces cm), Text.takeEnd 1 p == "A"]
 cWin2 (p, _) = Text.takeEnd 1 p == "Z"
 
 part2 cm =
-  pStart $
-  traceShowId $
-  foldl1 pMerge $
-  traceShowId $ map (pOf . looper (cMove cm) cWin2) $ cStarts2 cm
+  pStart
+    $ traceShowId
+    $ foldl1 pMerge
+    $ traceShowId
+    $ map (pOf . looper (cMove cm) cWin2)
+    $ cStarts2 cm
 
 tasks =
   Tasks
@@ -101,7 +97,7 @@ tasks =
     8
     (CodeBlock 0)
     parser
-    [ Task part1 2
-    , TaskScraper (CodeBlock 1) part1 6
-    , TaskScraper (CodeBlock 2) part2 6
+    [ task part1 2
+    , task part1 6 & taskScraper (CodeBlock 1)
+    , task part2 6 & taskScraper (CodeBlock 2)
     ]

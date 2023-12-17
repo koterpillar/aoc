@@ -46,4 +46,4 @@ tasks =
     1
     (CodeBlock 0)
     parser
-    [Task part1 142, TaskScraper (CodeBlock 1) part2 281]
+    [task part1 142, task part2 281 & taskScraper (CodeBlock 1)]

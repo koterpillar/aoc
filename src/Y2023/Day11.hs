@@ -25,13 +25,13 @@ distances expansion g =
     none acc i = Set.notMember i $ Set.map acc galaxies
     distance p1 p2 = manhattan ex (pX p1) (pX p2) + manhattan ey (pY p1) (pY p2)
     manhattan gaps a b =
-      sum $
-      map
-        (\i ->
-           if i `elem` gaps
-             then expansion
-             else 1)
-        [min a b + 1 .. max a b]
+      sum
+        $ map
+            (\i ->
+               if i `elem` gaps
+                 then expansion
+                 else 1)
+            [min a b + 1 .. max a b]
 
 part2 :: Grid -> Int
 part2 = distances 1000000
@@ -45,8 +45,8 @@ tasks =
     11
     (CodeBlock 0)
     parser
-    [ Task part1 374
+    [ task part1 374
     , AssertExample "expand 10" 1030 (distances 10)
     , AssertExample "expand 100" 8410 (distances 100)
-    , TaskBlind part2
+    , taskBlind part2
     ]

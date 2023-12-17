@@ -119,8 +119,8 @@ tasks =
     10
     (CodeBlock 4)
     parser
-    [ Task part1 8
-    , TaskScraper (CodeBlock 9) part2 4
-    , TaskScraper (CodeBlock 12) part2 8
-    , TaskScraper (CodeBlock 14) part2 10
+    [ task part1 8
+    , task part2 4 & taskScraper (CodeBlock 9)
+    , task part2 8 & taskScraper (CodeBlock 12)
+    , task part2 10 & taskScraper (CodeBlock 14)
     ]

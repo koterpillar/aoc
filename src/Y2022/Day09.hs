@@ -43,9 +43,12 @@ mkSteps = concatMap $ \(d, n) -> replicate n d
 
 traceTail :: Int -> [Move] -> Int
 traceTail n =
-  length .
-  ttraceF (displayG . fromSetG) .
-  Set.fromList . map last . foldCollect dragRope (initRope n) . mkSteps
+  length
+    . ttraceF (displayG . fromSetG)
+    . Set.fromList
+    . map last
+    . foldCollect dragRope (initRope n)
+    . mkSteps
 
 part1 :: [Move] -> Int
 part1 = traceTail 2
@@ -67,6 +70,6 @@ tasks =
         "drag rope 2"
         [Position2 2 1, Position2 1 1]
         (dragRope E [Position2 1 1, Position2 0 0])
-    , Task part1 13
-    , TaskScraper (CodeBlock 7) part2 36
+    , task part1 13
+    , task part2 36 & taskScraper (CodeBlock 7)
     ]

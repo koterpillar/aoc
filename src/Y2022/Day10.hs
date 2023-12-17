@@ -19,13 +19,11 @@ instrP = wordsP &* unconsBindP go
     go "noop" = ap0P Noop
     go "addx" = ap1P Addx integerP
 
-data CPU =
-  CPU
-    { cX       :: Int
-    , cCycle   :: Int
-    , cHistory :: Map Int Int
-    }
-  deriving (Ord, Eq, Show)
+data CPU = CPU
+  { cX       :: Int
+  , cCycle   :: Int
+  , cHistory :: Map Int Int
+  } deriving (Ord, Eq, Show)
 
 initCPU :: CPU
 initCPU = CPU 1 1 Map.empty
@@ -90,4 +88,7 @@ tasks =
     10
     (CodeBlock 1)
     (linesP &** instrP)
-    [TaskScraper (CodeBlock 0) part1test (-1), Task part1 13140, Task part2 ()]
+    [ task part1test (-1) & taskScraper (CodeBlock 0)
+    , task part1 13140
+    , task part2 ()
+    ]
