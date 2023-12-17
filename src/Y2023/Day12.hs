@@ -2,12 +2,14 @@ module Y2023.Day12 where
 
 import           Control.Monad.State
 
-import qualified Data.Map            as Map
-import qualified Data.Set            as Set
-import qualified Data.Text           as Text
+import           Control.Parallel.Strategies (parMap, rpar)
+
+import qualified Data.Map                    as Map
+import qualified Data.Set                    as Set
+import qualified Data.Text                   as Text
 
 import           AOC
-import           Grid                (middleDot)
+import           Grid                        (middleDot)
 import           Memo
 import           Utils
 
@@ -149,22 +151,31 @@ possibilitiesCounts ps cs =
   Map.lookup cs $
   counts $ traceF (\l -> "brute force " <> lineShow l <> " " <> show cs) ps
 
+cSize :: [Int] -> Int
+cSize = sum . map succ
+
 possibilitiesLargestAll :: PFT (Maybe Int)
 possibilitiesLargestAll ps cs = do
   c <- maybeMaximum cs
   let (c1, _:c2) = span (/= c) cs
+  (kMin, kMax) <- lineBounds ps
+  let kMin' = kMin + cSize c1
+  let kMax' = kMax - pred c - cSize c2
+  let ks = filter (fits c ps) [kMin' .. kMax']
   let ks = filter (fits c ps) $ Map.keys ps
+  when (length ks >= 60) $
+    traceM $
+    "largest branching " <>
+    lineShow ps <>
+    " into " <>
+    show (length ks) <>
+    " branches on " <> show c1 <> "-" <> show c <> "-" <> show c2
   pure $
     sum
       [ let [p1, p2] = cutParts c [k] ps
          in multiplyZ (possibilities0 p1 c1) (possibilities0 p2 c2)
       | k <- ks
       ]
-
-isNeedle :: Int -> [Maybe Pos] -> Bool
-isNeedle n xs =
-  head xs /= Just Y &&
-  last xs /= Just Y && drop 1 (dropEnd 1 xs) == replicate n (Just Y)
 
 cutParts :: Int -> [Int] -> Line -> [Line]
 cutParts _ [] l = [l]
@@ -187,6 +198,11 @@ possibilitiesLargestOnlyFit ps cs = do
   guard $ length cparts == succ (length ks)
   let pparts = cutParts c ks ps
   pure $ productZ $ zipWith possibilities0 pparts cparts
+
+isNeedle :: Int -> [Maybe Pos] -> Bool
+isNeedle n xs =
+  head xs /= Just Y &&
+  last xs /= Just Y && drop 1 (dropEnd 1 xs) == replicate n (Just Y)
 
 -- If all the largest numbers fit each into a an undamaged ### block, put them
 -- there and deal with the intervals in between separately.
@@ -288,7 +304,7 @@ possibilities =
   traceF (\(l, cs) -> "input " <> map posShow l <> " " <> show cs)
 
 part1 :: [InputLine] -> Int
-part1 = sum . map (traceShowId . possibilities)
+part1 = sum . parMap rpar (traceShowId . possibilities)
 
 part2unfold :: InputLine -> InputLine
 part2unfold = intercalate [Just Q] . replicate 5 *** join . replicate 5

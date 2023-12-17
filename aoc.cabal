@@ -168,6 +168,7 @@ library
     , memoize
     , microlens-platform
     , mtl
+    , parallel
     , split
     , text
     , time
@@ -192,6 +193,7 @@ executable main
       RecordWildCards
       TupleSections
       TypeApplications
+  ghc-options: -threaded -rtsopts
   build-depends:
       MissingH
     , aeson
@@ -209,6 +211,7 @@ executable main
     , memoize
     , microlens-platform
     , mtl
+    , parallel
     , split
     , text
     , time
