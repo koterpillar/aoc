@@ -165,7 +165,6 @@ library
     , html-entities
     , http-conduit
     , linear
-    , memoize
     , microlens-platform
     , mtl
     , parallel
@@ -193,7 +192,7 @@ executable main
       RecordWildCards
       TupleSections
       TypeApplications
-  ghc-options: -threaded -rtsopts
+  ghc-options: -threaded -with-rtsopts=-N
   build-depends:
       MissingH
     , aeson
@@ -208,7 +207,6 @@ executable main
     , html-entities
     , http-conduit
     , linear
-    , memoize
     , microlens-platform
     , mtl
     , parallel

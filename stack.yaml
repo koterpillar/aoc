@@ -3,4 +3,3 @@ packages:
 - .
 extra-deps:
 - astar-0.3.0.0
-- memoize-1.1.2

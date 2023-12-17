@@ -21,9 +21,6 @@ newtype VKey =
 instance Hashable VKey where
   hashWithSalt s = hashWithSalt s . unVKey
 
-instance Memoizable VKey where
-  memoize f t = memoize (f . VKey) (unVKey t)
-
 vAA :: VKey
 vAA = VKey "AA"
 

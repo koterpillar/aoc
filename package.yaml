@@ -25,7 +25,6 @@ dependencies:
 - html-entities
 - http-conduit
 - linear
-- memoize
 - microlens-platform
 - MissingH
 - mtl
@@ -53,7 +52,7 @@ library:
 
 executables:
   main:
-    ghc-options: -threaded -rtsopts
+    ghc-options: -threaded -with-rtsopts=-N
     source-dirs: main
     main: Main.hs
     dependencies:

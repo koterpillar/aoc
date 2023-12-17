@@ -3,7 +3,6 @@ module Utils
   , module Data.Containers.ListUtils
   , module Data.Either
   , module Data.Either.Extra
-  , module Data.Function.Memoize
   , module Data.Maybe
   , module Data.List
   , module Data.List.Extra
@@ -69,7 +68,6 @@ import           Data.Foldable             (foldlM, foldrM, for_, toList,
 import           Data.Functor              (($>))
 
 import           Data.Function             (on)
-import           Data.Function.Memoize
 
 import           Data.List
 import           Data.List.Extra

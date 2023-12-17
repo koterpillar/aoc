@@ -11,13 +11,6 @@ packages:
       size: 213
   original:
     hackage: astar-0.3.0.0
-- completed:
-    hackage: memoize-1.1.2@sha256:d7701b55ed63434d1e8b507d0a76bb58f2fe31b7ce329132e1ca808c7001da49,1928
-    pantry-tree:
-      sha256: 8c99f1a87a270c8b8fb2238a0a94b346a986cb502753162dab909ed8b2ff44ad
-      size: 687
-  original:
-    hackage: memoize-1.1.2
 snapshots:
 - completed:
     sha256: a684cdbdf9304b325a503e0fe1d9648e9c18155ce4c7cfebbe8a7f93674e6295

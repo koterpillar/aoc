@@ -16,7 +16,6 @@ import           Data.Foldable             (for_, toList, traverse_)
 import           Data.Functor              (($>))
 
 import           Data.Function             (on, (&))
-import           Data.Function.Memoize
 
 import           Data.List
 

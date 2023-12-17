@@ -4,6 +4,7 @@ import qualified Data.Text as Text
 
 import           AOC
 import           Graph
+import           Memo
 import           Utils
 
 type Bag = Text
@@ -44,10 +45,11 @@ findCost :: Rules -> Int
 findCost rules = pred $ findCost' rules shinyGold
 
 findCost' :: Rules -> Bag -> Int
-findCost' rules =
-  memoFix $ \memoFind bag ->
-    let inners = mapLookupE "rule" bag rules
-     in 1 + sum [n * memoFind inner | (n, inner) <- toList inners]
+findCost' rules = unsafeMemo go
+  where
+    go bag =
+      let inners = mapLookupE "rule" bag rules
+       in 1 + sum [n * go inner | (n, inner) <- toList inners]
 
 tasks =
   Tasks

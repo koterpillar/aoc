@@ -1,6 +1,5 @@
 module Utils.Text where
 
-import           Data.Function.Memoize
 
 import           Data.Text             (Text)
 import qualified Data.Text             as Text
@@ -27,6 +26,3 @@ terase piece = Text.replace piece ""
 
 tlength :: Text -> Int
 tlength = Text.length
-
-instance Memoizable Text where
-  memoize f t = memoize (f . Text.pack) (Text.unpack t)
