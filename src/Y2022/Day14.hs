@@ -59,7 +59,7 @@ dropAllSand :: Maybe Int -> Grid -> Grid
 dropAllSand floor = iterateSettleL $ dropSand floor sandInit
 
 countSand :: Maybe Int -> Grid -> Int
-countSand y = countIf (Sand ==) . Map.elems . dropAllSand y
+countSand y = countElem Sand . dropAllSand y
 
 part1 = countSand Nothing . mkGrid
 

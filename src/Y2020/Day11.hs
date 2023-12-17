@@ -18,8 +18,8 @@ instance GridItem Seat where
 
 type Grid = Grid2 Seat
 
-countOccupied :: [Seat] -> Int
-countOccupied = countIf (== Occupied)
+countOccupied :: Foldable f => f Seat -> Int
+countOccupied = countElem Occupied
 
 occupiedNeighbors :: Grid -> Position2 -> Int
 occupiedNeighbors g p = countOccupied $ mapMaybe (`mapLookup` g) $ adjacent8 p
@@ -43,11 +43,9 @@ step occupiedNeighbors maxOccupied g =
     go v _ = v
 
 stabilizedSeats, stabilizedSeats2 :: Grid -> Int
-stabilizedSeats =
-  countOccupied . toList . iterateSettleL (step occupiedNeighbors 4)
+stabilizedSeats = countOccupied . iterateSettleL (step occupiedNeighbors 4)
 
-stabilizedSeats2 =
-  countOccupied . toList . iterateSettleL (step occupiedNeighbors2 5)
+stabilizedSeats2 = countOccupied . iterateSettleL (step occupiedNeighbors2 5)
 
 tasks =
   Tasks

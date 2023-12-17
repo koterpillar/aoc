@@ -24,6 +24,8 @@ import qualified Data.Map                  as Map
 
 import           Data.Maybe
 
+import           Data.Monoid               (Sum (..))
+
 import           Data.Set                  (Set)
 import qualified Data.Set                  as Set
 
@@ -103,10 +105,19 @@ subRange lo hi a b = wrapRange lo hi $ a - b
 wrapRange :: Int -> Int -> Int -> Int
 wrapRange lo hi x = lo + (x - lo) `mod` (hi - lo + 1)
 
-countIf :: (a -> Bool) -> [a] -> Int
-countIf p = length . filter p
+countIf :: Foldable f => (a -> Bool) -> f a -> Int
+countIf p =
+  getSum .
+  foldMap
+    (\x ->
+       if p x
+         then Sum 1
+         else mempty)
 
-countTrue :: [Bool] -> Int
+countElem :: (Foldable f, Eq a) => a -> f a -> Int
+countElem = countIf . (==)
+
+countTrue :: Foldable f => f Bool -> Int
 countTrue = countIf id
 
 inRange :: Ord k => k -> k -> k -> Bool

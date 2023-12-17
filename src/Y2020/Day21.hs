@@ -62,7 +62,7 @@ safeIs foods a2is = Set.difference is $ Set.unions $ map mapElemsSet a2is
     is = Set.unions $ map fst foods
 
 part1 :: Input -> Int
-part1 foods = sum $ map (countIf isSafe . Set.toList . fst) foods
+part1 foods = sum $ map (countIf isSafe . fst) foods
   where
     a2is = map traceShowId $ solveAll foods
     is = Set.unions $ map fst foods

@@ -7,7 +7,7 @@ import           Memo
 import           Utils
 
 oneAndThree :: [Int] -> Int
-oneAndThree adapters = countIf (== 1) stepups * countIf (== 3) stepups
+oneAndThree adapters = countElem 1 stepups * countElem 3 stepups
   where
     stepups = zipWithTail subtract joltages
     joltages = 0 : sort adapters ++ [maximum adapters + 3]
