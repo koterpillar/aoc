@@ -8,12 +8,16 @@ import qualified Data.Text           as Text
 
 import           AOC
 import           Grid                (middleDot)
+import           Memo
 import           Utils
 
 data Pos
   = Y
   | Q
   deriving (Eq, Ord, Show, Bounded, Enum)
+
+instance Hashable Pos where
+  hashWithSalt s = hashWithSalt s . fromEnum
 
 posShow :: Maybe Pos -> Char
 posShow (Just Y) = '#'
@@ -79,33 +83,14 @@ countsAppend a b =
     pure (ka ++ kb, va * vb)
 
 counts :: Line -> PossibleCounts
-counts = runMemo . countsM
-
-type MemoState i o = i -> State (Map i o) o
-
-memoState :: Ord i => i -> State (Map i o) o -> State (Map i o) o
-memoState k a = do
-  existing <- gets (Map.lookup k)
-  case existing of
-    Just result -> pure result
-    Nothing -> do
-      calculated <- a
-      modify $ Map.insert k calculated
-      pure calculated
-
-runMemo :: State (Map i o) r -> r
-runMemo = flip evalState Map.empty
-
-countsM :: MemoState Line PossibleCounts
-countsM ps =
-  memoState ps $
-  case posSplit ps of
-    Nothing -> pure $ Map.singleton (knownCounts ps) 1
-    Just (pl, k, pr) -> do
-      cl <- countsM pl
-      cr <- countsM pr
-      ca <- countsM $ Map.insert k Y ps
-      pure $ (cl `countsAppend` cr) `mapSum` ca
+counts =
+  unsafeMemo $ \ps ->
+    case posSplit ps of
+      Nothing -> Map.singleton (knownCounts ps) 1
+      Just (pl, k, pr) -> (cl `countsAppend` cr) `mapSum` ca
+        where cl = counts pl
+              cr = counts pr
+              ca = counts $ Map.insert k Y ps
 
 lineLength :: Line -> Int
 lineLength ps =
@@ -279,9 +264,17 @@ possibilitiesEmpty ps cs
   | Map.null ps = Just 0
   | otherwise = Nothing
 
+possibilitiesSingle :: PFT (Maybe Int)
+possibilitiesSingle ps [1]
+  | Y `elem` ps = Nothing
+  | otherwise = Just $ length ps
+possibilitiesSingle _ _ = Nothing
+
 possibilities0 :: PFT Int
 possibilities0 =
+  unsafeMemo2 $
   possibilitiesEmpty `fallback2`
+  possibilitiesSingle `fallback2`
   possibilitiesAlignFirst `fallback2`
   possibilitiesAlignLast `fallback2`
   possibilitiesLargestExactFit `fallback2`
@@ -308,53 +301,51 @@ tasks =
   [ Assert "countsAppend" (Map.fromList [([], 1), ([1], 2), ([1, 1], 1)]) $
     let m = Map.fromList [([], 1), ([1], 1)]
      in countsAppend m m
-  , let l = mkLine [Q, Y, Y, Q]
-     in Assert
-          ("counts " <> Text.pack (lineShow l))
-          (Map.fromList [([2], 1), ([3], 2), ([4], 1)]) $
-        counts l
-  , let l = mkLine $ replicate 3 Q
-     in Assert
-          ("counts " <> Text.pack (lineShow l))
-          (Map.fromList [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)]) $
-        counts l
-  , let l = mkLine $ replicate 4 Q
-     in Assert
-          ("counts " <> Text.pack (lineShow l))
-          (Map.fromList
-             [ ([], 1)
-             , ([1], 4)
-             , ([1, 1], 3)
-             , ([1, 2], 1)
-             , ([2], 3)
-             , ([2, 1], 1)
-             , ([3], 2)
-             , ([4], 1)
-             ]) $
-        counts l
-  , let l = mkLine $ replicate 5 Q
-     in Assert
-          ("counts " <> Text.pack (lineShow l))
-          (Map.fromList
-             [ ([], 1)
-             , ([1], 5)
-             , ([1, 1], 6)
-             , ([1, 1, 1], 1)
-             , ([1, 2], 3)
-             , ([1, 3], 1)
-             , ([2], 4)
-             , ([2, 1], 3)
-             , ([2, 2], 1)
-             , ([3], 3)
-             , ([3, 1], 1)
-             , ([4], 2)
-             , ([5], 1)
-             ]) $
-        counts l
-  , Assert "possibilitiesAlignLast" (Just 1) $
+  ] ++
+  [ let l' = mkLine l
+     in Assert ("counts " <> Text.pack (lineShow l')) r $ counts l'
+  | (l, r) <-
+      [ ([Y], Map.fromList [([1], 1)])
+      , ([Q, Y, Y, Q], Map.fromList [([2], 1), ([3], 2), ([4], 1)])
+      , ( replicate 3 Q
+        , Map.fromList [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)])
+      , ( replicate 4 Q
+        , Map.fromList
+            [ ([], 1)
+            , ([1], 4)
+            , ([1, 1], 3)
+            , ([1, 2], 1)
+            , ([2], 3)
+            , ([2, 1], 1)
+            , ([3], 2)
+            , ([4], 1)
+            ])
+      , ( replicate 5 Q
+        , Map.fromList
+            [ ([], 1)
+            , ([1], 5)
+            , ([1, 1], 6)
+            , ([1, 1, 1], 1)
+            , ([1, 2], 3)
+            , ([1, 3], 1)
+            , ([2], 4)
+            , ([2, 1], 3)
+            , ([2, 2], 1)
+            , ([3], 3)
+            , ([3, 1], 1)
+            , ([4], 2)
+            , ([5], 1)
+            ])
+      ]
+  ] ++
+  [ Assert "possibilitiesAlignLast" (Just 1) $
     possibilitiesAlignLast (mkLine [Y, Y, Y, Y]) [4]
   , Assert "possibilitiesAlignLast" Nothing $
     possibilitiesAlignLast (mkLine [Q, Y, Q, Q]) [3]
+  , Assert "possibilitiesSingle" (Just 20) $
+    possibilitiesSingle
+      (mkLine' $ intercalate [Nothing] $ replicate 4 $ replicate 5 $ Just Q)
+      [1]
   ] ++
   [ AssertExample ("part 1 line " <> tshow i) r $ possibilities . flip (!!) i
   | (i, r) <- zip [0 ..] [1, 4, 1, 1, 4, 10]
