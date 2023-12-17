@@ -8,6 +8,7 @@ module AOC
   , Task(..)
   , task
   , taskBlind
+  , taskPart
   , taskScraper
   , processTasks
   , module Miniparse
@@ -43,6 +44,10 @@ import           Utils
 -- | https://www.reddit.com/r/adventofcode/comments/z9dhtd/please_include_your_contact_info_in_the_useragent/
 userAgent :: Text
 userAgent = "github.com/koterpillar/aoc by a@koterpillar.com"
+
+baseURL :: Integer -> Int -> Text
+baseURL year day =
+  "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
 
 readIfExists :: Text -> IO (Maybe Text)
 readIfExists fileName = do
@@ -100,9 +105,7 @@ withCacheFile' year day cacheKey action = do
 
 withCacheFile :: CacheFileName a => Integer -> Int -> a -> IO Text -> IO Text
 withCacheFile year day cacheKey action =
-  withCacheFile' year day cacheKey $ \case
-    Nothing -> action
-    Just cached -> pure cached
+  withCacheFile' year day cacheKey $ maybe action pure
 
 dropAfterAll :: Text -> Text -> [Text]
 dropAfterAll marker =
@@ -147,6 +150,15 @@ inlineCode =
     inlineCodeBegin = "<code>"
     exampleEnd = "</code>"
 
+answerBegin :: Text
+answerBegin = "<p>Your puzzle answer was <code>"
+
+answerEnd :: Text
+answerEnd = "</code>"
+
+answers :: Text -> [Text]
+answers = map (dropBefore answerEnd) . dropAfterAll answerBegin
+
 data ExampleScraper
   = ShowExamples
   | CodeBlock Int
@@ -162,9 +174,7 @@ instance CacheFileName ExampleScraper where
 getExample :: Integer -> Int -> ExampleScraper -> IO Text
 getExample year day scraper =
   withCacheFile year day scraper $ do
-    page <-
-      simpleRequest
-        $ "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
+    page <- simpleRequest $ baseURL year day
     pure $! selectExample scraper page
 
 showExamples :: Text -> Text
@@ -186,6 +196,27 @@ selectExample (InlineCode n) = (!! n) . inlineCode
 selectExample LastInlineCode = last . inlineCode
 selectExample (Inline text)  = const text
 
+newtype Answer = Answer
+  { answerPart :: Int
+  } deriving (Eq, Ord, Show)
+
+instance CacheFileName Answer where
+  cacheFileName (Answer part) = "answer-" <> tshow part
+
+getAnswer :: Integer -> Int -> Answer -> IO (Maybe Text)
+getAnswer year day answer =
+  fmap discardEmpty
+    $ withCacheFile year day answer
+    $ do
+        page <- simpleRequest $ baseURL year day
+        let as = answers page
+        let a = fromMaybe mempty $ as !? pred (answerPart answer)
+        pure $! a
+  where
+    discardEmpty t
+      | Text.null t = Nothing
+      | otherwise = Just t
+
 currentYear :: IO Integer
 currentYear = do
   (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
@@ -200,43 +231,58 @@ instance CacheFileName Input where
 
 getInput :: Integer -> Int -> IO Text
 getInput year day =
-  withCacheFile year day Input
-    $ simpleRequest
-    $ "https://adventofcode.com/"
-        <> tshow year
-        <> "/day/"
-        <> tshow day
-        <> "/input"
+  withCacheFile year day Input $ simpleRequest $ baseURL year day <> "/input"
 
 data Tasks where
   Tasks
     :: Integer -> Int -> ExampleScraper -> Parser Text a -> [Task a] -> Tasks
 
+class (Eq a) =>
+      AnswerLike a
+  where
+  answerToText :: a -> Text
+
+instance AnswerLike Text where
+  answerToText = id
+
+instance AnswerLike String where
+  answerToText = Text.pack
+
+instance AnswerLike Int where
+  answerToText = Text.pack . show
+
 data Task a where
-  Task :: (Eq b, Show b) => (a -> b) -> b -> Task a
+  Task :: AnswerLike b => (a -> b) -> b -> Task a
   Task'
-    :: (Eq b, Show b)=> { _taskFn :: a -> b
-                        , _taskExampleAnswer :: Maybe b
-                        , _taskScraper :: Maybe ExampleScraper}
+    :: AnswerLike b=> { _taskFn :: a -> b
+                      , _taskExampleAnswer :: Maybe b
+                      , _taskScraper :: Maybe ExampleScraper
+                      , _taskPart :: Maybe Int}
     -> Task a
   Assert :: (Eq b, Show b) => Text -> b -> b -> Task a
   AssertExample :: (Eq b, Show b) => Text -> b -> (a -> b) -> Task a
 
-task :: (Eq b, Show b) => (a -> b) -> b -> Task a
+task :: AnswerLike b => (a -> b) -> b -> Task a
 task _taskFn a = Task' {..}
   where
     _taskExampleAnswer = Just a
     _taskScraper = Nothing
+    _taskPart = Nothing
 
-taskBlind :: (Eq b, Show b) => (a -> b) -> Task a
+taskBlind :: AnswerLike b => (a -> b) -> Task a
 taskBlind _taskFn = Task' {..}
   where
     _taskExampleAnswer = Nothing
     _taskScraper = Nothing
+    _taskPart = Nothing
 
 taskScraper :: ExampleScraper -> Task a -> Task a
 taskScraper scraper t@Task' {} = t {_taskScraper = Just scraper}
 taskScraper _ t = terror $ "Cannot override scraper for: " <> taskName t
+
+taskPart :: Int -> Task a -> Task a
+taskPart part t@Task' {} = t {_taskPart = Just part}
+taskPart _ t             = terror $ "Cannot override part for: " <> taskName t
 
 taskName :: Task a -> Text
 taskName Task {}                  = "Task"
@@ -265,17 +311,25 @@ processTask year day globalScraper parser (Task solve expected) =
     day
     globalScraper
     parser
-    (Task' solve (Just expected) Nothing)
-processTask year day globalScraper parser (Task' solve expected taskScraper) = do
+    (Task' solve (Just expected) Nothing Nothing)
+processTask year day globalScraper parser (Task' solve exampleAnswer taskScraper part) = do
   let scraper = fromMaybe globalScraper taskScraper
   example <- justParse parser <$> getExample year day scraper
   let exampleResult = solve example
-  case expected of
-    Just expected' -> assertEqual "Example result" expected' exampleResult
-    Nothing        -> putStrLn $ "Example result " <> show exampleResult
+  case exampleAnswer of
+    Just answer ->
+      assertEqual
+        "Example result"
+        (answerToText answer)
+        (answerToText exampleResult)
+    Nothing -> Text.putStrLn $ "Example result " <> answerToText exampleResult
   input <- justParse parser <$> getInput year day
   let result = solve input
-  print result
+  Text.putStrLn $ answerToText result
+  for_ part $ \part' -> do
+    answer <- getAnswer year day $ Answer part'
+    for_ answer $ \answer' ->
+      assertEqual ("Answer part " <> tshow part') answer' (answerToText result)
 processTask _ _ _ _ (Assert message expected actual) =
   assertEqual message expected actual
 processTask year day scraper parser (AssertExample message expected fn) = do

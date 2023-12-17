@@ -61,8 +61,8 @@ signalStrength cpu pc = traceShowF (pc, ) (r * pc)
   where
     r = cAt pc cpu
 
-part2 :: [Instruction] -> ()
-part2 is = ttrace (displayG screen) ()
+part2 :: [Instruction] -> Text
+part2 is = displayG screen
   where
     screen =
       Map.fromList [(sp2pt pc, ()) | pc <- screenpoints, pixelVisible pc cpu]
@@ -90,5 +90,5 @@ tasks =
     (linesP &** instrP)
     [ task part1test (-1) & taskScraper (CodeBlock 0)
     , task part1 13140
-    , task part2 ()
+    , taskBlind part2
     ]

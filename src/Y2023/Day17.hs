@@ -65,4 +65,4 @@ ultraMoves st@(St p d l) =
 part2 :: Grid -> Int
 part2 = solve ultraMoves $ \st -> stL st >= 4
 
-tasks = Tasks 2023 17 (CodeBlock 0) parser [Task part1 102, Task part2 94]
+tasks = Tasks 2023 17 (CodeBlock 0) parser [task part1 102 & taskPart 1, task part2 94 & taskPart 2]

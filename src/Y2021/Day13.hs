@@ -42,8 +42,8 @@ parseInstructions = lineGroupsP &* parseDots &+ traverseP parseFold
 part1 :: Instructions -> Int
 part1 (p, fs) = length $ applyFold (head fs) p
 
-part2 :: Instructions -> ()
-part2 (p, fs) = ttrace (displayG $ foldl (flip applyFold) p fs) ()
+part2 :: Instructions -> Text
+part2 (p, fs) = displayG $ foldl (flip applyFold) p fs
 
 tasks =
   Tasks
@@ -53,6 +53,6 @@ tasks =
     parseInstructions
     [ Assert "foldY" (Position2 1 4) (applyFoldPoint (FoldY 7) (Position2 1 10))
     , Assert "foldY" (Position2 1 4) (applyFoldPoint (FoldY 7) (Position2 1 4))
-    , Task part1 17
-    , Task part2 ()
+    , task part1 17 & taskPart 1
+    , taskBlind part2
     ]

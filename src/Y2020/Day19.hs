@@ -18,9 +18,9 @@ data Rule
 
 ruleP :: Parser Text Rule
 ruleP =
-  (RChar <$>
-   filterP (Text.isPrefixOf "\"") &* pureP (Text.replace "\"" "") &* charP) &|
-  (RRecurse <$> (tsplitP " | " &** wordsP &** integerP))
+  (RChar
+     <$> filterP (Text.isPrefixOf "\"") &* pureP (Text.replace "\"" "") &* charP)
+    &| (RRecurse <$> (tsplitP " | " &** wordsP &** integerP))
 
 type Rules = Map Int Rule
 
@@ -84,8 +84,9 @@ convert rules = go Set.empty 0
               [[R2Many a, R2Balanced a' b]]
                 | a == a' -> R2Magic a b
               rsets ->
-                mkr2set $
-                Set.unions $ map (foldr1 setConcat . map r2unset) rsets
+                mkr2set
+                  $ Set.unions
+                  $ map (foldr1 setConcat . map r2unset) rsets
           RMany i -> R2Many $ go seen' i
           RBalanced a b -> R2Balanced (go seen' a) (go seen' b)
       where
@@ -159,14 +160,17 @@ tasks =
     19
     (CodeBlock 4)
     parser
-    [ Task countValid 3
-    , Task (structure . convert . fst) (r2dummy 15)
-    , Task
-        (structure . convert . doFixups . fst)
+    [ AssertExample "countValid" 3 countValid
+    , AssertExample
+        "structure . convert . fst"
+        (r2dummy 15)
+        (structure . convert . fst)
+    , AssertExample
+        "structure . convert . doFixups . fst"
         (R2Magic (r2dummy 5) (r2dummy 5))
-    , Task (countValid2 id) 3
-    , Task
-        (\(rs, msgs) -> filter (matches2 (doFixups rs)) msgs)
-        testGoodMessages
-    , Task (countValid2 doFixups) 12
+        (structure . convert . doFixups . fst)
+    , task (countValid2 id) 3 & taskPart 1
+    , AssertExample "testGoodMessages" testGoodMessages $ \(rs, msgs) ->
+        filter (matches2 (doFixups rs)) msgs
+    , task (countValid2 doFixups) 12 & taskPart 2
     ]

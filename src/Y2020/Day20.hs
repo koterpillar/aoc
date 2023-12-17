@@ -16,12 +16,10 @@ mapmap = map . map
 
 type Grid = Grid2 ()
 
-data Tile =
-  Tile
-    { tid   :: Int
-    , tgrid :: Grid
-    }
-  deriving (Eq, Ord)
+data Tile = Tile
+  { tid   :: Int
+  , tgrid :: Grid
+  } deriving (Eq, Ord)
 
 instance Show Tile where
   show Tile {..} = "Tile " ++ show tid ++ ":\n" ++ Text.unpack (displayG tgrid)
@@ -31,9 +29,10 @@ parseTiles = lineGroupsP &* pureP (filter $ not . null) &** parseTile
 
 parseTile :: Parser [Text] Tile
 parseTile =
-  uncurry Tile <$>
-  unconsP &* (pureP (Text.replace "Tile " "" . Text.replace ":" "") &* integerP) &=
-  (pureP Text.unlines &* dotGridP)
+  uncurry Tile
+    <$> unconsP
+          &* (pureP (Text.replace "Tile " "" . Text.replace ":" "") &* integerP)
+          &= (pureP Text.unlines &* dotGridP)
 
 newtype Edge =
   Edge [Bool]
@@ -73,12 +72,10 @@ edge d Tile {tgrid = g} = Edge [Map.member p g | p <- points d]
     points W = [Position2 xmin y | y <- [ymin .. ymax]]
     points S = [Position2 x ymax | x <- [xmin .. xmax]]
 
-data GridLink =
-  GridLink
-    { glT :: Tile
-    , glE :: Map Direction4 Edge
-    }
-  deriving (Eq, Ord, Show)
+data GridLink = GridLink
+  { glT :: Tile
+  , glE :: Map Direction4 Edge
+  } deriving (Eq, Ord, Show)
 
 glD :: Direction4 -> GridLink -> Edge
 glD d GridLink {..} = glE Map.! d
@@ -137,10 +134,12 @@ findLink d gl = do
 
 findUnmatched :: Int -> Direction4 -> State GridLinks (Set GridLink)
 findUnmatched cid d =
-  gets $
-  setFromList .
-  filter (\l -> glId l == cid) .
-  concatMap snd . filter (\((k, _), v) -> k == d && length v == 1) . Map.toList
+  gets
+    $ setFromList
+        . filter (\l -> glId l == cid)
+        . concatMap snd
+        . filter (\((k, _), v) -> k == d && length v == 1)
+        . Map.toList
 
 deleteTile :: GridLink -> State GridLinks GridLink
 deleteTile l@(GridLink (Tile i _) _) = do
@@ -241,35 +240,35 @@ exampleMergedIds = [[1951, 2311, 3079], [2729, 1427, 2473], [2971, 1489, 1171]]
 
 exampleMerged :: Text
 exampleMerged =
-  Text.replace "." (Text.singleton middleDot) $
-  Text.unlines $
-  map
-    Text.pack
-    [ ".#.#..#.##...#.##..#####"
-    , "###....#.#....#..#......"
-    , "##.##.###.#.#..######..."
-    , "###.#####...#.#####.#..#"
-    , "##.#....#.##.####...#.##"
-    , "...########.#....#####.#"
-    , "....#..#...##..#.#.###.."
-    , ".####...#..#.....#......"
-    , "#..#.##..#..###.#.##...."
-    , "#.####..#.####.#.#.###.."
-    , "###.#.#...#.######.#..##"
-    , "#.####....##..########.#"
-    , "##..##.#...#...#.#.#.#.."
-    , "...#..#..#.#.##..###.###"
-    , ".#.#....#.##.#...###.##."
-    , "###.#...#..#.##.######.."
-    , ".#.#.###.##.##.#..#.##.."
-    , ".####.###.#...###.#..#.#"
-    , "..#.#..#..#.#.#.####.###"
-    , "#..####...#.#.#.###.###."
-    , "#####..#####...###....##"
-    , "#.##..#..#...#..####...#"
-    , ".#.###..##..##..####.##."
-    , "...###...##...#...#..###"
-    ]
+  Text.replace "." (Text.singleton middleDot)
+    $ Text.unlines
+    $ map
+        Text.pack
+        [ ".#.#..#.##...#.##..#####"
+        , "###....#.#....#..#......"
+        , "##.##.###.#.#..######..."
+        , "###.#####...#.#####.#..#"
+        , "##.#....#.##.####...#.##"
+        , "...########.#....#####.#"
+        , "....#..#...##..#.#.###.."
+        , ".####...#..#.....#......"
+        , "#..#.##..#..###.#.##...."
+        , "#.####..#.####.#.#.###.."
+        , "###.#.#...#.######.#..##"
+        , "#.####....##..########.#"
+        , "##..##.#...#...#.#.#.#.."
+        , "...#..#..#.#.##..###.###"
+        , ".#.#....#.##.#...###.##."
+        , "###.#...#..#.##.######.."
+        , ".#.#.###.##.##.#..#.##.."
+        , ".####.###.#...###.#..#.#"
+        , "..#.#..#..#.#.#.####.###"
+        , "#..####...#.#.#.###.###."
+        , "#####..#####...###....##"
+        , "#.##..#..#...#..####...#"
+        , ".#.###..##..##..####.##."
+        , "...###...##...#...#..###"
+        ]
 
 tileSize :: Position2
 tileSize = Position2 9 9
@@ -281,10 +280,10 @@ findTileSize ts = pmax `pointMinus` pmin
 
 monster :: Grid
 monster =
-  justParse dotGridP $
-  Text.replace " " "." $
-  Text.unlines
-    ["                  # ", "#    ##    ##    ###", " #  #  #  #  #  #   "]
+  justParse dotGridP
+    $ Text.replace " " "."
+    $ Text.unlines
+        ["                  # ", "#    ##    ##    ###", " #  #  #  #  #  #   "]
 
 shiftG :: Position2 -> Grid -> Grid
 shiftG d = Map.mapKeys (pointPlus d)
@@ -314,10 +313,12 @@ tasks =
     20
     (CodeBlock 0)
     parseTiles
-    [ Task (product . findCorners) 20899048083289
-    , Task findTileSize tileSize
-    , Task (fixupExample . mergeIds) exampleMergedIds
-    , Task (displayG . fixupExampleGrid . mergeT) exampleMerged
+    [ task (product . findCorners) 20899048083289 & taskPart 1
+    , AssertExample "findTileSize" tileSize findTileSize
+    , AssertExample "fixupExample . mergeIds" exampleMergedIds
+        $ fixupExample . mergeIds
+    , AssertExample "fixupExampleGrid . mergeT" exampleMerged
+        $ displayG . fixupExampleGrid . mergeT
     , Assert "monster counts itself" [Position2 0 0] (monsterOrigins monster)
     , Assert
         "monster counts itself plus dot"
@@ -328,8 +329,7 @@ tasks =
         [Position2 2 2]
         (monsterOrigins (shiftG (Position2 2 2) monster))
     , Task (countMonsters . fixupGrid fixupExample . mergeT) 2
-    , Task
-        (setFromList . map countMonsters . flips . mergeT)
-        (setFromList [0, 2])
-    , Task (subtractMonstersFlips . mergeT) 273
+    , AssertExample "countMonsters" (setFromList [0, 2])
+        $ setFromList . map countMonsters . flips . mergeT
+    , task (subtractMonstersFlips . mergeT) 273 & taskPart 2
     ]

@@ -47,7 +47,7 @@ tasks =
     ${DAY}
     ShowExamples
     parser
-    [ task part1 ()
+    [ task part1 () & taskPart 1
     ]
 EOF
 

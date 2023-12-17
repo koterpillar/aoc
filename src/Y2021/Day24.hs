@@ -230,8 +230,8 @@ tasks =
         , Mod X (SrcValue 3)
         , Add Z (SrcRegister X)
         ]
-    , Task (traceShowIt part1) ()
-    , Task (traceShowIt part2) ()
+    , taskBlind (show . part1)
+    , taskBlind (show . part2)
     ]
 
 parse :: Parser Text [Instruction]
