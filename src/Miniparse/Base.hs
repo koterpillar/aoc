@@ -7,15 +7,15 @@ import qualified Data.Aeson          as Aeson
 import qualified Data.Map            as Map
 import qualified Data.Text           as Text
 import qualified Data.Text.Encoding  as Text
+import qualified Data.Text.Read
 
 import           Bit
 import           Grid
 import           Utils
 
-newtype Parser src dest =
-  Parser
-    { runParse :: src -> Either String dest
-    }
+newtype Parser src dest = Parser
+  { runParse :: src -> Either String dest
+  }
 
 instance Functor (Parser src) where
   fmap f (Parser p) = Parser $ fmap f . p
@@ -45,10 +45,11 @@ choiceP choices =
         case mapLookup src cmap of
           Just dest -> Right dest
           Nothing ->
-            Left $
-            "Unexpected: " ++
-            show src ++
-            ", expected one of: " ++ intercalate "," (map (show . fst) choices)
+            Left
+              $ "Unexpected: "
+                  ++ show src
+                  ++ ", expected one of: "
+                  ++ intercalate "," (map (show . fst) choices)
 
 choiceEBP ::
      (Ord src, Show src, Bounded dest, Enum dest) => [src] -> Parser src dest
@@ -97,6 +98,20 @@ readP = stringP &* Parser readEitherErr
 
 integerP :: Parser Text Int
 integerP = readP
+
+hexP :: Parser Text Int
+hexP =
+  Parser
+    $ Data.Text.Read.hexadecimal >=> \(i, t) ->
+        if Text.null t
+          then pure i
+          else Left $ "hexP: trailing input: " <> show t
+  where
+    go c
+      | isDigit c = Right $ ord c - ord '0'
+      | inRange 'a' 'f' c = Right $ ord c - ord 'a' + 10
+      | inRange 'A' 'F' c = Right $ ord c - ord 'A' + 10
+      | otherwise = Left $ "Invalid hex digit " <> show c
 
 integersP :: Text -> Parser Text [Int]
 integersP sep = tsplitP sep &** integerP
