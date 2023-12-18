@@ -37,6 +37,7 @@ library
       Miniparse.State
       Path
       Quantum
+      Ranges
       Search
       Utils
       Utils.Base
