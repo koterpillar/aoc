@@ -67,9 +67,11 @@ addHeader name value request =
         (fromString name, Text.encodeUtf8 value) : requestHeaders request
     }
 
-simpleRequest :: Text -> IO Text
-simpleRequest url = do
-  request <- parseRequestThrow $ Text.unpack url
+aocRequest :: Text -> IO Text
+aocRequest url = parseRequestThrow (Text.unpack url) >>= aocRequest'
+
+aocRequest' :: Request -> IO Text
+aocRequest' request = do
   session <- readSession
   let request' =
         addHeader "User-Agent" userAgent
@@ -174,7 +176,7 @@ instance CacheFileName ExampleScraper where
 getExample :: Integer -> Int -> ExampleScraper -> IO Text
 getExample year day scraper =
   withCacheFile year day scraper $ do
-    page <- simpleRequest $ baseURL year day
+    page <- aocRequest $ baseURL year day
     pure $! selectExample scraper page
 
 showExamples :: Text -> Text
@@ -231,7 +233,7 @@ instance CacheFileName Input where
 
 getInput :: Integer -> Int -> IO Text
 getInput year day =
-  withCacheFile year day Input $ simpleRequest $ baseURL year day <> "/input"
+  withCacheFile year day Input $ aocRequest $ baseURL year day <> "/input"
 
 data Tasks where
   Tasks
