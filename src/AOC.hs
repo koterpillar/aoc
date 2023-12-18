@@ -207,14 +207,17 @@ instance CacheFileName Answer where
 
 getAnswer :: Integer -> Int -> Answer -> IO (Maybe Text)
 getAnswer year day answer =
-  fmap discardEmpty
-    $ withCacheFile year day answer
-    $ do
-        page <- simpleRequest $ baseURL year day
-        let as = answers page
-        let a = fromMaybe mempty $ as !? pred (answerPart answer)
-        pure $! a
+  discardEmpty <$> withCacheFile' year day answer fetchAnswer
   where
+    fetchAnswer Nothing = fetchAnswer'
+    fetchAnswer (Just cached)
+      | Text.null cached = fetchAnswer'
+      | otherwise = pure cached
+    fetchAnswer' = do
+      page <- aocRequest $ baseURL year day
+      let as = answers page
+      let a = fromMaybe mempty $ as !? pred (answerPart answer)
+      pure $! a
     discardEmpty t
       | Text.null t = Nothing
       | otherwise = Just t
