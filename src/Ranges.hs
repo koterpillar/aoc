@@ -60,3 +60,6 @@ maximum = fmap (snd . snd) . unsnoc . toList
 
 length :: Ranges -> Int
 length = sum . map (uncurry Prelude.subtract) . toList
+
+lengthInclusive :: Ranges -> Int
+lengthInclusive = sum . map (succ . uncurry Prelude.subtract) . toList
