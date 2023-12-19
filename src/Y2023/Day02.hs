@@ -7,12 +7,10 @@ import qualified Data.Text as Text
 import           AOC
 import           Utils
 
-data Gm =
-  Gm
-    { gmId    :: Int
-    , gmRolls :: [Roll]
-    }
-  deriving (Show)
+data Gm = Gm
+  { gmId    :: Int
+  , gmRolls :: [Roll]
+  } deriving (Show)
 
 gameIdP :: Parser Text Int
 gameIdP = pureP (Text.drop 5) &* integerP
@@ -21,8 +19,8 @@ type Roll = Map Text Int
 
 rollP :: Parser Text Roll
 rollP =
-  Map.fromList <$>
-  tsplitP ", " &** (tsplitP " " &* ap2P (curry swap) integerP idP)
+  Map.fromList
+    <$> tsplitP ", " &** (tsplitP " " &* ap2P (curry swap) integerP idP)
 
 parser :: Parser Text [Gm]
 parser = linesP &** (tsplitP ": " &* ap2P Gm gameIdP (tsplitP "; " &** rollP))

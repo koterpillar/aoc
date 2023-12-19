@@ -11,22 +11,21 @@ data Instruction
 
 parseInstruction :: Parser Text Instruction
 parseInstruction =
-  uncurry ($) <$>
-  wordsP &* choiceP [("acc", Acc), ("jmp", Jmp), ("nop", Nop)] &+
-  (pureP (terase "+") &* integerP)
+  uncurry ($)
+    <$> wordsP
+          &* choiceP [("acc", Acc), ("jmp", Jmp), ("nop", Nop)]
+          &+ (pureP (terase "+") &* integerP)
 
 type Program = Map Int Instruction
 
 parseProgram :: Parser Text Program
 parseProgram = mapFromList . zipN 0 <$> linesP &** parseInstruction
 
-data CPU =
-  CPU
-    { cPC      :: Int
-    , cAcc     :: Int
-    , cVisited :: Set Int
-    }
-  deriving (Eq, Show)
+data CPU = CPU
+  { cPC      :: Int
+  , cAcc     :: Int
+  , cVisited :: Set Int
+  } deriving (Eq, Show)
 
 mkCPU :: CPU
 mkCPU = CPU {cPC = 0, cAcc = 0, cVisited = mempty}

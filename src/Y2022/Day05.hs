@@ -13,27 +13,26 @@ type Stack = [Char]
 
 type Stacks = Map Int Stack
 
-data Instruction =
-  Instruction
-    { iFrom  :: Int
-    , iTo    :: Int
-    , iCount :: Int
-    }
-  deriving (Eq, Show)
+data Instruction = Instruction
+  { iFrom  :: Int
+  , iTo    :: Int
+  , iCount :: Int
+  } deriving (Eq, Show)
 
 type Input = (Stacks, [Instruction])
 
 parseInstruction :: Parser Text Instruction
 parseInstruction =
-  wordsP &* pureP (filter $ Text.all isDigit) &*
-  ap3P mk integerP integerP integerP
+  wordsP
+    &* pureP (filter $ Text.all isDigit)
+    &* ap3P mk integerP integerP integerP
   where
     mk c f t = Instruction f t c
 
 stacksP :: Parser [Text] Stacks
 stacksP =
-  Map.fromList . zipN 1 . map catMaybes . transpose <$>
-  pureP init &* traverseP listsP
+  Map.fromList . zipN 1 . map catMaybes . transpose
+    <$> pureP init &* traverseP listsP
 
 listsP :: Parser Text [Maybe Char]
 listsP =
@@ -44,11 +43,12 @@ parser = lineGroupsP &* stacksP &+ traverseP parseInstruction
 
 applyInstruction :: Instruction -> Stacks -> Stacks
 applyInstruction i@(Instruction from to count) =
-  iterateNL count $
-  execState $ do
-    ff <- ix from <<%= tail
-    let f = headE "move from empty" ff
-    ix to %= (f :)
+  iterateNL count
+    $ execState
+    $ do
+        ff <- ix from <<%= tail
+        let f = headE "move from empty" ff
+        ix to %= (f :)
 
 applyInstruction2 :: Instruction -> Stacks -> Stacks
 applyInstruction2 i@(Instruction from to count) =

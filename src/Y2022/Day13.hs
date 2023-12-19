@@ -38,9 +38,12 @@ dividers = [PList [PList [PNum n]] | n <- [2, 6]]
 
 part2 :: Input -> Int
 part2 =
-  product .
-  filterTuple (`elem` dividers) .
-  zipN 1 . sort . (++) dividers . concatMap (\(a, b) -> [a, b])
+  product
+    . filterTuple (`elem` dividers)
+    . zipN 1
+    . sort
+    . (++) dividers
+    . concatMap (\(a, b) -> [a, b])
 
 tasks =
   Tasks

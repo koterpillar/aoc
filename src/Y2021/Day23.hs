@@ -26,13 +26,11 @@ aEnergy B = 10
 aEnergy C = 100
 aEnergy D = 1000
 
-data Situation =
-  Situation
-    { posHallway   :: !(Map Int Amphi)
-    , posRooms     :: !(Map Amphi [Amphi])
-    , posRoomDepth :: !Int
-    }
-  deriving (Ord, Eq, Show)
+data Situation = Situation
+  { posHallway   :: !(Map Int Amphi)
+  , posRooms     :: !(Map Amphi [Amphi])
+  , posRoomDepth :: !Int
+  } deriving (Ord, Eq, Show)
 
 instance Hashable Situation where
   hashWithSalt s (Situation h r d) = hashWithSalt s (h, r, d)
@@ -143,8 +141,10 @@ energySpent :: Situation -> Situation -> Int
 energySpent s1 s2 =
   if a1 /= a2
     then error
-           ("Inconsistent positions: " <>
-            show (a1, p1) <> " /= " <> show (a2, p2))
+           ("Inconsistent positions: "
+              <> show (a1, p1)
+              <> " /= "
+              <> show (a2, p2))
     else moveEnergy a1 p1 p2
   where
     ps1 = apositions s1
@@ -162,18 +162,23 @@ toPart2 :: Situation -> Situation
 toPart2 s = s {posRoomDepth = posRoomDepth s + 2, posRooms = rooms'}
   where
     rooms' =
-      posRooms s & Map.adjust (insert1 [D, D]) A & Map.adjust (insert1 [C, B]) B &
-      Map.adjust (insert1 [B, A]) C &
-      Map.adjust (insert1 [A, C]) D
+      posRooms s
+        & Map.adjust (insert1 [D, D]) A
+        & Map.adjust (insert1 [C, B]) B
+        & Map.adjust (insert1 [B, A]) C
+        & Map.adjust (insert1 [A, C]) D
     insert1 :: [a] -> [a] -> [a]
     insert1 [a2, a3] (a1:as) = a1 : a2 : a3 : as
     insert1 _ _              = error "insert1"
 
 part1 :: Situation -> Int
 part1 pos =
-  totalEnergySpent $
-  map traceShowId $
-  (pos :) $ fromJustE ("no solution for " <> show pos) $ solve $ traceShowId pos
+  totalEnergySpent
+    $ map traceShowId
+    $ (pos :)
+    $ fromJustE ("no solution for " <> show pos)
+    $ solve
+    $ traceShowId pos
 
 part2 :: Situation -> Int
 part2 = part1 . toPart2
@@ -211,5 +216,5 @@ mkSituation grid = Situation {..}
 
 parseAmphi :: Parser Char (Maybe Amphi)
 parseAmphi =
-  choiceP $
-  map (\a -> (head $ show a, Just a)) amphis ++ [(c, Nothing) | c <- ".# "]
+  choiceP
+    $ map (\a -> (head $ show a, Just a)) amphis ++ [(c, Nothing) | c <- ".# "]

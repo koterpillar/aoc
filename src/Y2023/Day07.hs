@@ -29,11 +29,9 @@ data Card
 cardP :: Parser Char Card
 cardP = choiceEBP $ map (head . tail . show) (enumerate :: [Card])
 
-newtype Hand =
-  Hand
-    { hCards :: [Card]
-    }
-  deriving (Eq)
+newtype Hand = Hand
+  { hCards :: [Card]
+  } deriving (Eq)
 
 instance Show Hand where
   show (Hand h) = "Hand " <> map (head . tail . show) h
@@ -75,10 +73,15 @@ hType2 h = minimum $ hType <$> hExpand h
 
 traceHand :: Int -> (Hand, Int) -> Int -> Text
 traceHand rank (h, bid) r =
-  tshow h <>
-  " type " <>
-  tshow (hType h) <>
-  " rank " <> tshow rank <> " bid " <> tshow bid <> " = " <> tshow r
+  tshow h
+    <> " type "
+    <> tshow (hType h)
+    <> " rank "
+    <> tshow rank
+    <> " bid "
+    <> tshow bid
+    <> " = "
+    <> tshow r
 
 totals :: (Hand -> HandType) -> [(Hand, Int)] -> Int
 totals ht = sum . zipWith winning [1 ..] . sortOn (Down . fallback ht . fst)

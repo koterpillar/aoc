@@ -52,8 +52,8 @@ guessNumbers allnumbers = flip mapLookup result
     c = single "c" $ setDifference n1 (set1 f)
     d = single "d" $ setDifference n4 $ n1 <> set1 b
     g =
-      single "g" $
-      setDifference (setFromList wires) (setFromList [a, b, c, d, e, f])
+      single "g"
+        $ setDifference (setFromList wires) (setFromList [a, b, c, d, e, f])
     n0 = setFromList [a, b, c, e, f, g]
     n2 = setFromList [a, c, d, e, g]
     n3 = setFromList [a, c, d, f, g]

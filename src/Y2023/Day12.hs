@@ -55,9 +55,10 @@ type InputLine = ([Maybe Pos], Springs)
 
 parser :: Parser Text [InputLine]
 parser =
-  linesP &** wordsP &*
-  ((charactersP &** choiceP [('.', Nothing), ('#', Just Y), ('?', Just Q)]) &+
-   integersP ",")
+  linesP
+    &** wordsP
+    &* ((charactersP &** choiceP [('.', Nothing), ('#', Just Y), ('?', Just Q)])
+          &+ integersP ",")
 
 mkLine' :: [Maybe Pos] -> Line
 mkLine' p = Map.fromList [(i, c) | (i, Just c) <- zip [0 ..] p]
@@ -139,17 +140,24 @@ fallback2V heuristic slow a b =
       let r' = slow a b
        in if r == r'
             then r
-            else error $
-                 "heuristic failed on " <>
-                 show a <> ", " <> show b <> ": " <> show r <> " != " <> show r'
+            else error
+                   $ "heuristic failed on "
+                       <> show a
+                       <> ", "
+                       <> show b
+                       <> ": "
+                       <> show r
+                       <> " != "
+                       <> show r'
 
 infixr 1 `fallback2V`
 
 possibilitiesCounts :: PFT Int
 possibilitiesCounts ps cs =
-  fromMaybe 0 $
-  Map.lookup cs $
-  counts $ traceF (\l -> "brute force " <> lineShow l <> " " <> show cs) ps
+  fromMaybe 0
+    $ Map.lookup cs
+    $ counts
+    $ traceF (\l -> "brute force " <> lineShow l <> " " <> show cs) ps
 
 cSize :: [Int] -> Int
 cSize = sum . map succ
@@ -163,19 +171,24 @@ possibilitiesLargestAll ps cs = do
   let kMax' = kMax - pred c - cSize c2
   let ks = filter (fits c ps) [kMin' .. kMax']
   let ks = filter (fits c ps) $ Map.keys ps
-  when (length ks >= 60) $
-    traceM $
-    "largest branching " <>
-    lineShow ps <>
-    " into " <>
-    show (length ks) <>
-    " branches on " <> show c1 <> "-" <> show c <> "-" <> show c2
-  pure $
-    sum
-      [ let [p1, p2] = cutParts c [k] ps
+  when (length ks >= 60)
+    $ traceM
+    $ "largest branching "
+        <> lineShow ps
+        <> " into "
+        <> show (length ks)
+        <> " branches on "
+        <> show c1
+        <> "-"
+        <> show c
+        <> "-"
+        <> show c2
+  pure
+    $ sum
+        [ let [p1, p2] = cutParts c [k] ps
          in multiplyZ (possibilities0 p1 c1) (possibilities0 p2 c2)
-      | k <- ks
-      ]
+        | k <- ks
+        ]
 
 cutParts :: Int -> [Int] -> Line -> [Line]
 cutParts _ [] l = [l]
@@ -201,8 +214,9 @@ possibilitiesLargestOnlyFit ps cs = do
 
 isNeedle :: Int -> [Maybe Pos] -> Bool
 isNeedle n xs =
-  head xs /= Just Y &&
-  last xs /= Just Y && drop 1 (dropEnd 1 xs) == replicate n (Just Y)
+  head xs /= Just Y
+    && last xs /= Just Y
+    && drop 1 (dropEnd 1 xs) == replicate n (Just Y)
 
 -- If all the largest numbers fit each into a an undamaged ### block, put them
 -- there and deal with the intervals in between separately.
@@ -215,8 +229,8 @@ possibilitiesLargestExactFit ps cs = do
   c <- maybeMaximum cs
   let cparts = splitOn [c] cs
   let ks =
-        filter (\k -> isNeedle c $ lineInterval (k - 1) (k + c) ps) $
-        Map.keys ps
+        filter (\k -> isNeedle c $ lineInterval (k - 1) (k + c) ps)
+          $ Map.keys ps
   guard $ length cparts == succ (length ks)
   let pparts = cutParts c ks ps
   pure $ productZ $ zipWith possibilities0 pparts cparts
@@ -224,8 +238,9 @@ possibilitiesLargestExactFit ps cs = do
 -- Does the interval fit onto the line in the specified position?
 fits :: Int -> Line -> Int -> Bool
 fits n ps k0 =
-  Map.lookup (pred k0) ps /= Just Y &&
-  Map.lookup (succ k1) ps /= Just Y && notElem Nothing (lineInterval k0 k1 ps)
+  Map.lookup (pred k0) ps /= Just Y
+    && Map.lookup (succ k1) ps /= Just Y
+    && notElem Nothing (lineInterval k0 k1 ps)
   where
     k1 = k0 + n - 1
 
@@ -273,10 +288,10 @@ possibilitiesAlignLast ps cs = do
 possibilitiesEmpty :: PFT (Maybe Int)
 possibilitiesEmpty ps cs
   | null cs =
-    Just $
-    if Y `elem` ps
-      then 0
-      else 1
+    Just
+      $ if Y `elem` ps
+          then 0
+          else 1
   | Map.null ps = Just 0
   | otherwise = Nothing
 
@@ -288,20 +303,21 @@ possibilitiesSingle _ _ = Nothing
 
 possibilities0 :: PFT Int
 possibilities0 =
-  unsafeMemo2 $
-  possibilitiesEmpty `fallback2`
-  possibilitiesSingle `fallback2`
-  possibilitiesAlignFirst `fallback2`
-  possibilitiesAlignLast `fallback2`
-  possibilitiesLargestExactFit `fallback2`
-  possibilitiesLargestOnlyFit `fallback2`
-  possibilitiesLargestAll `fallback2` possibilitiesCounts
+  unsafeMemo2
+    $ possibilitiesEmpty
+        `fallback2` possibilitiesSingle
+        `fallback2` possibilitiesAlignFirst
+        `fallback2` possibilitiesAlignLast
+        `fallback2` possibilitiesLargestExactFit
+        `fallback2` possibilitiesLargestOnlyFit
+        `fallback2` possibilitiesLargestAll
+        `fallback2` possibilitiesCounts
 
 possibilities :: InputLine -> Int
 possibilities =
-  uncurry possibilities0 .
-  first mkLine' .
-  traceF (\(l, cs) -> "input " <> map posShow l <> " " <> show cs)
+  uncurry possibilities0
+    . first mkLine'
+    . traceF (\(l, cs) -> "input " <> map posShow l <> " " <> show cs)
 
 part1 :: [InputLine] -> Int
 part1 = sum . parMap rpar (traceShowId . possibilities)
@@ -313,62 +329,68 @@ part2 :: [InputLine] -> Int
 part2 = part1 . map part2unfold
 
 tasks =
-  Tasks 2023 12 (CodeBlock 1) parser $
-  [ Assert "countsAppend" (Map.fromList [([], 1), ([1], 2), ([1, 1], 1)]) $
-    let m = Map.fromList [([], 1), ([1], 1)]
-     in countsAppend m m
-  ] ++
-  [ let l' = mkLine l
-     in Assert ("counts " <> Text.pack (lineShow l')) r $ counts l'
-  | (l, r) <-
-      [ ([Y], Map.fromList [([1], 1)])
-      , ([Q, Y, Y, Q], Map.fromList [([2], 1), ([3], 2), ([4], 1)])
-      , ( replicate 3 Q
-        , Map.fromList [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)])
-      , ( replicate 4 Q
-        , Map.fromList
-            [ ([], 1)
-            , ([1], 4)
-            , ([1, 1], 3)
-            , ([1, 2], 1)
-            , ([2], 3)
-            , ([2, 1], 1)
-            , ([3], 2)
-            , ([4], 1)
-            ])
-      , ( replicate 5 Q
-        , Map.fromList
-            [ ([], 1)
-            , ([1], 5)
-            , ([1, 1], 6)
-            , ([1, 1, 1], 1)
-            , ([1, 2], 3)
-            , ([1, 3], 1)
-            , ([2], 4)
-            , ([2, 1], 3)
-            , ([2, 2], 1)
-            , ([3], 3)
-            , ([3, 1], 1)
-            , ([4], 2)
-            , ([5], 1)
-            ])
+  Tasks 2023 12 (CodeBlock 1) parser
+    $ [ Assert "countsAppend" (Map.fromList [([], 1), ([1], 2), ([1, 1], 1)])
+          $ let m = Map.fromList [([], 1), ([1], 1)]
+             in countsAppend m m
       ]
-  ] ++
-  [ Assert "possibilitiesAlignLast" (Just 1) $
-    possibilitiesAlignLast (mkLine [Y, Y, Y, Y]) [4]
-  , Assert "possibilitiesAlignLast" Nothing $
-    possibilitiesAlignLast (mkLine [Q, Y, Q, Q]) [3]
-  , Assert "possibilitiesSingle" (Just 20) $
-    possibilitiesSingle
-      (mkLine' $ intercalate [Nothing] $ replicate 4 $ replicate 5 $ Just Q)
-      [1]
-  ] ++
-  [ AssertExample ("part 1 line " <> tshow i) r $ possibilities . flip (!!) i
-  | (i, r) <- zip [0 ..] [1, 4, 1, 1, 4, 10]
-  ] ++
-  [Task part1 21] ++
-  [ AssertExample ("part 2 line " <> tshow i) r $
-  possibilities . part2unfold . flip (!!) i
-  | (i, r) <- zip [0 ..] [1, 16384, 1, 16, 2500, 506250]
-  ] ++
-  [Task part2 525152]
+        ++ [ let l' = mkLine l
+            in Assert ("counts " <> Text.pack (lineShow l')) r $ counts l'
+           | (l, r) <-
+               [ ([Y], Map.fromList [([1], 1)])
+               , ([Q, Y, Y, Q], Map.fromList [([2], 1), ([3], 2), ([4], 1)])
+               , ( replicate 3 Q
+                 , Map.fromList
+                     [([], 1), ([1], 3), ([1, 1], 1), ([2], 2), ([3], 1)])
+               , ( replicate 4 Q
+                 , Map.fromList
+                     [ ([], 1)
+                     , ([1], 4)
+                     , ([1, 1], 3)
+                     , ([1, 2], 1)
+                     , ([2], 3)
+                     , ([2, 1], 1)
+                     , ([3], 2)
+                     , ([4], 1)
+                     ])
+               , ( replicate 5 Q
+                 , Map.fromList
+                     [ ([], 1)
+                     , ([1], 5)
+                     , ([1, 1], 6)
+                     , ([1, 1, 1], 1)
+                     , ([1, 2], 3)
+                     , ([1, 3], 1)
+                     , ([2], 4)
+                     , ([2, 1], 3)
+                     , ([2, 2], 1)
+                     , ([3], 3)
+                     , ([3, 1], 1)
+                     , ([4], 2)
+                     , ([5], 1)
+                     ])
+               ]
+           ]
+        ++ [ Assert "possibilitiesAlignLast" (Just 1)
+               $ possibilitiesAlignLast (mkLine [Y, Y, Y, Y]) [4]
+           , Assert "possibilitiesAlignLast" Nothing
+               $ possibilitiesAlignLast (mkLine [Q, Y, Q, Q]) [3]
+           , Assert "possibilitiesSingle" (Just 20)
+               $ possibilitiesSingle
+                   (mkLine'
+                      $ intercalate [Nothing]
+                      $ replicate 4
+                      $ replicate 5
+                      $ Just Q)
+                   [1]
+           ]
+        ++ [ AssertExample ("part 1 line " <> tshow i) r
+             $ possibilities . flip (!!) i
+           | (i, r) <- zip [0 ..] [1, 4, 1, 1, 4, 10]
+           ]
+        ++ [Task part1 21]
+        ++ [ AssertExample ("part 2 line " <> tshow i) r
+             $ possibilities . part2unfold . flip (!!) i
+           | (i, r) <- zip [0 ..] [1, 16384, 1, 16, 2500, 506250]
+           ]
+        ++ [Task part2 525152]

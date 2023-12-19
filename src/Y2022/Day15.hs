@@ -32,9 +32,10 @@ parser :: Parser Text Input
 parser = linesP &** tsplitP ":" &* (part &+ part)
   where
     part =
-      pureP (terase "x=" . terase "y=" . terase "," . terase ":") &* wordsP &*
-      pureP (takeEnd 2) &*
-      ap2P Position2 integerP integerP
+      pureP (terase "x=" . terase "y=" . terase "," . terase ":")
+        &* wordsP
+        &* pureP (takeEnd 2)
+        &* ap2P Position2 integerP integerP
 
 empties :: Int -> Position2 -> Position2 -> Set Position2
 empties y sensor@(Position2 sx sy) beacon =
@@ -83,8 +84,10 @@ borders sensor@(Position2 x y) beacon =
 
 part2 :: Input -> Int
 part2 input =
-  tuningFreq $
-  fromSingleE "filtered" $ nubOrd $ filter (\p -> all (invisibleTo p) input) bs
+  tuningFreq
+    $ fromSingleE "filtered"
+    $ nubOrd
+    $ filter (\p -> all (invisibleTo p) input) bs
   where
     mx =
       if isExample input

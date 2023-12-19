@@ -44,8 +44,9 @@ highestPoint area =
 vxmin :: TargetArea -> Int
 vxmin (Position2 xmin _, _) -- FIXME correct?
  =
-  fromJustE ("vxmin " <> show xmin) $
-  listToMaybe $ dropWhile (\v -> xres v < xmin) [0 ..]
+  fromJustE ("vxmin " <> show xmin)
+    $ listToMaybe
+    $ dropWhile (\v -> xres v < xmin) [0 ..]
   where
     xres v = v * (v + 1)
 
@@ -73,9 +74,10 @@ hits area = do
 
 part1 :: TargetArea -> Int
 part1 area =
-  highestPoint area $
-  ttraceF (displayScene 5 area) $
-  maximumBy (compare `on` highestPoint area) $ hits area
+  highestPoint area
+    $ ttraceF (displayScene 5 area)
+    $ maximumBy (compare `on` highestPoint area)
+    $ hits area
 
 part2 :: TargetArea -> Int
 part2 = length . hits
@@ -84,10 +86,11 @@ displayScene :: Int -> TargetArea -> Velocity -> Text
 displayScene scale area@(Position2 xmin ymin, Position2 xmax ymax) v = display
   where
     display =
-      displayG $
-      shrinkWithG scale pref $
-      Map.mapKeys (\(Position2 x y) -> Position2 x (-y)) $
-      mapFromList $ areaPoints ++ pathPoints
+      displayG
+        $ shrinkWithG scale pref
+        $ Map.mapKeys (\(Position2 x y) -> Position2 x (-y))
+        $ mapFromList
+        $ areaPoints ++ pathPoints
     areaPoints =
       [(Position2 x y, '#') | x <- [xmin .. xmax], y <- [ymin .. ymax]]
     pathPoints = [(p, '*') | p <- projectilePath area v]
@@ -96,9 +99,11 @@ displayScene scale area@(Position2 xmin ymin, Position2 xmax ymax) v = display
 
 targetAreaP :: Parser Text TargetArea
 targetAreaP =
-  pureP (Text.drop (tlength "target area: x=")) &* tsplitP ", y=" &* boundP &+
-  boundP &*
-  pureP mkBounds
+  pureP (Text.drop (tlength "target area: x="))
+    &* tsplitP ", y="
+    &* boundP
+    &+ boundP
+    &* pureP mkBounds
   where
     boundP :: Parser Text (Int, Int)
     boundP = tsplitP ".." &* integerP &+ integerP

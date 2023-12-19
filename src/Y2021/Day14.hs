@@ -18,8 +18,10 @@ type Insertions = Map Pair Element
 
 parse :: Parser Text (Polymer, Insertions)
 parse =
-  linesP &* unconsP &* charactersP &=
-  (mapFromList <$> pureP tail &* traverseP parseInsertion)
+  linesP
+    &* unconsP
+    &* charactersP
+    &= (mapFromList <$> pureP tail &* traverseP parseInsertion)
   where
     parseInsertion = tsplitP " -> " &* (charactersP &* pairP) &+ charP
 
@@ -40,10 +42,11 @@ step instructions = mapFromListSum . concatMap go . mapToList
 
 countMap :: PolymerMap -> Map Char Int
 countMap =
-  fmap (`div` 2) .
-  mapFromListSum .
-  filter (\(e, _) -> e /= nullElement) .
-  concatMap (\((e1, e2), c) -> [(e1, c), (e2, c)]) . mapToList
+  fmap (`div` 2)
+    . mapFromListSum
+    . filter (\(e, _) -> e /= nullElement)
+    . concatMap (\((e1, e2), c) -> [(e1, c), (e2, c)])
+    . mapToList
 
 solve steps (polymer, insertions) =
   diff $ iterateNL steps (step insertions) (toPairs polymer)

@@ -28,19 +28,20 @@ bWin drawn board =
 bScore :: Set Int -> Board -> Int
 bScore drawn = sum . filter (not . (`setMember` drawn)) . toList
 
-data Play =
-  Play
-    { pBoards        :: [Board]
-    , pNumbers       :: [Int]
-    , pLastNumber    :: Maybe Int
-    , pPlayedNumbers :: Set Int
-    }
-  deriving (Eq, Show)
+data Play = Play
+  { pBoards        :: [Board]
+  , pNumbers       :: [Int]
+  , pLastNumber    :: Maybe Int
+  , pPlayedNumbers :: Set Int
+  } deriving (Eq, Show)
 
 parsePlayP :: Parser Text Play
 parsePlayP =
-  lineGroupsP &* unconsP &* parseNumbersLine &= traverseP parseBoard &*
-  pureP (uncurry mkPlay)
+  lineGroupsP
+    &* unconsP
+    &* parseNumbersLine
+    &= traverseP parseBoard
+    &* pureP (uncurry mkPlay)
   where
     parseNumbersLine = singleP &* integersP ","
     mkPlay numbers boards = Play boards numbers Nothing mempty
@@ -62,13 +63,13 @@ pStep play@Play {..} =
   case pNumbers of
     [] -> Nothing
     nextNumber:remainingNumbers ->
-      Just $
-      play
-        { pPlayedNumbers = setInsert nextNumber pPlayedNumbers
-        , pLastNumber = Just nextNumber
-        , pNumbers = remainingNumbers
-        , pBoards = filter (not . bWin pPlayedNumbers) pBoards
-        }
+      Just
+        $ play
+            { pPlayedNumbers = setInsert nextNumber pPlayedNumbers
+            , pLastNumber = Just nextNumber
+            , pNumbers = remainingNumbers
+            , pBoards = filter (not . bWin pPlayedNumbers) pBoards
+            }
 
 pAllWins :: Play -> [Int]
 pAllWins = concatMap pWinningScore . iterateMaybe pStep

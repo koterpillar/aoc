@@ -12,12 +12,10 @@ import qualified Data.Map as Map
 
 import           Utils
 
-data Cycle st =
-  Cycle
-    { cycleStart :: [st]
-    , cycleLoop  :: [st]
-    }
-  deriving (Show, Eq, Ord)
+data Cycle st = Cycle
+  { cycleStart :: [st]
+  , cycleLoop  :: [st]
+  } deriving (Show, Eq, Ord)
 
 cycleFind :: (Ord st, Show st) => (st -> st) -> st -> Cycle st
 cycleFind next = go [] 0 Map.empty

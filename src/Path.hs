@@ -18,12 +18,10 @@ import           Utils
 hashSetFromList :: (Eq a, Hashable a) => [a] -> HashSet a
 hashSetFromList = HashSet.fromList
 
-data Tree edge node =
-  Tree
-    { treeNode     :: node
-    , treeBranches :: [(edge, Tree edge node)]
-    }
-  deriving (Ord, Eq, Show, Foldable)
+data Tree edge node = Tree
+  { treeNode     :: node
+  , treeBranches :: [(edge, Tree edge node)]
+  } deriving (Ord, Eq, Show, Foldable)
 
 moveTree ::
      (pos -> [move]) -> (move -> pos -> Maybe pos) -> pos -> Tree move pos

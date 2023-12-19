@@ -30,22 +30,21 @@ data St
   | Outside
   deriving (Eq, Show)
 
-data St1 =
-  St1
-    { _st1map :: Map Cube St
-    , _st1min :: Cube
-    , _st1max :: Cube
-    }
+data St1 = St1
+  { _st1map :: Map Cube St
+  , _st1min :: Cube
+  , _st1max :: Cube
+  }
 
-makeLenses ''St1
+$(makeLenses ''St1)
 
 stlookup :: Cube -> State St1 (Maybe St)
 stlookup c = do
   St1 {..} <- get
-  pure $
-    if and (zipWith3 inRange _st1min _st1max c)
-      then Map.lookup c _st1map
-      else Just Outside
+  pure
+    $ if and (zipWith3 inRange _st1min _st1max c)
+        then Map.lookup c _st1map
+        else Just Outside
 
 stinsert :: Cube -> St -> State St1 ()
 stinsert c v = st1map %= Map.insert c v
@@ -70,10 +69,10 @@ canGo c = do
 isOutside :: Cube -> State St1 Bool
 isOutside c = do
   res <- fromMaybe False <$> isOutside' c
-  stsetpending $
-    if res
-      then Outside
-      else Inside
+  stsetpending
+    $ if res
+        then Outside
+        else Inside
   pure res
 
 isOutside' :: Cube -> State St1 (Maybe Bool)
@@ -89,7 +88,7 @@ isOutside' c =
       a1 <- filterM canGo a0
       res <- condense <$> traverse isOutside' a1
       for_ res $ \case
-        True  -> stinsert c Outside
+        True -> stinsert c Outside
         False -> stinsert c Inside
       pure res
 

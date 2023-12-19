@@ -8,12 +8,11 @@ import           Numeric
 
 import           Utils
 
-data Knot =
-  Knot
-    { kItems    :: !(Map Int Int) -- ^ map positions to numbers
-    , kPos      :: !Int
-    , kSkipSize :: !Int
-    }
+data Knot = Knot
+  { kItems    :: !(Map Int Int) -- ^ map positions to numbers
+  , kPos      :: !Int
+  , kSkipSize :: !Int
+  }
 
 kAt :: Knot -> Int -> Int
 kAt k i =
@@ -32,9 +31,11 @@ mkKnot len =
 
 instance Show Knot where
   show k =
-    "Knot {" ++
-    unwords (map showKItem [0 .. kLength k - 1]) ++
-    ", kSkipSize = " ++ show (kSkipSize k) ++ "}"
+    "Knot {"
+      ++ unwords (map showKItem [0 .. kLength k - 1])
+      ++ ", kSkipSize = "
+      ++ show (kSkipSize k)
+      ++ "}"
     where
       showKItem i
         | i == kPos k = "[" ++ show (kAt k i) ++ "]"

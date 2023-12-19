@@ -8,12 +8,10 @@ import           AOC
 import           Bit
 import           Utils
 
-data Range =
-  Range
-    { rangeGreaterOrEqual :: !(Maybe Int)
-    , rangeLessThan       :: !(Maybe Int)
-    }
-  deriving (Ord, Eq)
+data Range = Range
+  { rangeGreaterOrEqual :: !(Maybe Int)
+  , rangeLessThan       :: !(Maybe Int)
+  } deriving (Ord, Eq)
 
 instance Show Range where
   show (Range a b) = "Range [" <> s' a <> ".." <> s' b <> ")"
@@ -82,9 +80,15 @@ data DecisionTree value
 instance Show value => Show (DecisionTree value) where
   show (Value v) = show v
   show (Branch axis c yes no) =
-    "{" <>
-    show yes <>
-    "|" <> tail (show axis) <> "=" <> show c <> "|" <> show no <> "}"
+    "{"
+      <> show yes
+      <> "|"
+      <> tail (show axis)
+      <> "="
+      <> show c
+      <> "|"
+      <> show no
+      <> "}"
 
 dtCount :: (Eq value, Show value) => value -> DecisionTree value -> Int
 dtCount v = dtCountIn v mempty
@@ -94,8 +98,8 @@ dtCountIn ::
 dtCountIn v cs (Value v')
   | v == v' =
     fromJustE
-      ("infinite region while counting " <> show v <> " inside " <> show cs) $
-    cvolume cs
+      ("infinite region while counting " <> show v <> " inside " <> show cs)
+      $ cvolume cs
   | otherwise = 0
 dtCountIn v cs t@(Branch axis c yes no) = sum $ catMaybes [yes', no']
   where
@@ -103,9 +107,13 @@ dtCountIn v cs t@(Branch axis c yes no) = sum $ catMaybes [yes', no']
     (ryes, rno) =
       traceF
         (\yn ->
-           "current range: " <>
-           show r <> " split at: " <> show c <> " result: " <> show yn) $
-      splitRangeAt c r
+           "current range: "
+             <> show r
+             <> " split at: "
+             <> show c
+             <> " result: "
+             <> show yn)
+        $ splitRangeAt c r
     csWith r' = mapInsert axis r' cs
     yes' = dtCountIn v <$> fmap csWith ryes <*> pure yes
     no' = dtCountIn v <$> fmap csWith rno <*> pure no
@@ -150,13 +158,17 @@ tasks =
     22
     (CodeBlock 2)
     parse
-    [ Assert "split range" (Just $ mkRangeLT 10, Just $ mkRangeGE 10) $
-      splitRangeAt 10 nullRange
+    [ Assert "split range" (Just $ mkRangeLT 10, Just $ mkRangeGE 10)
+        $ splitRangeAt 10 nullRange
     , Assert "count in one cube" (101 ^ 3) $ dtCountIn I part1cuboid $ Value I
-    , Assert "count example 0 step 1" 27 $
-      dtCount I $ traceShowId $ applyInput (take 1 example0) initial
-    , Assert "count example 0 step 2" (27 + 19) $
-      dtCount I $ traceShowId $ applyInput (take 2 example0) initial
+    , Assert "count example 0 step 1" 27
+        $ dtCount I
+        $ traceShowId
+        $ applyInput (take 1 example0) initial
+    , Assert "count example 0 step 2" (27 + 19)
+        $ dtCount I
+        $ traceShowId
+        $ applyInput (take 2 example0) initial
     , Task part1 474140
     , Task part2 2758514936282235
     ]
@@ -189,9 +201,11 @@ axisP = choiceEBP ["x", "y", "z"]
 
 cuboidP :: Parser Text Cuboid
 cuboidP =
-  (tsplitP "," &** tsplitP "=" &* axisP &+
-   (tsplitP ".." &* integerP &+ integerP)) &*
-  pureP mkCuboid
+  (tsplitP ","
+     &** tsplitP "="
+     &* axisP
+     &+ (tsplitP ".." &* integerP &+ integerP))
+    &* pureP mkCuboid
 
 mkCuboid :: [(Axis, (Int, Int))] -> Cuboid
 mkCuboid = mapFromList . map (second $ \(a, b) -> Range (Just a) (Just (b + 1)))

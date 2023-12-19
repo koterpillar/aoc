@@ -7,17 +7,15 @@ import qualified Data.Text as Text
 import           AOC
 import           Utils
 
-data Race =
-  Race
-    { rTime     :: Int
-    , rDistance :: Int
-    }
-  deriving (Show, Eq, Ord)
+data Race = Race
+  { rTime     :: Int
+  , rDistance :: Int
+  } deriving (Show, Eq, Ord)
 
 parser :: Parser Text [Race]
 parser =
-  uncurry (zipWith Race) <$>
-  ((linesP &** wordsP &* pureP tail &** integerP) &* pairP)
+  uncurry (zipWith Race)
+    <$> ((linesP &** wordsP &* pureP tail &** integerP) &* pairP)
 
 waysToWin :: Race -> Int
 waysToWin (Race t d) = length $ [hold | hold <- [0 .. t], distance hold t > d]

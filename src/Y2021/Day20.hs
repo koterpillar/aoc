@@ -7,11 +7,10 @@ import           Bit
 import           Grid
 import           Utils
 
-data Grid =
-  Grid
-    { inside  :: !(Grid2 ())
-    , outside :: !Bool
-    }
+data Grid = Grid
+  { inside  :: !(Grid2 ())
+  , outside :: !Bool
+  }
 
 instructionSize :: Int
 instructionSize = 2 ^ 9
@@ -32,8 +31,9 @@ instructionFor instructions n =
 
 parse :: Parser Text (Instructions, Grid)
 parse =
-  lineGroupsP &* (pureP mconcat &* (mkInstructions <$> dotsP)) &+
-  (mkGrid <$> pureP Text.unlines &* dotGridP)
+  lineGroupsP
+    &* (pureP mconcat &* (mkInstructions <$> dotsP))
+    &+ (mkGrid <$> pureP Text.unlines &* dotGridP)
 
 gridBit :: Position2 -> Grid -> Bit
 gridBit p g
@@ -45,11 +45,12 @@ gridBounds = boundsG . inside
 
 gridDisplay :: Grid -> Text
 gridDisplay (Grid inside outside) =
-  "Outside: " <>
-  (if outside
-     then "#"
-     else ".") <>
-  "\n" <> displayG inside
+  "Outside: "
+    <> (if outside
+          then "#"
+          else ".")
+    <> "\n"
+    <> displayG inside
 
 gridCount :: Grid -> Int
 gridCount (Grid _ True)  = error "infinite"
@@ -73,10 +74,10 @@ step instructions grid = ttraceF gridDisplay result
         guard $ instructionFor instructions bits
         pure (Position2 x y, ())
     outside' =
-      instructionFor instructions $
-      if outside grid
-        then instructionSize - 1
-        else 0
+      instructionFor instructions
+        $ if outside grid
+            then instructionSize - 1
+            else 0
 
 lightAfter :: Int -> (Instructions, Grid) -> Int
 lightAfter steps (instructions, grid) =

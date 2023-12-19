@@ -13,8 +13,9 @@ pathCost :: Grid -> [Position2] -> Int
 pathCost grid path = sum (mapMaybe (`mapLookup` grid) path)
 
 part1 grid =
-  pathCost grid $
-  fromJust $ aStar moves distance heuristicDistance isGoal startPosition
+  pathCost grid
+    $ fromJust
+    $ aStar moves distance heuristicDistance isGoal startPosition
   where
     (startPosition, endPosition) = boundsG grid
     isGoal = (== endPosition)

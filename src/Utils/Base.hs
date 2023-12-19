@@ -107,12 +107,12 @@ wrapRange lo hi x = lo + (x - lo) `mod` (hi - lo + 1)
 
 countIf :: Foldable f => (a -> Bool) -> f a -> Int
 countIf p =
-  getSum .
-  foldMap
-    (\x ->
-       if p x
-         then Sum 1
-         else mempty)
+  getSum
+    . foldMap
+        (\x ->
+           if p x
+             then Sum 1
+             else mempty)
 
 countElem :: (Foldable f, Eq a) => a -> f a -> Int
 countElem = countIf . (==)

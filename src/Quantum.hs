@@ -28,11 +28,9 @@ class Collapse a where
   cappend :: a -> a -> a
   collapse :: a -> a -> a
 
-newtype Quantum collapse a =
-  Quantum
-    { getQuantum :: Map a collapse
-    }
-  deriving (Eq, Ord, Show)
+newtype Quantum collapse a = Quantum
+  { getQuantum :: Map a collapse
+  } deriving (Eq, Ord, Show)
 
 size :: Quantum collapse a -> Int
 size = length . getQuantum

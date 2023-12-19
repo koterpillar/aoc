@@ -14,13 +14,11 @@ type Grid = Grid2 Int
 parser :: Parser Text Grid
 parser = digitGridP
 
-data St =
-  St
-    { stP :: Position2
-    , stD :: Direction4
-    , stL :: Int
-    }
-  deriving (Ord, Eq, Show)
+data St = St
+  { stP :: Position2
+  , stD :: Direction4
+  , stL :: Int
+  } deriving (Ord, Eq, Show)
 
 instance Hashable St where
   hashWithSalt s (St p d l) = hashWithSalt s (p, d, l)
@@ -43,8 +41,8 @@ solve m goalCondition g =
   ttrace (displayG $ overlayPath g path) $ sum $ map heatLossS path
   where
     path =
-      fromJustE "no path" $
-      aStar moves' (const heatLossS) distanceToGoal isGoal start
+      fromJustE "no path"
+        $ aStar moves' (const heatLossS) distanceToGoal isGoal start
     moves' = filter (insideBounds b . stP) . m
     isGoal c = distanceToGoal c == 0 && goalCondition c
     distanceToGoal (St p1 _ _) = manhattanDistance p1 goal
@@ -59,10 +57,16 @@ part1 = solve moves (const True)
 
 ultraMoves :: St -> [St]
 ultraMoves st@(St p d l) =
-  [moveForward st | l < 10] ++
-  [turn d' st | l >= 4, d' <- [turnLeft d, turnRight d]]
+  [moveForward st | l < 10]
+    ++ [turn d' st | l >= 4, d' <- [turnLeft d, turnRight d]]
 
 part2 :: Grid -> Int
 part2 = solve ultraMoves $ \st -> stL st >= 4
 
-tasks = Tasks 2023 17 (CodeBlock 0) parser [task part1 102 & taskPart 1, task part2 94 & taskPart 2]
+tasks =
+  Tasks
+    2023
+    17
+    (CodeBlock 0)
+    parser
+    [task part1 102 & taskPart 1, task part2 94 & taskPart 2]

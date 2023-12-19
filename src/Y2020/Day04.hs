@@ -36,8 +36,8 @@ iyr = fieldParser "iyr" $ yearParser 2010 2020
 eyr = fieldParser "eyr" $ yearParser 2020 2030
 
 hgt =
-  fieldParser "hgt" $
-  tspanP isDigit &* integerP &= idP &* filterP (uncurry valid . swap)
+  fieldParser "hgt"
+    $ tspanP isDigit &* integerP &= idP &* filterP (uncurry valid . swap)
   where
     valid "cm" = inRange 150 193
     valid "in" = inRange 59 76
@@ -50,8 +50,8 @@ hcl = fieldParser "hcl" $ tspanP (== '#') &* filterP (uncurry valid)
     isHexDigit c = isDigit c || inRange 'a' 'f' c
 
 ecl =
-  fieldParser "ecl" $
-  filterP (`elem` ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"])
+  fieldParser "ecl"
+    $ filterP (`elem` ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"])
 
 pid = fieldParser "pid" $ digitsP &* filterP (\t -> length t == 9)
 

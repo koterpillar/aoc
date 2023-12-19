@@ -84,8 +84,8 @@ hexToBits = concatMap (htb 4)
         (x `div` 2)
         ((if even x
             then O
-            else I) :
-         r)
+            else I)
+           : r)
 
 parse :: Parser Text Packet
 parse = mkPacket . hexToBits <$> charactersP &** hexDigitP

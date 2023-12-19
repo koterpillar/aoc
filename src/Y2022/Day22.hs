@@ -40,14 +40,12 @@ instance GridItem GI where
 itemP :: Parser Char GI0
 itemP = choiceEBP "#. "
 
-data Grid =
-  Gr
-    { _gGrid   :: Grid2 GI
-    , _gBounds :: (Position2, Position2)
-    }
-  deriving (Eq, Ord, Show)
+data Grid = Gr
+  { _gGrid   :: Grid2 GI
+  , _gBounds :: (Position2, Position2)
+  } deriving (Eq, Ord, Show)
 
-makeLenses ''Grid
+$(makeLenses ''Grid)
 
 data Face
   = FBack
@@ -58,15 +56,13 @@ data Face
   | FDown
   deriving (Eq, Ord, Show)
 
-data Grid3 =
-  Grid3
-    { _gGrids :: Map Face (Grid2 GI)
-    , _g2D    :: Grid2 GI
-    , _gSize  :: Int
-    }
-  deriving (Eq, Ord, Show)
+data Grid3 = Grid3
+  { _gGrids :: Map Face (Grid2 GI)
+  , _g2D    :: Grid2 GI
+  , _gSize  :: Int
+  } deriving (Eq, Ord, Show)
 
-makeLenses ''Grid3
+$(makeLenses ''Grid3)
 
 class Show grid =>
       IsGrid grid
@@ -101,25 +97,24 @@ data Instruction
 
 instructionsP :: Parser Text [Instruction]
 instructionsP =
-  pureP (Text.groupBy (\a b -> isDigit a == isDigit b)) &**
-  (Forward <$> integerP) &|
-  (RotateLeft <$ requireP "L") &|
-  (RotateRight <$ requireP "R")
+  pureP (Text.groupBy (\a b -> isDigit a == isDigit b))
+    &** (Forward <$> integerP)
+    &| (RotateLeft <$ requireP "L")
+    &| (RotateRight <$ requireP "R")
 
 parser :: Parser Text Input
 parser =
-  lineGroupsP &*
-  (fmap mkgrid (traverseP $ charactersP &** itemP) &+ (singleP &* instructionsP))
+  lineGroupsP
+    &* (fmap mkgrid (traverseP $ charactersP &** itemP)
+          &+ (singleP &* instructionsP))
 
-data You =
-  You
-    { _yPosition  :: Position2
-    , _yDirection :: Direction4
-    , _yFace      :: Face
-    }
-  deriving (Eq, Show)
+data You = You
+  { _yPosition  :: Position2
+  , _yDirection :: Direction4
+  , _yFace      :: Face
+  } deriving (Eq, Show)
 
-makeLenses ''You
+$(makeLenses ''You)
 
 giProjectBack :: GI -> You -> You
 giProjectBack c (You p d f) = You (giPosition c) (giDirection c d) f
@@ -228,8 +223,8 @@ part2 (g, is) = doWalksScore step3 g3 is you3
     you2 = start g
     g3back = g3 ^?! gGrids . ix FBack
     p3 =
-      fromJustE "p3" $
-      mapFindValue (\gi -> giPosition gi == _yPosition you2) g3back
+      fromJustE "p3"
+        $ mapFindValue (\gi -> giPosition gi == _yPosition you2) g3back
     you3 = you2 {_yPosition = p3}
 
 fixupExample :: Grid2 a -> Grid2 a
@@ -321,8 +316,9 @@ cubify g = Grid3 {..}
     e f as =
       case catMaybes [fn <$> Map.lookup p gs | (fn, p) <- as] of
         [] ->
-          error $ traceInput $ "Cannot find " ++ show f ++ " in " ++
-          show (Map.keys gs)
+          error
+            $ traceInput
+            $ "Cannot find " ++ show f ++ " in " ++ show (Map.keys gs)
         r:_ -> (f, r)
     traceInput = ttrace (displayG $ Map.map (const ()) gs)
 

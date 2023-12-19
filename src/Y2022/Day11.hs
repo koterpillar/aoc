@@ -41,18 +41,16 @@ itemDeworry worryDiv (Item x) = Item (x `div` fromInteger worryDiv)
 itemTest :: Int -> Item -> Bool
 itemTest testDivisor i@(Item x) = x `mod` testDivisor == 0
 
-data Monkey =
-  Monkey
-    { _mItems       :: [Item]
-    , _mOp          :: MonkeyFn
-    , _mTestDivisor :: Int
-    , _mTrue        :: Int
-    , _mFalse       :: Int
-    , _mSeen        :: Int
-    }
-  deriving (Show)
+data Monkey = Monkey
+  { _mItems       :: [Item]
+  , _mOp          :: MonkeyFn
+  , _mTestDivisor :: Int
+  , _mTrue        :: Int
+  , _mFalse       :: Int
+  , _mSeen        :: Int
+  } deriving (Show)
 
-makeLenses ''Monkey
+$(makeLenses ''Monkey)
 
 monkeyP :: Parser [Text] Monkey
 monkeyP = ap5P mk itemsP fnP lastNumP lastNumP lastNumP
@@ -61,11 +59,14 @@ monkeyP = ap5P mk itemsP fnP lastNumP lastNumP lastNumP
       where
         _mSeen = 0
     itemsP =
-      pureP (terase "  Starting items: ") &* tsplitP "," &**
-      (mkItem <$> integerP)
+      pureP (terase "  Starting items: ")
+        &* tsplitP ","
+        &** (mkItem <$> integerP)
     fnP =
-      pureP (terase "  Operation: new = old ") &* wordsP &* pairP &*
-      tupleBindP fnP1
+      pureP (terase "  Operation: new = old ")
+        &* wordsP
+        &* pairP
+        &* tupleBindP fnP1
     fnP1 "*" = (Mult <$> integerP) &| (Square <$ requireP "old")
     fnP1 "+" = Plus <$> integerP
 
@@ -76,8 +77,8 @@ type Situation = Map Int Monkey
 
 parser :: Parser Text Situation
 parser =
-  mapFromList <$> lineGroupsP &** unconsP &* (pureP (terase ":") &* lastNumP) &=
-  monkeyP
+  mapFromList
+    <$> lineGroupsP &** unconsP &* (pureP (terase ":") &* lastNumP) &= monkeyP
 
 traceItems :: State Situation ()
 traceItems = do
@@ -89,8 +90,8 @@ traceSeen :: State Situation ()
 traceSeen = do
   st <- get
   for_ (Map.toList $ Map.map _mSeen st) $ \(i, seen) ->
-    traceM $ "Monkey " ++ show i ++ " inspected items " ++ show seen ++
-    " times."
+    traceM
+      $ "Monkey " ++ show i ++ " inspected items " ++ show seen ++ " times."
 
 move :: Integer -> State Situation ()
 move worryDiv = do

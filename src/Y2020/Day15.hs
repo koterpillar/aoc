@@ -9,12 +9,11 @@ import qualified Data.Vector.Unboxed.Mutable as MVector
 import           AOC
 import           Utils
 
-data State s =
-  State
-    { sTurns    :: STRef s Int
-    , sRecent   :: MVector s Int
-    , sLastSaid :: STRef s Int
-    }
+data State s = State
+  { sTurns    :: STRef s Int
+  , sRecent   :: MVector s Int
+  , sLastSaid :: STRef s Int
+  }
 
 say :: State s -> Int -> ST s ()
 say State {..} n = do
@@ -29,10 +28,10 @@ nextNumber State {..} = do
   ls <- readSTRef sLastSaid
   t <- readSTRef sTurns
   r <- MVector.read sRecent ls
-  pure $
-    if r == 0
-      then 0
-      else t - r
+  pure
+    $ if r == 0
+        then 0
+        else t - r
 
 firstState :: Int -> Int -> ST s (State s)
 firstState max n = do

@@ -30,39 +30,39 @@ emptyInventory = Map.fromList $ zip enumerate $ repeat 0
 
 inventoryP :: Parser Text Inventory
 inventoryP =
-  Map.fromList <$>
-  tsplitP " and " &** (swap <$> wordsP &* integerP &+ materialP)
+  Map.fromList
+    <$> tsplitP " and " &** (swap <$> wordsP &* integerP &+ materialP)
 
-data Blueprint =
-  Blueprint
-    { bID    :: Int
-    , bCosts :: Map Material Inventory
-    }
-  deriving (Eq, Ord, Show)
+data Blueprint = Blueprint
+  { bID    :: Int
+  , bCosts :: Map Material Inventory
+  } deriving (Eq, Ord, Show)
 
 recipeP :: Parser Text (Material, Inventory)
 recipeP =
-  tsplitP " robot costs " &* (pureP (terase "Each ") &* materialP) &+
-  (pureP (terase ".") &* inventoryP)
+  tsplitP " robot costs "
+    &* (pureP (terase "Each ") &* materialP)
+    &+ (pureP (terase ".") &* inventoryP)
 
 blueprintP :: Parser Text Blueprint
 blueprintP =
-  uncurry Blueprint <$>
-  tsplitP ": " &* (pureP (terase "Blueprint ") &* integerP) &+
-  (Map.fromList <$> tsplitP ". " &** recipeP)
+  uncurry Blueprint
+    <$> tsplitP ": "
+          &* (pureP (terase "Blueprint ") &* integerP)
+          &+ (Map.fromList <$> tsplitP ". " &** recipeP)
 
 parser :: Parser Text [Blueprint]
 parser =
-  pureP (treplace "\n  " " ") &* linesP &* pureP (filter $ not . Text.null) &**
-  blueprintP
+  pureP (treplace "\n  " " ")
+    &* linesP
+    &* pureP (filter $ not . Text.null)
+    &** blueprintP
 
-data St =
-  St
-    { stRobots    :: Inventory
-    , stResources :: Inventory
-    , stTime      :: Int
-    }
-  deriving (Eq, Ord, Show)
+data St = St
+  { stRobots    :: Inventory
+  , stResources :: Inventory
+  , stTime      :: Int
+  } deriving (Eq, Ord, Show)
 
 stResource :: Material -> St -> Int
 stResource m = mapLookupE "stResource" m . stResources

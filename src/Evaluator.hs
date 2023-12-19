@@ -27,8 +27,9 @@ tokenP ::
   -> Parser src arg
   -> Parser src (Token op arg)
 tokenP opChoices argP =
-  (TConst <$> argP) &| (TOp <$> choiceEBP opChoices) &|
-  choiceP [("(", TLParen), (")", TRParen)]
+  (TConst <$> argP)
+    &| (TOp <$> choiceEBP opChoices)
+    &| choiceP [("(", TLParen), (")", TRParen)]
 
 expressionP ::
      (Bounded op, Enum op)
@@ -36,8 +37,9 @@ expressionP ::
   -> Parser Text arg
   -> Parser Text [Token op arg]
 expressionP opChoices argP =
-  pureP (Text.replace "(" " ( " . Text.replace ")" " ) ") &* wordsP &**
-  tokenP opChoices argP
+  pureP (Text.replace "(" " ( " . Text.replace ")" " ) ")
+    &* wordsP
+    &** tokenP opChoices argP
 
 type Priority op = op -> Int
 
@@ -58,9 +60,9 @@ arg ::
   -> StateParser [Token op arg] arg
 arg prio opApply =
   unconsSP_ >>= \case
-    TLParen  -> evaluate' prio opApply <* ensureUnconsSP_ TRParen
+    TLParen -> evaluate' prio opApply <* ensureUnconsSP_ TRParen
     TConst v -> pure v
-    a        -> failSP $ "arg: " ++ show a
+    a -> failSP $ "arg: " ++ show a
 
 evaluate' ::
      (Show op, Show arg, Eq op, Eq arg)
@@ -72,10 +74,10 @@ evaluate' prio opApply = go []
     go stk = do
       a <- arg prio opApply
       unconsSP >>= \case
-        Nothing       -> pure $ unwindAll opApply stk a
-        Just TRParen  -> putBackSP TRParen *> pure (unwindAll opApply stk a)
+        Nothing -> pure $ unwindAll opApply stk a
+        Just TRParen -> putBackSP TRParen *> pure (unwindAll opApply stk a)
         Just (TOp op) -> go $ unwind prio opApply stk a op
-        Just a        -> failSP $ "evaluate': " ++ show a
+        Just a -> failSP $ "evaluate': " ++ show a
 
 unwindAll :: OpApply op arg -> [(arg, op)] -> arg -> arg
 unwindAll _ [] a                  = a

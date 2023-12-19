@@ -98,11 +98,17 @@ unifyPoint :: Transform3 -> Position3 -> Position3 -> Transform3
 unifyPoint r a b =
   if b == b'
     then t
-    else error $
-         "unifyPoint: b = " <>
-         show b <>
-         " doesn't match b' = " <>
-         show b' <> " a = " <> show a <> " t = " <> show t <> " r = " <> show r
+    else error
+           $ "unifyPoint: b = "
+               <> show b
+               <> " doesn't match b' = "
+               <> show b'
+               <> " a = "
+               <> show a
+               <> " t = "
+               <> show t
+               <> " r = "
+               <> show r
   where
     t = translationT $ subP a $ multiplyPT b $ inverseT r
     b' = a `multiplyPT` inverseT t `multiplyPT` r
@@ -173,8 +179,9 @@ part1 scene = length beacons
 
 part2 :: Scene -> Int
 part2 scene =
-  fromJustE "no unified beacons" $
-  maybeMaximum [manhattanLength $ subP p1 p2 | p1 <- positions, p2 <- positions]
+  fromJustE "no unified beacons"
+    $ maybeMaximum
+        [manhattanLength $ subP p1 p2 | p1 <- positions, p2 <- positions]
   where
     (positions, _) = fromJustE "part2: cannot unify" $ unifyAll $ toList scene
 
@@ -192,8 +199,10 @@ tasks =
     [ let p1 = mkPosition 1 2 3
           p2 = mkPosition 10 20 30
        in Assert "translationT" p2 $ multiplyPT p1 (translationT $ subP p2 p1)
-    , Assert "rotationsT" 24 $
-      length $ sort $ map (multiplyPT $ mkPosition 1 2 3) rotationsT
+    , Assert "rotationsT" 24
+        $ length
+        $ sort
+        $ map (multiplyPT $ mkPosition 1 2 3) rotationsT
     , let canon = testBasis
           candidate =
             setFromList
@@ -205,12 +214,12 @@ tasks =
               ]
        in Assert
             "unify 1"
-            (Just (mkPosition (-10) 0 0, setInsert (mkPosition 10 20 30) canon)) $
-          first transformOrigin <$> unify' 4 canon candidate
-    , AssertExample "unify 0 and 1" True $
-      (\(v1:v2:_) -> isJust $ unify v1 v2) . toList
-    , Assert "orientation 1" basis $
-      (map $ flip multiplyPT $ head rotationsT) basis
+            (Just (mkPosition (-10) 0 0, setInsert (mkPosition 10 20 30) canon))
+            $ first transformOrigin <$> unify' 4 canon candidate
+    , AssertExample "unify 0 and 1" True
+        $ (\(v1:v2:_) -> isJust $ unify v1 v2) . toList
+    , Assert "orientation 1" basis
+        $ (map $ flip multiplyPT $ head rotationsT) basis
     , Task part1 79
     , Task part2 3621
     ]
@@ -227,8 +236,8 @@ parseScanner = wordsP &* pureP (!! 2) &* integerP
 
 parsePosition3 :: Parser Text Position3
 parsePosition3 =
-  (tsplitP "," &** integerP) &*
-  Parser
-    (\case
-       [x, y, z] -> Right (mkPosition x y z)
-       other     -> Left $ "Expected 3 integers, found: " <> show other)
+  (tsplitP "," &** integerP)
+    &* Parser
+         (\case
+            [x, y, z] -> Right (mkPosition x y z)
+            other -> Left $ "Expected 3 integers, found: " <> show other)

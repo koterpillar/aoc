@@ -15,8 +15,8 @@ data GI
 
 parser :: Parser Text (Grid2 GI)
 parser =
-  charGridMaybeP $
-  (Just . GN <$> digitP) &| (Nothing <$ requireP '.') &| pureP (Just . GS)
+  charGridMaybeP
+    $ (Just . GN <$> digitP) &| (Nothing <$ requireP '.') &| pureP (Just . GS)
 
 numberAt :: Position2 -> Grid2 GI -> Maybe Int
 numberAt p g =
@@ -46,10 +46,10 @@ symbolAdjacent (_, ps) g =
     p <- ps
     d <- allDir8
     let p' = walk d p
-    pure $
-      case Map.lookup p' g of
-        Just (GS _) -> True
-        _           -> False
+    pure
+      $ case Map.lookup p' g of
+          Just (GS _) -> True
+          _           -> False
 
 part1 g = sum $ map fst $ filter (`symbolAdjacent` g) $ numbers g
 

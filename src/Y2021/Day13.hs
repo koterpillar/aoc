@@ -36,8 +36,9 @@ parseInstructions = lineGroupsP &* parseDots &+ traverseP parseFold
     parseDots = mapFromList . flip zip (repeat ()) <$> traverseP parseDot
     parseDot = tsplitP "," &* ap2P Position2 integerP integerP
     parseFold =
-      pureP (Text.drop 11) &* tsplitP "=" &*
-      ap2P ($) (choiceP [("x", FoldX), ("y", FoldY)]) integerP
+      pureP (Text.drop 11)
+        &* tsplitP "="
+        &* ap2P ($) (choiceP [("x", FoldX), ("y", FoldY)]) integerP
 
 part1 :: Instructions -> Int
 part1 (p, fs) = length $ applyFold (head fs) p

@@ -9,12 +9,10 @@ import qualified Data.Set        as Set
 import           Path
 import           Utils
 
-data Search k v =
-  Search
-    { sFound    :: Map k v
-    , sPossible :: Map k (Set v)
-    }
-  deriving (Eq, Ord, Show)
+data Search k v = Search
+  { sFound    :: Map k v
+  , sPossible :: Map k (Set v)
+  } deriving (Eq, Ord, Show)
 
 sStart :: Ord k => Map k (Set v) -> Search k v
 sStart = Search mempty
@@ -30,10 +28,11 @@ pick m = ((k, vs), Map.delete k m)
 decideMapping ::
      (Ord k, Hashable k, Ord v, Hashable v) => Map k (Set v) -> Map k v
 decideMapping =
-  sFound .
-  lastE "empty route found" .
-  fromJustE "no route found" .
-  aStarDepthGoal moves' (length . sPossible) . sStart
+  sFound
+    . lastE "empty route found"
+    . fromJustE "no route found"
+    . aStarDepthGoal moves' (length . sPossible)
+    . sStart
 
 decideMappingAll ::
      (Ord k, Hashable k, Ord v, Hashable v) => Map k (Set v) -> [Map k v]

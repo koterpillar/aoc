@@ -46,19 +46,17 @@ rocks =
 
 type StKey = (Int, Grid, Int)
 
-data St =
-  St
-    { _stWind    :: [Direction4]
-    , _stWindInd :: Int
-    , _stChamber :: Grid
-    , _stRock    :: Maybe Rock
-    , _stDropped :: Int
-    , _stOffset  :: Int
-    , _stPrev    :: Map StKey St
-    }
-  deriving (Show)
+data St = St
+  { _stWind    :: [Direction4]
+  , _stWindInd :: Int
+  , _stChamber :: Grid
+  , _stRock    :: Maybe Rock
+  , _stDropped :: Int
+  , _stOffset  :: Int
+  , _stPrev    :: Map StKey St
+  } deriving (Show)
 
-makeLenses ''St
+$(makeLenses ''St)
 
 stKey :: St -> StKey
 stKey St {..} = (_stWindInd, _stChamber, _stDropped `mod` length rocks)
@@ -83,8 +81,11 @@ instance GridItem GI where
 
 displaySt :: St -> Text
 displaySt St {..} =
-  displayG $
-  foldr Map.union (Map.map (const C) _stChamber) (Map.map (const R) <$> _stRock)
+  displayG
+    $ foldr
+        Map.union
+        (Map.map (const C) _stChamber)
+        (Map.map (const R) <$> _stRock)
 
 stInit :: [Direction4] -> St
 stInit _stWind = St {..}
@@ -155,8 +156,8 @@ optimize = do
   for_ (traverse (probe g ymin ymax) [xmin .. xmax]) $ \depths -> do
     let cutoff = maximum depths
     let g' =
-          Map.mapKeys (\(Position2 x y) -> Position2 x (y - cutoff)) $
-          Map.filterWithKey (\(Position2 _ y) _ -> y <= cutoff) g
+          Map.mapKeys (\(Position2 x y) -> Position2 x (y - cutoff))
+            $ Map.filterWithKey (\(Position2 _ y) _ -> y <= cutoff) g
     stChamber .= g'
     stOffset %= subtract cutoff
 

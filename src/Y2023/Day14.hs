@@ -20,13 +20,11 @@ instance GridItem Rock where
 
 type Grid1 = Grid2 Rock
 
-data RockGrid =
-  RockGrid
-    { rgBounds :: (Position2, Position2)
-    , rgX      :: Grid2 ()
-    , rgO      :: Grid2 ()
-    }
-  deriving (Eq, Ord, Show)
+data RockGrid = RockGrid
+  { rgBounds :: (Position2, Position2)
+  , rgX      :: Grid2 ()
+  , rgO      :: Grid2 ()
+  } deriving (Eq, Ord, Show)
 
 toRockGrid :: Grid1 -> RockGrid
 toRockGrid g = RockGrid {..}
@@ -47,9 +45,9 @@ roll d (RockGrid b gx go) = RockGrid b gx go'
         [(walkN i d' p, ()) | (p, n) <- Map.toList stops, i <- [1 .. n]]
     d' = reverse4 d
     findStop p =
-      fromJustE "findStop" $
-      find (\p' -> not (insideBounds b p') || Map.member p' gx) $
-      iterate (walk d) p
+      fromJustE "findStop"
+        $ find (\p' -> not (insideBounds b p') || Map.member p' gx)
+        $ iterate (walk d) p
 
 northLoad :: RockGrid -> Int
 northLoad (RockGrid (_, Position2 _ ymax) _ go) =
@@ -60,9 +58,9 @@ part1 = northLoad . roll N
 rollCycle = iterateNL 1 $ roll E . roll S . roll W . roll N
 
 part2 =
-  northLoad .
-  cycleElement 1000000000 .
-  traceShowF (\c -> (length (cycleStart c), length (cycleLoop c))) .
-  cycleFind rollCycle
+  northLoad
+    . cycleElement 1000000000
+    . traceShowF (\c -> (length (cycleStart c), length (cycleLoop c)))
+    . cycleFind rollCycle
 
 tasks = Tasks 2023 14 (CodeBlock 0) parser [Task part1 136, Task part2 64]

@@ -44,11 +44,11 @@ go :: State Grid ()
 go = do
   goP $ modifyP $ pure . \(v, _) -> (v, False)
   goP incrP
-  goP $
-    modifyP $
-    pure . \case
-      (_, True)  -> (0, True)
-      (v, False) -> (v, False)
+  goP
+    $ modifyP
+    $ pure . \case
+        (_, True) -> (0, True)
+        (v, False) -> (v, False)
 
 part1 :: Grid -> Int
 part1 = go 0 100

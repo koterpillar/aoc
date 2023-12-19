@@ -29,18 +29,18 @@ type Grid = Grid2 Tile
 
 parser :: Parser Text Grid
 parser =
-  charGridP' $ choiceP $ map (showInGrid &&& id) $ Wall :
-  map (Blizzard . pure) allDir4
+  charGridP'
+    $ choiceP
+    $ map (showInGrid &&& id)
+    $ Wall : map (Blizzard . pure) allDir4
 
-data Ctx =
-  Ctx
-    { _ctxPeriod :: Int
-    , _ctxGrids  :: [Grid]
-    , _ctxBounds :: (Position2, Position2)
-    }
-  deriving (Ord, Eq, Show)
+data Ctx = Ctx
+  { _ctxPeriod :: Int
+  , _ctxGrids  :: [Grid]
+  , _ctxBounds :: (Position2, Position2)
+  } deriving (Ord, Eq, Show)
 
-makeLenses ''Ctx
+$(makeLenses ''Ctx)
 
 type St = (Position2, Int)
 
@@ -79,8 +79,8 @@ ctxEnd = ctxBounds . _2 . walked W
 
 findRoute :: Ctx -> St -> Position2 -> [St]
 findRoute c st end =
-  fromJustE "findRoute" $
-  aStarDepthGoal (moves c) (manhattanDistance end . fst) st
+  fromJustE "findRoute"
+    $ aStarDepthGoal (moves c) (manhattanDistance end . fst) st
 
 allDir4None :: [Maybe Direction4]
 allDir4None = Nothing : map Just allDir4

@@ -1,10 +1,9 @@
 module Utils.Text where
 
+import           Data.Text (Text)
+import qualified Data.Text as Text
 
-import           Data.Text             (Text)
-import qualified Data.Text             as Text
-
-import           GHC.Stack             (HasCallStack)
+import           GHC.Stack (HasCallStack)
 
 pad :: Int -> Text -> Text
 pad sz = Text.justifyRight sz ' '

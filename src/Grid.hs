@@ -7,12 +7,10 @@ import qualified Data.Text     as Text
 
 import           Utils
 
-data Position2 =
-  Position2
-    { pX :: !Int
-    , pY :: !Int
-    }
-  deriving (Eq, Ord, Show)
+data Position2 = Position2
+  { pX :: !Int
+  , pY :: !Int
+  } deriving (Eq, Ord, Show)
 
 instance Hashable Position2 where
   hashWithSalt s (Position2 x y) = hashWithSalt s (x, y)

@@ -6,9 +6,9 @@ import           Utils
 
 findSum :: Int -> Int -> [Int] -> Set Int
 findSum count total candidates =
-  lastE "empty path" $
-  fromJustE "no numbers add to requested" $
-  aStarDepth prependNumber toGoal isGoal mempty
+  lastE "empty path"
+    $ fromJustE "no numbers add to requested"
+    $ aStarDepth prependNumber toGoal isGoal mempty
   where
     prependNumber :: Set Int -> [Set Int]
     prependNumber existing =

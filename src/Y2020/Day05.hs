@@ -12,8 +12,11 @@ parseCodes = linesP &** pureP seatCode
 
 seatCode :: Text -> Int
 seatCode =
-  treadBin .
-  treplace "F" "0" . treplace "B" "1" . treplace "L" "0" . treplace "R" "1"
+  treadBin
+    . treplace "F" "0"
+    . treplace "B" "1"
+    . treplace "L" "0"
+    . treplace "R" "1"
 
 treadBin :: Text -> Int
 treadBin = fst . head . readBin . Text.unpack

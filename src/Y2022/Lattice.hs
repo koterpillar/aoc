@@ -34,14 +34,11 @@ latticeInsert :: Positionable a => Lattice -> a -> Maybe Lattice
 latticeInsert LEmpty    = Just . LTree . mkSingleton . latticePosition
 latticeInsert (LTree l) = fmap LTree . (`lInsert` l) . latticePosition
 
-latticeInsertS ::
-     MonadState Lattice s
-  => Positionable a =>
-       a -> s Bool
+latticeInsertS :: MonadState Lattice s => Positionable a => a -> s Bool
 latticeInsertS a =
   gets (`latticeInsert` a) >>= \case
     Nothing -> pure False
-    Just l  -> put l $> True
+    Just l -> put l $> True
 
 mkSingleton :: [Int] -> L
 mkSingleton = foldr ((LChoice .) . Map.singleton) LLeaf

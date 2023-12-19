@@ -39,6 +39,7 @@ traceAO msg fn = traceO msg . fn . traceF (prependShow $ msg ++ "<")
 traceAO2 ::
      (Show a1, Show a2, Show o) => String -> (a1 -> a2 -> o) -> a1 -> a2 -> o
 traceAO2 msg fn =
-  curry $
-  traceO msg .
-  uncurry fn . traceF (\(a1, a2) -> msg ++ "< " ++ show a1 ++ show a2)
+  curry
+    $ traceO msg
+        . uncurry fn
+        . traceF (\(a1, a2) -> msg ++ "< " ++ show a1 ++ show a2)

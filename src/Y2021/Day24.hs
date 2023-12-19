@@ -8,8 +8,8 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Text       as Text
 
 import           AOC
-import           Quantum         (Collapse (..), Quantum)
 import qualified Quantum
+import           Quantum         (Collapse (..), Quantum)
 import           Utils           hiding (Map)
 
 data Register
@@ -64,14 +64,12 @@ iDest (Eql r _) = r
 
 type Program = [Instruction]
 
-data ALU =
-  ALU
-    { aluW :: !Int
-    , aluX :: !Int
-    , aluY :: !Int
-    , aluZ :: !Int
-    }
-  deriving (Eq, Ord)
+data ALU = ALU
+  { aluW :: !Int
+  , aluX :: !Int
+  , aluY :: !Int
+  , aluZ :: !Int
+  } deriving (Eq, Ord)
 
 instance Show ALU where
   show (ALU w x y z) =
@@ -198,10 +196,13 @@ bestInput ::
   => Program
   -> Maybe [Int]
 bestInput =
-  inputsSingleKey @c .
-  Quantum.filter success .
-  flip runProgram (Quantum.pure aluInit) .
-  listProgress 10 . traceShowF length . optimize . traceShowF length
+  inputsSingleKey @c
+    . Quantum.filter success
+    . flip runProgram (Quantum.pure aluInit)
+    . listProgress 10
+    . traceShowF length
+    . optimize
+    . traceShowF length
 
 part1 :: Program -> Maybe [Int]
 part1 = bestInput @Max
@@ -218,18 +219,18 @@ tasks =
     24
     (Inline "")
     parse
-    [ Assert "part1" (Just [7]) $
-      part1 [Inp Z, Add Z (SrcValue 2), Mod Z (SrcValue 3)]
-    , Assert "part1 two inputs" (Just [7, 8]) $
-      part1
-        [ Inp Z
-        , Add Z (SrcValue 2)
-        , Mod Z (SrcValue 3)
-        , Inp X
-        , Add X (SrcValue 1)
-        , Mod X (SrcValue 3)
-        , Add Z (SrcRegister X)
-        ]
+    [ Assert "part1" (Just [7])
+        $ part1 [Inp Z, Add Z (SrcValue 2), Mod Z (SrcValue 3)]
+    , Assert "part1 two inputs" (Just [7, 8])
+        $ part1
+            [ Inp Z
+            , Add Z (SrcValue 2)
+            , Mod Z (SrcValue 3)
+            , Inp X
+            , Add X (SrcValue 1)
+            , Mod X (SrcValue 3)
+            , Add Z (SrcRegister X)
+            ]
     , taskBlind (show . part1)
     , taskBlind (show . part2)
     ]

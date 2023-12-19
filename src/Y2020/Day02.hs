@@ -6,20 +6,18 @@ import           AOC
 import           Miniparse
 import           Utils
 
-data Policy =
-  Policy
-    { pOne  :: Int
-    , pTwo  :: Int
-    , pChar :: Char
-    }
-  deriving (Ord, Eq, Show)
+data Policy = Policy
+  { pOne  :: Int
+  , pTwo  :: Int
+  , pChar :: Char
+  } deriving (Ord, Eq, Show)
 
 parsePolicy :: Parser Text [(Policy, Text)]
 parsePolicy = linesP &** tsplitP ": " &* policyP &+ idP
   where
     policyP =
-      (\((pOne, pTwo), pChar) -> Policy {..}) <$>
-      wordsP &* (tsplitP "-" &* integerP &+ integerP) &+ charP
+      (\((pOne, pTwo), pChar) -> Policy {..})
+        <$> wordsP &* (tsplitP "-" &* integerP &+ integerP) &+ charP
 
 isValid1 :: Policy -> Text -> Bool
 isValid1 Policy {..} t = inRange pOne pTwo $ Text.count (Text.singleton pChar) t

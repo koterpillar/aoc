@@ -12,11 +12,9 @@ import           AOC
 import           Path
 import           Utils
 
-newtype VKey =
-  VKey
-    { unVKey :: Text
-    }
-  deriving (Eq, Ord)
+newtype VKey = VKey
+  { unVKey :: Text
+  } deriving (Eq, Ord)
 
 instance Hashable VKey where
   hashWithSalt s = hashWithSalt s . unVKey
@@ -27,12 +25,10 @@ vAA = VKey "AA"
 instance Show VKey where
   show (VKey k) = Text.unpack k
 
-data VData =
-  VData
-    { vFlow :: Int
-    , vNext :: [(Int, VKey)]
-    }
-  deriving (Eq, Ord, Show)
+data VData = VData
+  { vFlow :: Int
+  , vNext :: [(Int, VKey)]
+  } deriving (Eq, Ord, Show)
 
 mkVData :: Int -> [VKey] -> VData
 mkVData f n = VData f $ zip (repeat 1) n
@@ -44,15 +40,15 @@ iValves = mapFilterValues $ (> 0) . vFlow
 
 parser :: Parser Text Input
 parser =
-  Map.fromList <$>
-  linesP &** wordsP &* pureP tail &* unconsP &* (pureP VKey &= vdp)
+  Map.fromList
+    <$> linesP &** wordsP &* pureP tail &* unconsP &* (pureP VKey &= vdp)
   where
     vdp =
-      pureP (drop 2) &*
-      (uncurry mkVData <$>
-       unconsP &*
-       ((pureP (terase "rate=" . terase ";") &* integerP) &=
-        (pureP (drop 4 . map (terase ",")) &** pureP VKey)))
+      pureP (drop 2)
+        &* (uncurry mkVData
+              <$> unconsP
+                    &* ((pureP (terase "rate=" . terase ";") &* integerP)
+                          &= (pureP (drop 4 . map (terase ",")) &** pureP VKey)))
 
 type PathFn = VKey -> VKey -> Int
 
@@ -68,17 +64,20 @@ mPath m = \from to -> mapLookupE "mPath" (from, to) paths
 
 mPath' :: Input -> PathFn
 mPath' m from to =
-  fst $
-  lastE "mPath" $
-  fromJustE "mPath" $
-  aStar moves (subtract `on` fst) (const 0) ((== to) . snd) (0, from)
+  fst
+    $ lastE "mPath"
+    $ fromJustE "mPath"
+    $ aStar moves (subtract `on` fst) (const 0) ((== to) . snd) (0, from)
   where
     moves (d, k) = [(d + d', k') | (d', k') <- vNext $ mapLookupE "mPath" k m]
 
 mValves :: Input -> [VKey]
 mValves =
-  map fst .
-  sortOn (negate . snd) . filter ((> 0) . snd) . Map.toList . Map.map vFlow
+  map fst
+    . sortOn (negate . snd)
+    . filter ((> 0) . snd)
+    . Map.toList
+    . Map.map vFlow
 
 mTally :: Input -> PathFn -> Int -> [VKey] -> Int
 mTally m path limit = go 0 0 vAA
@@ -92,19 +91,20 @@ mTally m path limit = go 0 0 vAA
           let dt = path p1 p2 + 1
           let df = vFlow $ mapLookupE "mTally" p2 m
           let t2 = t1 + dt
-          pure $
-            if t2 > limit
-              then f1 * (limit - t1)
-              else let f2 = f1 + df
-                    in f1 * dt + go f2 t2 p2 vrest
+          pure
+            $ if t2 > limit
+                then f1 * (limit - t1)
+                else let f2 = f1 + df
+                      in f1 * dt + go f2 t2 p2 vrest
 
 start :: Int -> Input -> Int
 start minutes input = score
   where
     !path = mPath input
     score =
-      mTally input path minutes $
-      traceF (prependShow "valves" . length) $ mValves input
+      mTally input path minutes
+        $ traceF (prependShow "valves" . length)
+        $ mValves input
 
 part1 = start 30
 
@@ -116,10 +116,12 @@ splits (x:xs) = do
 
 start2 :: Int -> Input -> Int
 start2 minutes input =
-  maximum $
-  map (uncurry (+) . (score *** score)) $
-  listProgress 100 $
-  traceF (prependShow "splits" . length) $ splits $ mValves input
+  maximum
+    $ map (uncurry (+) . (score *** score))
+    $ listProgress 100
+    $ traceF (prependShow "splits" . length)
+    $ splits
+    $ mValves input
   where
     !path = mPath input
     score = mTally input path minutes

@@ -24,10 +24,10 @@ data LensOp
 
 lensOpsP :: Parser [String] [LensOp]
 lensOpsP =
-  traverseP $
-  pureP Text.pack &*
-  ((tsplitP "-" &* ap2P (\x _ -> LRemove x) charactersP (requireP "")) &|
-   (tsplitP "=" &* ap2P LAdd charactersP integerP))
+  traverseP
+    $ pureP Text.pack
+        &* ((tsplitP "-" &* ap2P (\x _ -> LRemove x) charactersP (requireP ""))
+              &| (tsplitP "=" &* ap2P LAdd charactersP integerP))
 
 type Box = [(String, Int)]
 
@@ -63,7 +63,6 @@ setupLens (LAdd x v) m = Map.insert k e' m
                e
         else e ++ [(x, v)]
 
-part2 =
-  focusingPowers . setupLenses . justParse lensOpsP
+part2 = focusingPowers . setupLenses . justParse lensOpsP
 
 tasks = Tasks 2023 15 (CodeBlock 0) parser [Task part1 1320, Task part2 145]

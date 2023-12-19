@@ -13,20 +13,16 @@ import           Path
 import           Search
 import           Utils
 
-newtype A =
-  A
-    { getA :: Text
-    }
-  deriving (Eq, Ord, Show)
+newtype A = A
+  { getA :: Text
+  } deriving (Eq, Ord, Show)
 
 instance Hashable A where
   hashWithSalt s = hashWithSalt s . getA
 
-newtype I =
-  I
-    { getI :: Text
-    }
-  deriving (Eq, Ord, Show)
+newtype I = I
+  { getI :: Text
+  } deriving (Eq, Ord, Show)
 
 instance Hashable I where
   hashWithSalt s = hashWithSalt s . getI

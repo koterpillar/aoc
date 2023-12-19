@@ -46,9 +46,9 @@ cmdBodyP (LS _)  = LS . Dir . Map.fromList <$> traverseP lsItemP
 
 lsItemP :: Parser Text (Text, FileDir)
 lsItemP =
-  wordsP &*
-  (((requireP "dir" &* constP emptyDir) &| (integerP &* pureP File)) &+ idP) &*
-  pureP swap
+  wordsP
+    &* (((requireP "dir" &* constP emptyDir) &| (integerP &* pureP File)) &+ idP)
+    &* pureP swap
 
 cmdP :: Parser [Text] Command
 cmdP = unconsP &* (cmdHeaderP &=> cmdBodyP)

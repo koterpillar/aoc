@@ -15,16 +15,16 @@ type StateParser src dest = StateParserT String src dest
 stateP ::
      (Eq src, Monoid src, Show src) => StateParser src dest -> Parser src dest
 stateP p =
-  Parser $
-  runStateT p >=> \(result, remainder) ->
-    if remainder == mempty
-      then Right result
-      else Left $ "unconsumed remainder: " ++ show remainder
+  Parser
+    $ runStateT p >=> \(result, remainder) ->
+        if remainder == mempty
+          then Right result
+          else Left $ "unconsumed remainder: " ++ show remainder
 
 unconsSP :: StateParserT e [a] (Maybe a)
 unconsSP =
   state $ \case
-    []     -> (Nothing, [])
+    [] -> (Nothing, [])
     (x:xs) -> (Just x, xs)
 
 unconsSP_ :: StateParser [a] a

@@ -19,9 +19,11 @@ type Rule = (Bag, Set (Int, Bag))
 
 parseInners :: Parser Text (Set (Int, Bag))
 parseInners =
-  setFromList <$>
-  pureP (terase ".") &* tsplitP ", " &* pureP (filter (/= "no other bags")) &**
-  parseInner
+  setFromList
+    <$> pureP (terase ".")
+          &* tsplitP ", "
+          &* pureP (filter (/= "no other bags"))
+          &** parseInner
 
 parseRule :: Parser Text Rule
 parseRule = tsplitP " contain " &* parseBag &+ parseInners

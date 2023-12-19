@@ -3,8 +3,8 @@ module Y2021.Day21 where
 import qualified Data.Map as Map
 
 import           AOC
-import           Quantum  (Collapse (..), Quantum)
 import qualified Quantum
+import           Quantum  (Collapse (..), Quantum)
 import           Utils
 
 mod1 :: Int -> Int -> Int
@@ -35,9 +35,10 @@ ctotal cs = sum [c | (_, QCount c) <- Quantum.toList cs]
 
 cexamples :: Show a => Counts a -> String
 cexamples gs =
-  "Total: " <>
-  show (ctotal gs) <>
-  " Examples: " <> intercalate ", " (map show $ take 2 $ Quantum.toList gs)
+  "Total: "
+    <> show (ctotal gs)
+    <> " Examples: "
+    <> intercalate ", " (map show $ take 2 $ Quantum.toList gs)
 
 traceCounts :: Show a => Counts a -> Counts a
 traceCounts = traceF cexamples
@@ -64,15 +65,13 @@ roll Dirac =
   Quantum.fromListSingle
     [(a + b + c, Dirac) | a <- diceSides, b <- diceSides, c <- diceSides]
 
-data Game =
-  Game
-    { gamePositions :: !(Map Player Int)
-    , gameDice      :: Dice
-    , gameTurn      :: !Int
-    , gameScore     :: !(Map Player Int)
-    , gameUntil     :: !Int
-    }
-  deriving (Ord, Eq, Show)
+data Game = Game
+  { gamePositions :: !(Map Player Int)
+  , gameDice      :: Dice
+  , gameTurn      :: !Int
+  , gameScore     :: !(Map Player Int)
+  , gameUntil     :: !Int
+  } deriving (Ord, Eq, Show)
 
 gamePlayers :: Game -> [Player]
 gamePlayers = Map.keys . gamePositions
@@ -106,8 +105,8 @@ gameStep g = Quantum.map (uncurry go) $ roll $ gameDice g
       where
         player = gameCurrentPlayer g
         position =
-          fromJustE ("no position for player " <> show player) $
-          mapLookup player (gamePositions g)
+          fromJustE ("no position for player " <> show player)
+            $ mapLookup player (gamePositions g)
         position' = (position + movement) `mod1` 10
         gamePositions' = mapInsert player position' (gamePositions g)
         gameScore' = Map.adjust (+ position') player (gameScore g)
@@ -143,10 +142,13 @@ part2 :: Positions -> Int
 part2 game = max s1 s2
   where
     [(_, QCount s1), (_, QCount s2)] =
-      Quantum.toList $
-      traceCounts $
-      Quantum.map snd $
-      traceCounts $ gamePlay $ traceShowId $ startGameDirac game
+      Quantum.toList
+        $ traceCounts
+        $ Quantum.map snd
+        $ traceCounts
+        $ gamePlay
+        $ traceShowId
+        $ startGameDirac game
 
 testDirac :: Counts Int
 testDirac = Quantum.flatMap droll (\a -> Quantum.map (a +) droll)
