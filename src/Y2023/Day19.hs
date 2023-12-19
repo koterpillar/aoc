@@ -101,31 +101,19 @@ exprEval (Expr c s v) p = rating c p `signOp` v
     op LessThan    = (<)
     op GreaterThan = (>)
 
-accepts1 :: Workflow -> Part -> Maybe (Either Bool Text)
-accepts1 Accept _ = Just $ Left True
-accepts1 Reject _ = Just $ Left False
-accepts1 (Goto x) _ = Just $ Right x
-accepts1 (Condition e w) p
-  | exprEval e p = accepts1 w p
-  | otherwise = Nothing
-
-accepts2 :: [Workflow] -> Part -> Either Bool Text
-accepts2 [] p = error $ "Part " <> show p <> " not accepted by any workflow"
-accepts2 (w:ws) p =
-  case accepts1 w p of
-    Just r  -> r
-    Nothing -> accepts2 ws p
-
-accepts :: Text -> Workflows -> Part -> Bool
-accepts i w p =
-  case accepts2 ws p of
-    Left r   -> r
-    Right i' -> accepts i' w p
+accepts :: Workflows -> Text -> Part -> Bool
+accepts w i p = go p $ mapLookupE "accepts.go" i w
   where
-    ws = mapLookupE "accepts" i w
+    go _ [] = error "accepts: empty workflow"
+    go _ (Accept:_) = True
+    go _ (Reject:_) = False
+    go p (Goto i':_) = accepts w i' p
+    go p (Condition e w:ws)
+      | exprEval e p = go p (w : ws)
+      | otherwise = go p ws
 
 part1 :: Workflows -> [Part] -> Int
-part1 w = sum . map totalRating . filter (accepts "in" w)
+part1 w = sum . map totalRating . filter (accepts w "in")
 
 type MetaPart = Map Category Ranges
 
@@ -145,16 +133,13 @@ metaCondition (Expr c s v) = Map.adjust (go s) c
     go LessThan    = Ranges.subtract (Ranges.singleton (pred v) 4000)
     go GreaterThan = Ranges.subtract (Ranges.singleton 1 $ succ v)
 
-metaAccepts :: Workflows -> Text -> Int
-metaAccepts = metaAccepts' metaPartAll
-
-metaAccepts' :: MetaPart -> Workflows -> Text -> Int
-metaAccepts' p w i = go p $ mapLookupE "metaAccepts.go'" i w
+metaAccepts :: Workflows -> Text -> MetaPart -> Int
+metaAccepts w i p = go p $ mapLookupE "metaAccepts.go" i w
   where
     go _ [] = error "empty workflow"
     go p (Accept:_) = metaPartCount p
     go _ (Reject:_) = 0
-    go p (Goto i':_) = metaAccepts' p w i'
+    go p (Goto i':_) = metaAccepts w i' p
     go p (Condition e w:ws) = r1 + r2
       where
         p1 = metaCondition e p
@@ -163,7 +148,7 @@ metaAccepts' p w i = go p $ mapLookupE "metaAccepts.go'" i w
         r2 = go p2 ws
 
 part2 :: Workflows -> Int
-part2 = flip metaAccepts "in"
+part2 w = metaAccepts w "in" metaPartAll
 
 testWorkflows :: Workflows
 testWorkflows =
@@ -179,17 +164,15 @@ tasks =
     19
     (CodeBlock 0)
     parser
-    [ AssertExample "part 1 in result" (Right "qqz") $ \(w, p:_) ->
-        accepts2 (mapLookupE "ae1" "in" w) p
-    , task (uncurry part1) 19114 & taskPart 1
+    [ task (uncurry part1) 19114 & taskPart 1
     , Assert "metaPartCount all" (4000 ^ 4) $ metaPartCount metaPartAll
     , Assert "metaAccepts empty" (4000 ^ 4)
-        $ metaAccepts (Map.singleton "in" [Accept]) "in"
+        $ metaAccepts (Map.singleton "in" [Accept]) "in" metaPartAll
     , Assert "metaAccepts x > 2000" (4000 ^ 4 `div` 2)
-        $ metaAccepts testWorkflows "hax"
+        $ metaAccepts testWorkflows "hax" metaPartAll
     , Assert "metaAccepts x < 2001" (4000 ^ 4 `div` 2)
-        $ metaAccepts testWorkflows "hax"
+        $ metaAccepts testWorkflows "hax" metaPartAll
     , Assert "metaAccepts m then x" (4000 ^ 4 `div` 2)
-        $ metaAccepts testWorkflows "h1m"
+        $ metaAccepts testWorkflows "h1m" metaPartAll
     , task (part2 . fst) 167409079868000 & taskPart 2
     ]
