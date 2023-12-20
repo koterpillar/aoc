@@ -140,24 +140,73 @@ allDestinations :: Machine -> Set MKey
 allDestinations = Set.fromList . concatMap mDestinations . Map.elems . maModules
 
 mst :: Machine -> Text
-mst ma = Text.unwords (map ff $ Map.toList $ maFlipFlops ma)
+mst ma = Text.unlines [ffs, cos]
   where
+    ffs = Text.unwords (map ff $ Map.toList $ maFlipFlops ma)
     ff (k, True)  = Text.toUpper k
     ff (k, False) = Text.toLower k
+    cos = Text.unwords $ map co $ Map.toList $ maConjunctions ma
+    co (c, cs) = c <> Text.pack (map p $ toList cs)
+    p High = '#'
+    p Low  = '.'
+
+pushForever :: Machine -> [[Send]]
+pushForever = unfoldr $ Just . pushButton
+
+target2 :: MKey
+target2 = "rx"
+
+turnsOn :: Send -> Bool
+turnsOn Send {..} = sPulse == Low && sTo == target2
+
+sendsTo :: MKey -> Machine -> [MKey]
+sendsTo t = filterTuple (elem t . mDestinations) . Map.toList . maModules
+
+targetComponents :: Machine -> [MKey]
+targetComponents m = sendsTo proxy m
+  where
+    proxy = fromSingleE "targetComponents.proxy" $ sendsTo target2 m
+
+indices :: (a -> Bool) -> [a] -> [(Int, a)]
+indices f = filter (f . snd) . zipN 0
+
+indicesAgain :: (a -> Bool) -> [[a]] -> [(Int, Int, a)]
+indicesAgain f xs = [(i, j, x) | (i, ys) <- zipN 0 xs, (j, x) <- indices f ys]
 
 part2 :: Machine -> Int
 part2 m
-  | "rx" `notElem` traceShowId (allDestinations m) = 0
-  | otherwise = go 1 m
+  | target2 `notElem` allDestinations m = 0
+  | otherwise = error $ show $ foldr1 lSneakyMerge $ map lowsToTarget targets
   where
-    go :: Int -> Machine -> Int
-    go n m
-      | any turnsOn r = n
-      | otherwise = go (succ n) (ttraceF mst m')
-      where
-        (r, m') = pushButton m
-        turnsOn (Send _ Low "rx") = True
-        turnsOn _                 = False
+    allSends = pushForever m
+    targets = traceShowF ("targets", ) $ targetComponents m
+    lowsToTarget t =
+      lFixSneaky
+        $ lFrom
+        $ map fst
+        $ indices (any $ \s -> sTo s == t && sPulse s == Low) allSends
+
+data Linear = Linear
+  { lStart :: Int
+  , lInc   :: Int
+  } deriving (Show)
+
+lFrom :: [Int] -> Linear
+lFrom (a:b:c:_) =
+  if c - b == b - a
+    then Linear a (b - a)
+    else error $ "lFrom: different deltas: " <> show [c - b, b - a]
+
+lFixSneaky :: Linear -> Linear
+lFixSneaky l@(Linear a b)
+  | b == succ a = Linear (-1) b
+  | otherwise = error $ "Expected origin at -1, got " <> show l
+
+lSneakyMerge :: Linear -> Linear -> Linear
+lSneakyMerge l1@(Linear a1 b1) l2@(Linear a2 b2)
+  | a1 == negate 1 && a2 == negate 1 = Linear (-1) (lcm b1 b2)
+  | otherwise =
+    error $ "Expected origin at -1, got " <> show l1 <> " and " <> show l2
 
 parser :: Parser Text Machine
 parser =
