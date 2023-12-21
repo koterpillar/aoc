@@ -1,8 +1,10 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Y2023.Day21 where
 
-import qualified Data.Map  as Map
-import qualified Data.Set  as Set
-import qualified Data.Text as Text
+import qualified Data.Map               as Map
+import qualified Data.Set               as Set
+import qualified Data.Text              as Text
 
 import           AOC
 import           Grid
@@ -22,60 +24,62 @@ type Input = Grid2 GardenItem
 parser :: Parser Text Input
 parser = charGridP
 
-inputBounds :: Input -> (Position2, Position2)
-inputBounds input =
-  (Position2 (pred xmin) (pred ymin), Position2 (succ xmax) (succ ymax))
+inputMaxBound :: Input -> Position2
+inputMaxBound input = Position2 (succ xmax) (succ ymax)
   where
-    (Position2 xmin ymin, Position2 xmax ymax) = boundsG input
+    (Position2 1 1, Position2 xmax ymax) = boundsG input
 
-findGnome :: Input -> (Grid2 (), Position2)
+type Grid = Grid2 ()
+
+findGnome :: Input -> (Grid, Position2)
 findGnome i = (g, start)
   where
     (start, Gnome) = fromSingleE "gnome" $ Map.toList $ Map.filter (== Gnome) i
     g = void $ Map.filter (/= Gnome) i
 
-type Pt = (Position2, Position2) -- (position inside grid, position in the infinite grid of grids)
+type It = (Position2, Set Position2) -- (position inside grid, positions in the infinite grid of grids)
 
 type St = Map Position2 (Set Position2) -- key = inside grid, values = positions in the infinite grid of grids
 
-type Wlk = (Direction4 -> Position2 -> Maybe Pt)
+type Wlk = (Direction4 -> Position2 -> Maybe (Position2, Position2))
 
-step :: Wlk -> Grid2 () -> St -> St
-step wlk g st =
+step :: Wlk -> St -> St
+step wlk st =
   Map.fromListWith Set.union $ do
     (p, gps) <- Map.toList st
     d <- allDir4
     (p', dgp) <- toList $ wlk d p
-    guard $ Map.notMember p' g
     let gps' = Set.map (pointPlus dgp) gps
     pure (p', gps')
 
-reachableInSteps :: ((Position2, Position2) -> Wlk) -> Int -> Input -> Int
+reachableInSteps :: (Grid -> Position2 -> Wlk) -> Int -> Input -> Int
 reachableInSteps genWlk n i = sum $ fmap Set.size result
   where
-    ib = inputBounds i
+    im = inputMaxBound i
     (g, gnome) = findGnome i
     start = Map.singleton gnome (Set.singleton $ Position2 0 0)
-    wlk = genWlk ib
-    result = iterateNL n (step wlk g) start
+    wlk = genWlk g im
+    result = iterateNL n (step wlk) start
 
-wlk1 :: (Position2, Position2) -> Wlk
-wlk1 ib d p
-  | insideBounds ib p' = Just (p', Position2 0 0)
-  | otherwise = Nothing
-  where
-    p' = walk d p
+wlk1 :: Grid -> Position2 -> Wlk
+wlk1 g im d p =
+  wlk2 g im d p >>= \case
+    r@(p', Position2 0 0) -> Just r
+    _ -> Nothing
+
+wlk2 :: Grid -> Position2 -> Wlk
+wlk2 g im d p = do
+  let Position2 xmax ymax = im
+  let Position2 x' y' = walk d p
+  let (dx, x'') = divMod x' (succ xmax)
+  let (dy, y'') = divMod y' (succ ymax)
+  let p'' = Position2 x'' y''
+  guard $ Map.notMember p'' g
+  let dp = Position2 dx dy
+  pure (p'', dp)
 
 part1 :: Int -> Input -> Int
 part1 = reachableInSteps wlk1
-
-wlk2 :: (Position2, Position2) -> Wlk
-wlk2 ib d p = Just (Position2 x'' y'', Position2 dx dy)
-  where
-    (Position2 0 0, Position2 xmax ymax) = ib
-    Position2 x' y' = walk d p
-    (dx, x'') = divMod x' (succ xmax)
-    (dy, y'') = divMod y' (succ ymax)
 
 part2 :: Int -> Input -> Int
 part2 = reachableInSteps wlk2
