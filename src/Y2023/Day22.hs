@@ -23,7 +23,7 @@ data Brick = Brick
 -- Parsing
 brickNames :: [Text]
 brickNames =
-  [Text.singleton c | c <- ['A' .. 'Z']] ++ map (Text.cons '#' . tshow) [27 ..]
+  [Text.singleton c | c <- ['A' .. 'Y']] ++ map (Text.cons 'Z' . tshow) [27 ..]
 
 p3p :: Parser Text P3
 p3p = tsplitP "," &* ap3P (,,) integerP integerP integerP
@@ -111,19 +111,29 @@ fall m = stateMemo go (`shiftAll` m)
 
 -- Dependencies
 -- Which bricks does each brick rest on?
-stoppers :: BrickMap -> Map Text (Set Text)
-stoppers bm =
+dependencies :: BrickMap -> Map Text (Set Text)
+dependencies bm =
   mapFromListS $ do
     (p@(x, y, z), b) <- Map.toList bm
-    let p' = (x, y, z - 1)
+    let p' = (x, y, pred z)
     b2 <- toList $ Map.lookup p' bm
     guard $ b2 /= b
     pure (b, Set.singleton b2)
+
+dotDepLine :: Text -> Set Text -> Text
+dotDepLine a bs = a <> "->" <> Text.intercalate "," (Set.toList bs)
+
+dotGraph :: [Text] -> Text
+dotGraph ls = "digraph {" <> Text.intercalate ";" ls <> "}"
+
+dotDependencies :: Map Text (Set Text) -> Text
+dotDependencies = dotGraph . map (uncurry dotDepLine) . Map.toList
 
 -- Which bricks are the only ones supporting something?
 singles :: Ord b => Map a (Set b) -> Set b
 singles = foldr1 Set.union . filter ((== 1) . length) . toList
 
+-- What brick is the closest one that, when removed, will cause this one to fall?
 singlePointsOfFailure ::
      (Ord a, Hashable a, Show a) => [a] -> Map a (Set a) -> Map a a
 singlePointsOfFailure names deps =
@@ -141,10 +151,7 @@ singlePointsOfFailure names deps =
               _          -> Nothing -- multiple roots, no single point of failure
 
 totalDependencies :: (Ord a, Hashable a, Show a) => [a] -> Map a a -> Map a Int
-totalDependencies names spof =
-  traceShow rdeps
-    $ traceShowF (("totalDeps", ) . Map.filter (> 0))
-    $ Map.fromList [(n, go n) | n <- names]
+totalDependencies names spof = Map.fromList [(n, go n) | n <- names]
   where
     go n = sum (map go ns) + length ns
       where
@@ -157,16 +164,16 @@ part1 bs = length bs - length (singles deps)
   where
     bm = traceBM $ brickMap bs
     bm1 = traceBM $ fall bm
-    deps = stoppers bm1
+    deps = dependencies bm1
 
 part2 :: [Brick] -> Int
-part2 bs = sum tdeps
+part2 bs = ttrace (dotDependencies deps) $ sum tdeps
   where
     bm = traceBM $ brickMap bs
     bm1 = fall bm
-    deps = stoppers bm1
+    deps = dependencies bm1
     names = map brickName bs
-    spof = traceShowF ("spof", ) $ singlePointsOfFailure names deps
+    spof = singlePointsOfFailure names deps
     tdeps = totalDependencies names spof
 
 tasks =
