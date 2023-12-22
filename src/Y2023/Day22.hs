@@ -92,30 +92,25 @@ supports :: BrickMap -> Text -> Map (Maybe Text) Int
 supports m n =
   mapFromListWith min $ map (supports1 m n) $ Map.keys $ Map.filter (== n) m
 
-type SD a = State (Map Text Int) a
-
-fall :: [Text] -> BrickMap -> BrickMap
-fall ns m = evalState (shiftAll m) Map.empty
+-- Make all the bricks fall down! In one step!
+fall :: BrickMap -> BrickMap
+fall m = stateMemo go (`shiftAll` m)
   where
+    ns = nubOrd $ Map.elems m
     s = Map.fromList [(n, supports m n) | n <- ns]
-    totalFall :: Text -> SD Int
-    totalFall n =
-      gets (Map.lookup n) >>= \case
-        Just r -> pure r
-        Nothing -> do
-          r <- minimum <$> traverse tf1 (Map.toList $ mapLookupE "fall" n s)
-          modify $ Map.insert n r
-          pure r
-    tf1 :: (Maybe Text, Int) -> SD Int
-    tf1 (Nothing, d) = pure d
-    tf1 (Just n, d)  = (+) d <$> totalFall n
-    shiftAll = fmap Map.fromList . traverse shift . Map.toList
-    shift :: (P3, Text) -> SD (P3, Text)
-    shift ((x, y, z), n) = do
-      dz <- totalFall n
+    go rgo n =
+      fmap minimum
+        $ for (Map.toList $ mapLookupE "fall" n s)
+        $ \case
+            (Nothing, d) -> pure d
+            (Just n, d) -> (+) d <$> rgo n
+    shiftAll tf = fmap Map.fromList . traverse (shift tf) . Map.toList
+    shift tf ((x, y, z), n) = do
+      dz <- tf n
       pure ((x, y, z - dz), n)
 
 -- Dependencies
+-- Which bricks does each brick rest on?
 stoppers :: BrickMap -> Map Text (Set Text)
 stoppers bm =
   mapFromListS $ do
@@ -125,6 +120,7 @@ stoppers bm =
     guard $ b2 /= b
     pure (b, Set.singleton b2)
 
+-- Which bricks are the only ones supporting something?
 singles :: Ord b => Map a (Set b) -> Set b
 singles = foldr1 Set.union . filter ((== 1) . length) . toList
 
@@ -160,16 +156,14 @@ part1 :: [Brick] -> Int
 part1 bs = length bs - length (singles deps)
   where
     bm = traceBM $ brickMap bs
-    ns = map brickName bs
-    bm1 = traceBM $ fall ns bm
+    bm1 = traceBM $ fall bm
     deps = stoppers bm1
 
 part2 :: [Brick] -> Int
 part2 bs = sum tdeps
   where
     bm = traceBM $ brickMap bs
-    ns = map brickName bs
-    bm1 = fall ns bm
+    bm1 = fall bm
     deps = stoppers bm1
     names = map brickName bs
     spof = traceShowF ("spof", ) $ singlePointsOfFailure names deps
@@ -181,6 +175,4 @@ tasks =
     22
     (CodeBlock 0)
     parser
-    [ task part1 5 & taskPart 1
-    , task part2 7 & taskPart 2
-    ]
+    [task part1 5 & taskPart 1, task part2 7 & taskPart 2]
