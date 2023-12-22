@@ -1,15 +1,17 @@
-{-# LANGUAGE Strict #-}
-
 module Y2023.Day22 where
 
-import qualified Data.Map  as Map
-import qualified Data.Set  as Set
-import qualified Data.Text as Text
+import           Control.Monad.State
+
+import qualified Data.Map            as Map
+import qualified Data.Set            as Set
+import qualified Data.Text           as Text
 
 import           AOC
 import           Grid
+import           Memo
 import           Utils
 
+-- Types
 type P3 = (Int, Int, Int)
 
 data Brick = Brick
@@ -18,6 +20,7 @@ data Brick = Brick
   , brickB    :: P3
   } deriving (Eq, Ord, Show)
 
+-- Parsing
 brickNames :: [Text]
 brickNames =
   [Text.singleton c | c <- ['A' .. 'Z']] ++ map (Text.cons '#' . tshow) [27 ..]
@@ -31,6 +34,7 @@ mkBrick n (a, b) = Brick n a b
 parser :: Parser Text [Brick]
 parser = zipWith mkBrick brickNames <$> linesP &** tsplitP "~" &* (p3p &+ p3p)
 
+-- Representation
 type BrickMap = Map P3 Text
 
 brickMap :: [Brick] -> BrickMap
@@ -42,53 +46,76 @@ brickMap bs =
     z <- [z1 .. z2]
     pure ((x, y, z), name)
 
-spaceBelow1 :: BrickMap -> Text -> P3 -> Int
-spaceBelow1 bm bn (x, y, z) = z - zStop - 1
+-- Display
+sideBySide :: [Text] -> Text
+sideBySide ts = Text.unlines $ map Text.unwords $ transpose $ map Text.lines ts
+
+displayBrickMap :: BrickMap -> Text
+displayBrickMap bm =
+  sideBySide [displayProject project bm | project <- [projectX, projectY]]
   where
-    canFall z' =
-      case Map.lookup (x, y, z') bm of
-        Nothing  -> True
-        Just bn' -> bn == bn'
-    zStop = fromMaybe 0 $ find (not . canFall) [z,pred z .. 1]
+    displayProject :: (P3 -> Position2) -> BrickMap -> Text
+    displayProject project bm =
+      displayG
+        $ Map.map (displayBricks . Set.toList)
+        $ mapFromListS
+        $ map (bimap project Set.singleton)
+        $ Map.toList bm
+    displayBricks [b] = Text.head b
+    displayBricks _   = '?'
+    k = max 1 $ length bm `div` 500
+    projectX (x, y, z) = Position2 y $ negate z `div` k
+    projectY (x, y, z) = Position2 x $ negate z `div` k
 
-spaceBelow :: BrickMap -> Text -> Int
-spaceBelow bm bn =
-  fromJustE
-    ("spaceBelow: empty brick "
-       <> show bn
-       <> " in\n"
-       <> Text.unpack (displayBrickMap bm))
-    $ maybeMinimum
-    $ [spaceBelow1 bm bn p | (p, n) <- Map.toList bm, n == bn]
+traceBM :: BrickMap -> BrickMap
+traceBM = ttraceF displayBrickMap
 
-fall1brick :: BrickMap -> Text -> BrickMap
-fall1brick bm bn
-  | dz == 0 = bm
-  | otherwise =
-    Map.fromList $ do
-      (p@(x, y, z), n) <- Map.toList bm
-      let p' =
-            if n == bn
-              then (x, y, z - dz)
-              else p
-      for_ (Map.lookup p' bm) $ \n' ->
-        when (n' /= n) $ error $ show ("brick fell into another", p, n, p', n')
-      pure (p', n)
+-- Fall
+-- For a particular point of a brick, what will stop its fall and how far away?
+supports1 ::
+     BrickMap
+  -> Text -- brick name the point belongs to
+  -> P3 -- point
+  -> (Maybe Text, Int) -- brick that will stop it (or ground if Nothing) and distance to it
+supports1 m n p@(x, y, z) =
+  second (\z' -> z - z' - 1)
+    $ fromMaybe (Nothing, 0)
+    $ listToMaybe
+    $ [ (Just n', z')
+      | z' <- [pred z,pred (pred z) .. 1]
+      , n' <- toList $ Map.lookup (x, y, z') m
+      , n' /= n
+      ]
+
+-- For a particular brick, what will stop its fall at every point and how far away?
+supports :: BrickMap -> Text -> Map (Maybe Text) Int
+supports m n =
+  mapFromListWith min $ map (supports1 m n) $ Map.keys $ Map.filter (== n) m
+
+type SD a = State (Map Text Int) a
+
+fall :: [Text] -> BrickMap -> BrickMap
+fall ns m = evalState (shiftAll m) Map.empty
   where
-    dz = spaceBelow bm bn
+    s = Map.fromList [(n, supports m n) | n <- ns]
+    totalFall :: Text -> SD Int
+    totalFall n =
+      gets (Map.lookup n) >>= \case
+        Just r -> pure r
+        Nothing -> do
+          r <- minimum <$> traverse tf1 (Map.toList $ mapLookupE "fall" n s)
+          modify $ Map.insert n r
+          pure r
+    tf1 :: (Maybe Text, Int) -> SD Int
+    tf1 (Nothing, d) = pure d
+    tf1 (Just n, d)  = (+) d <$> totalFall n
+    shiftAll = fmap Map.fromList . traverse shift . Map.toList
+    shift :: (P3, Text) -> SD (P3, Text)
+    shift ((x, y, z), n) = do
+      dz <- totalFall n
+      pure ((x, y, z - dz), n)
 
-sortedBrickNames :: BrickMap -> [Text]
-sortedBrickNames = nubOrd . map snd . sortOn (\((_, _, z), _) -> negate z) . Map.toList
-
-fall1 :: BrickMap -> BrickMap
-fall1 bm = go (sortedBrickNames bm) bm
-  where
-    go [] bm     = bm
-    go (b:bs) bm = go bs $ fall1brick bm b
-
-fall :: BrickMap -> BrickMap
-fall = iterateSettleL (traceBM . fall1)
-
+-- Dependencies
 stoppers :: BrickMap -> Map Text (Set Text)
 stoppers bm =
   mapFromListS $ do
@@ -98,38 +125,55 @@ stoppers bm =
     guard $ b2 /= b
     pure (b, Set.singleton b2)
 
-projectX :: P3 -> Position2
-projectX (x, y, z) = Position2 y $ negate z
-
-projectY :: P3 -> Position2
-projectY (x, y, z) = Position2 x $ negate z
-
-displayBrickMap :: BrickMap -> Text
-displayBrickMap bm =
-  Text.unlines [displayProject project bm | project <- [projectX, projectY]]
-  where
-    displayProject :: (P3 -> Position2) -> BrickMap -> Text
-    displayProject project bm =
-      displayG
-        $ Map.map (mkchr . Set.toList)
-        $ mapFromListS
-        $ map (bimap project Set.singleton)
-        $ Map.toList bm
-    mkchr [b] = Text.head b
-    mkchr _   = '?'
-
-traceBM = ttraceF displayBrickMap
-
 singles :: Ord b => Map a (Set b) -> Set b
 singles = foldr1 Set.union . filter ((== 1) . length) . toList
 
+singlePointsOfFailure ::
+     (Ord a, Hashable a, Show a) => [a] -> Map a (Set a) -> Map a a
+singlePointsOfFailure names deps =
+  Map.fromList [(n, d) | n <- names, d <- toList $ go n]
+  where
+    go =
+      unsafeMemo $ \a ->
+        case Set.toList <$> Map.lookup a deps of
+          Nothing -> Nothing -- root
+          Just [dep] -> Just dep -- single point of failure found!
+          Just deps -- multiple immediate dependencies
+           ->
+            case nubOrd $ map go deps of
+              [Just dep] -> Just dep -- all point to the same one!
+              _          -> Nothing -- multiple roots, no single point of failure
+
+totalDependencies :: (Ord a, Hashable a, Show a) => [a] -> Map a a -> Map a Int
+totalDependencies names spof =
+  traceShow rdeps
+    $ traceShowF (("totalDeps", ) . Map.filter (> 0))
+    $ Map.fromList [(n, go n) | n <- names]
+  where
+    go n = sum (map go ns) + length ns
+      where
+        ns = toList $ Map.findWithDefault Set.empty n rdeps
+    rdeps = mapFromListS [(d, Set.singleton n) | (n, d) <- Map.toList spof]
+
+-- Main
 part1 :: [Brick] -> Int
-part1 bs = length bs - length bSingleStoppers
+part1 bs = length bs - length (singles deps)
   where
     bm = traceBM $ brickMap bs
-    bm1 = fall bm
-    bStoppers = stoppers bm1
-    bSingleStoppers = singles bStoppers
+    ns = map brickName bs
+    bm1 = traceBM $ fall ns bm
+    deps = stoppers bm1
+
+part2 :: [Brick] -> Int
+part2 bs = sum tdeps
+  where
+    bm = traceBM $ brickMap bs
+    ns = map brickName bs
+    bm1 = fall ns bm
+    deps = stoppers bm1
+    names = map brickName bs
+    spof = traceShowF ("spof", ) $ singlePointsOfFailure names deps
+    tdeps = totalDependencies names spof
 
 tasks =
   Tasks
@@ -137,11 +181,6 @@ tasks =
     22
     (CodeBlock 0)
     parser
-    [ AssertExample
-        "space below"
-        0
-        (\bs ->
-           let bm = brickMap bs
-            in spaceBelow bm "B")
-    , task part1 5 & taskPart 1
+    [ task part1 5 & taskPart 1
+    , task part2 7 & taskPart 2
     ]
