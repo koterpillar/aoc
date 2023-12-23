@@ -1,6 +1,8 @@
 module Graph where
 
-import qualified Data.Map.Strict as SMap
+import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
+import qualified Data.Text       as Text
 
 import           Utils
 
@@ -10,10 +12,10 @@ vicinity :: Ord v => Set v -> Graph v -> Set v
 vicinity vs graph = vs <> mconcat (mapMaybe (`mapLookup` graph) $ toList vs)
 
 reverseGraph :: Ord v => Graph v -> Graph v
-reverseGraph graph = SMap.fromListWith mappend neighbors
+reverseGraph graph = Map.fromListWith mappend neighbors
   where
     neighbors = do
-      (v, vs) <- SMap.toList graph
+      (v, vs) <- Map.toList graph
       v' <- toList vs
       pure (v', set1 v)
 
@@ -21,7 +23,7 @@ reachableFrom :: Ord v => v -> Graph v -> Set v
 reachableFrom v graph = iterateSettleL (`vicinity` graph) (set1 v)
 
 vertices :: Graph v -> Set v
-vertices = SMap.keysSet
+vertices = Map.keysSet
 
 unreachableFrom :: Ord v => v -> Graph v -> Set v
 unreachableFrom v graph = vertices graph `setDifference` reachableFrom v graph
@@ -35,3 +37,9 @@ connectedComponents graph = go (vertices graph)
         let candidate = head $ toList candidates
             component = reachableFrom candidate graph
          in component : go (candidates `setDifference` component)
+
+dot :: (v -> Text) -> Graph v -> Text
+dot fmt = header . map (uncurry edge) . Map.toList
+  where
+    header ls = "digraph {" <> Text.intercalate ";" ls <> "}"
+    edge a bs = fmt a <> "->" <> Text.intercalate "," (map fmt $ Set.toList bs)

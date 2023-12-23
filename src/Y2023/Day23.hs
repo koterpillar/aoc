@@ -9,6 +9,7 @@ import qualified Data.Set                   as Set
 import qualified Data.Text                  as Text
 
 import           AOC
+import           Graph                      (dot)
 import           Grid
 import           Utils
 
@@ -67,12 +68,6 @@ paths g = ttrace (displayPaths paths g) paths
 
 part1 :: Grid -> Int
 part1 = maximum . map Set.size . paths
-
-dotDepLine :: Text -> Set Text -> Text
-dotDepLine a bs = a <> "->" <> Text.intercalate "," (Set.toList bs)
-
-dotGraph :: [Text] -> Text
-dotGraph ls = "digraph {" <> Text.intercalate ";" ls <> "}"
 
 data Edge t = Edge
   { eWeight :: Int
@@ -136,12 +131,7 @@ allPathsGrid m = allPaths start end m
     end = maximumOn pY $ Map.keys m
 
 mkdot :: Graph Position2 -> Text
-mkdot m =
-  dotGraph
-    [ dotDepLine (pv a) (Set.singleton $ pv b)
-    | (a, bs) <- Map.toList m
-    , Edge _ b <- bs
-    ]
+mkdot = dot pv . Map.map (Set.fromList . map eTarget)
   where
     pv (Position2 x y) = "p_" <> tshow x <> "_" <> tshow y
 
