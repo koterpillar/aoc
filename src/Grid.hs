@@ -81,7 +81,7 @@ instance GridItem () where
 instance GridItem Int where
   showInGrid i
     | i < 0 = '-'
-    | i > 10 = '+'
+    | i >= 10 = '+'
     | otherwise = chr (ord '0' + i)
 
 instance GridItem Direction4 where
