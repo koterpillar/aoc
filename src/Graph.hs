@@ -39,7 +39,8 @@ connectedComponents graph = go (vertices graph)
          in component : go (candidates `setDifference` component)
 
 dot :: (v -> Text) -> Graph v -> Text
-dot fmt = header . map (uncurry edge) . Map.toList
+dot fmt =
+  header . map (uncurry edge) . filter (not . Set.null . snd) . Map.toList
   where
     header ls = "digraph {" <> Text.intercalate ";" ls <> "}"
     edge a bs = fmt a <> "->" <> Text.intercalate "," (map fmt $ Set.toList bs)
