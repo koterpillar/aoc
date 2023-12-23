@@ -10,49 +10,53 @@ import           AOC
 import           Grid
 import           Utils
 
+origin :: Position2
+origin = Position2 0 0
+
 data GardenItem
   = Sand
   | Gnome
-  | Reach
   deriving (Ord, Eq, Show, Enum, Bounded)
 
-instance GridItem GardenItem where
-  showInGrid Sand  = '#'
-  showInGrid Gnome = 'S'
-  showInGrid Reach = 'O'
-
-type Input = Grid2 GardenItem
+type Input = Grid2 (Maybe GardenItem)
 
 data Grid = Grid
   { gG      :: Grid2 ()
   , gBounds :: (Position2, Position2)
+  , gSize   :: Int
   } deriving (Eq, Ord, Show)
 
 findGnomeCenter :: Input -> Grid
 findGnomeCenter i = Grid {..}
   where
-    (start, Gnome) = fromSingleE "gnome" $ Map.toList $ Map.filter (== Gnome) i
-    gG = Map.mapKeys (`pointMinus` start) $ void $ Map.filter (/= Gnome) i
-    (Position2 xmin ymin, Position2 xmax ymax) = boundsG gG
-    gBounds =
-      (Position2 (pred xmin) (pred ymin), Position2 (succ xmax) (succ ymax))
+    (start, Just Gnome) = fromSingleE "gnome" $ Map.toList $ Map.filter (== Just Gnome) i
+    t = flip pointMinus start
+    gG = Map.mapKeys t $ void $ Map.filter (== Just Sand) i
+    gBounds@(Position2 xmin ymin, Position2 xmax ymax) = bimap t t $ boundsG i
+    gSizeX = xmax - xmin + 1
+    gSizeY = ymax - ymin + 1
+    gSize
+      | gSizeX == gSizeY = gSizeX
+      | otherwise = error $ "non-square grid: " <> show (gSizeX, gSizeY)
 
 parser :: Parser Text Grid
-parser = findGnomeCenter <$> charGridP
+parser = findGnomeCenter <$> charGridP' (choiceP [('#', Just Sand), ('.', Nothing), ('S', Just Gnome)])
 
 testInput :: Grid
 testInput =
   justParse parser
     $ Text.unlines
-        [ "####.##.#"
-        , "####.#..."
-        , "####.#..#"
-        , "####.####"
-        , "....S...."
-        , "......#.."
-        , ".....####"
-        , "......#.."
-        , "......#.."
+        [ "..........."
+        , ".####.##.#."
+        , ".####.#...."
+        , ".####.#..#."
+        , ".####.####."
+        , ".....S....."
+        , ".......#..."
+        , "......####."
+        , ".......#..."
+        , ".......#..."
+        , "..........."
         ]
 
 stepPoint :: Grid -> Position2 -> [Position2]
@@ -70,117 +74,71 @@ stepN :: Grid -> Int -> Set Position2 -> Set Position2
 stepN _ 0 ps = ps
 stepN g n ps = stepN g (pred n) $ step1 g ps
 
-nubMerge :: Ord a => [a] -> [a] -> [a]
-nubMerge a b = nubOrd $ a ++ b
+reachableFrom :: Position2 -> Int -> Grid -> Set Position2
+reachableFrom p n g = stepN g n (Set.singleton p)
 
-mkGarden :: Grid -> Set Position2 -> Input
-mkGarden g st =
-  Map.map (const Sand) (gG g) `Map.union` Map.fromSet (const Reach) st
-
-reachableInSteps :: Position2 -> Int -> Grid -> Set Position2
-reachableInSteps p n g = stepN g n (Set.singleton p)
-
-traceReach g = ttraceF $ displayG . mkGarden g
+displayReach :: Grid -> Set Position2 -> Set Position2 -> Text
+displayReach g range reach =
+  "range="
+    <> tshow (Set.size range)
+    <> " reach="
+    <> tshow (Set.size reach)
+    <> "\n"
+    <> displayG (mkGarden g)
+  where
+    mkGarden g =
+      Map.map (const '#') (gG g)
+        `Map.union` Map.fromSet (const 'O') range
+        `Map.union` Map.fromSet (const 'o') reach
+        `Map.union` Map.fromList [(Position2 x y, 'X') | x <- [xmin, xmax], y <- [ymin, ymax]]
+    (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
 
 reachableInSteps1 :: Int -> Grid -> Set Position2
-reachableInSteps1 n g = traceReach g $ reachableInSteps (Position2 0 0) n g
+reachableInSteps1 n g =
+  ttraceF (displayReach g Set.empty) $ reachableFrom origin n g
 
 part1 :: Int -> Grid -> Int
 part1 n = length . reachableInSteps1 n
 
-hasOnCross :: Grid -> Bool
-hasOnCross = any onCross . Map.keys . gG
+possibleReach :: Position2 -> Int -> Grid -> Set Position2
+possibleReach p n g =
+  Set.fromList
+    [ p `pointPlus` Position2 x y
+    | x <- [negate n .. n]
+    , y <- [negate (n - x),negate (n - x) + 2 .. n - x]
+    , abs x + abs y <= n
+    , insideBounds (gBounds g) (p `pointPlus` Position2 x y)
+    , Map.notMember (Position2 x y) (gG g)
+    ]
   where
-    onCross (Position2 0 _) = True
-    onCross (Position2 _ 0) = True
-    onCross _               = False
+    (Position2 x0 y0) = p
 
--- assuming the grid has free cross in the middle, transpose the four parts it
--- divides it into to have the original center in the corners.
---
--- A B
--- C D
---
--- becomes
---
--- DB
--- CA
---
--- It will have double free cross in the middle thanks to the original grid
--- having free borders.
-transform :: Grid -> Grid2 ()
-transform g = Map.mapKeys tp (gG g)
+hasNooks :: Int -> Grid -> Bool
+hasNooks n g = ttrace (displayReach g range reach) $ reach /= range
   where
-    tp (Position2 x y) = Position2 (t xmax xmin x) (t ymax ymin y)
-    t amax amin a
-      | a < 0 = a + amax - amin + 1
-      | otherwise = a
-    (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
+    range = possibleReach origin n g
+    reach = reachableFrom origin n g
 
 part2 :: Int -> Grid -> Int
-part2 n g
-  | hasOnCross g = ttrace "paths on cross, ignoring" 0
-  | otherwise = part2' n (transform g)
+part2 n g = error "part2"
 
 metadata :: Grid -> Text
-metadata g = "hasOnCross=" <> tshow (hasOnCross g) <> " size=" <> tshow (sx, sy)
+metadata g =
+  "nooks1="
+    <> tshow nooks1
+    <> " nooks2="
+    <> tshow nooks2
+    <> " size="
+    <> tshow sz
   where
-    Position2 sx sy = pointMinus pMax pMin
-    (pMin, pMax) = gBounds g
+    low = realSteps `mod` (sz `div` 2)
+    high = low + sz
+    nooks1 = hasNooks low g
+    nooks2 = hasNooks high g
+    sz = gSize g
 
-half :: Int -> Int
-half i = i `div` 2
-
-timesPredHalf :: Int -> Int
-timesPredHalf i = half $ i * pred i
-
-timesSuccHalf :: Int -> Int
-timesSuccHalf = timesPredHalf . succ
-
-expandCorner :: Direction4 -> Grid2 () -> (Position2, Grid)
-expandCorner d1 gG = (p, Grid {..})
-  where
-    (Position2 xmin ymin, Position2 xmax ymax) = boundsG gG
-    p =
-      case d1 of
-        N -> Position2 (pred xmin) (succ ymax)
-        E -> Position2 (pred xmin) (pred ymin)
-        S -> Position2 (succ xmax) (pred ymin)
-        W -> Position2 (succ xmax) (succ ymax)
-    gBounds = boundsG $ Map.insert p () gG
-
-gridSize :: Grid2 () -> Int
-gridSize g = succ $ xmax - xmin
-  where
-    (Position2 xmin _, Position2 xmax _) = boundsG g
-
-part2' :: Int -> Grid2 () -> Int
-part2' n g = sum (map triangles allDir4) - line - 3 * center
-  where
-    triangles d =
-      less * reach p dLess + more * reach p dMore + full * fullReach
-      where
-        (p, g') = expandCorner d g
-        reach p n =
-          length $ traceReach g' $ reachableInSteps p (traceShowF ("reach arg", ) n) g'
-        fullReach
-          | r1 == r2 = r1
-          | otherwise = error $ "fullReach: " <> show r1 <> " < " <> show r2
-          where
-            r1 = reach p dFull
-            r2 = reach p $ dFull + 10
-    r = succ $ gridSize g
-    k = n `div` r
-    less = succ k
-    more = k
-    full = timesPredHalf k
-    dLess = n - k * r
-    dMore = dLess + r
-    dFull = 2 * r
-    line = 4 * half (succ n)
-    center
-      | odd n = 0
-      | even n = 1
+realSteps :: Int
+realSteps = 26501365
 
 tasks =
   Tasks
@@ -191,11 +149,8 @@ tasks =
     [ AssertExample "part 1" 16 $ part1 6
     , taskBlind (part1 64) & taskPart 1
     , Assert "part 1 test" 16 $ part1 4 testInput
-    , Assert "transform" (Position2 1 1, Position2 10 10)
-        $ boundsG
-        $ ttraceF displayG
-        $ transform testInput
-    , Assert "metadata" "hasOnCross=False size=(10,10)" $ metadata testInput
+    , Assert "reachable in 1 test" 4 $ Set.size $ reachableInSteps1 1 testInput
+    , Assert "metadata" "nooks1=False nooks2=False size=11" $ metadata testInput
     , taskBlind metadata
     -- , Assert "all on single grid" (33, 30) $ allOnGrid testInput
     -- can't apply the same algorithm to part 2 _example_ because it doesn't
@@ -208,5 +163,5 @@ tasks =
     -- , AssertExample "part 2 500" 167004 $ part2 500
     -- , AssertExample "part 2 1000" 668697 $ part2 1000
     , taskBlind (part2 1)
-    , taskBlind (part2 26501365) & taskPart 2
+    , taskBlind (part2 realSteps) & taskPart 2
     ]
