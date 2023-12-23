@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Y2023.Day22 where
 
 import           Control.Monad.State
@@ -127,36 +129,40 @@ dotGraph :: [Text] -> Text
 dotGraph ls = "digraph {" <> Text.intercalate ";" ls <> "}"
 
 dotDependencies :: Map Text (Set Text) -> Text
-dotDependencies = dotGraph . map (uncurry dotDepLine) . Map.toList
+dotDependencies m = dotGraph $ ds ++ fs
+  where
+    ds = map (uncurry dotDepLine) $ Map.toList m
+    fs =
+      [ dotDepLine a bs <> "[color=red]"
+      | (a, bs) <- Map.toList $ singlePointsOfFailure m
+      ]
 
 -- Which bricks are the only ones supporting something?
 singles :: Ord b => Map a (Set b) -> Set b
 singles = foldr1 Set.union . filter ((== 1) . length) . toList
 
--- What brick is the closest one that, when removed, will cause this one to fall?
+-- Which bricks will cause each brick to fail if they are removed
 singlePointsOfFailure ::
-     (Ord a, Hashable a, Show a) => [a] -> Map a (Set a) -> Map a a
-singlePointsOfFailure names deps =
-  Map.fromList [(n, d) | n <- names, d <- toList $ go n]
+     forall a. (Ord a, Hashable a, Show a)
+  => Map a (Set a)
+  -> Map a (Set a)
+singlePointsOfFailure deps =
+  stateMemo go $ \x ->
+    fmap mapFromListS
+      $ for names
+      $ \n -> do
+          d <- x n
+          pure (n, d)
   where
-    go =
-      unsafeMemo $ \a ->
-        case Set.toList <$> Map.lookup a deps of
-          Nothing -> Nothing -- root
-          Just [dep] -> Just dep -- single point of failure found!
-          Just deps -- multiple immediate dependencies
-           ->
-            case nubOrd $ map go deps of
-              [Just dep] -> Just dep -- all point to the same one!
-              _          -> Nothing -- multiple roots, no single point of failure
-
-totalDependencies :: (Ord a, Hashable a, Show a) => [a] -> Map a a -> Map a Int
-totalDependencies names spof = Map.fromList [(n, go n) | n <- names]
-  where
-    go n = sum (map go ns) + length ns
-      where
-        ns = toList $ Map.findWithDefault Set.empty n rdeps
-    rdeps = mapFromListS [(d, Set.singleton n) | (n, d) <- Map.toList spof]
+    names = Map.keys deps
+    go :: Monad m => (a -> m (Set a)) -> a -> m (Set a)
+    go rgo a =
+      case Set.toList <$> Map.lookup a deps of
+        Nothing -> pure Set.empty
+        Just deps ->
+          insertIfSingle deps . foldr1 Set.intersection <$> traverse rgo deps
+    insertIfSingle [x] = Set.insert x
+    insertIfSingle _   = id
 
 -- Main
 part1 :: [Brick] -> Int
@@ -167,14 +173,12 @@ part1 bs = length bs - length (singles deps)
     deps = dependencies bm1
 
 part2 :: [Brick] -> Int
-part2 bs = ttrace (dotDependencies deps) $ sum tdeps
+part2 bs = ttrace (dotDependencies deps) $ sum $ fmap Set.size spof
   where
-    bm = traceBM $ brickMap bs
+    bm = brickMap bs
     bm1 = fall bm
     deps = dependencies bm1
-    names = map brickName bs
-    spof = singlePointsOfFailure names deps
-    tdeps = totalDependencies names spof
+    spof = singlePointsOfFailure deps
 
 tasks =
   Tasks
