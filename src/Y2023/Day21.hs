@@ -55,17 +55,18 @@ testInput =
         , "......#.."
         ]
 
-stepPoint :: Grid2 () -> Position2 -> [Position2]
+stepPoint :: Grid -> Position2 -> [Position2]
 stepPoint g p = do
   d <- allDir4
   let p' = walk d p
-  guard $ Map.notMember p' g
+  guard $ insideBounds (gBounds g) p'
+  guard $ Map.notMember p' (gG g)
   pure p'
 
-step1 :: Grid2 () -> Set Position2 -> Set Position2
+step1 :: Grid -> Set Position2 -> Set Position2
 step1 g = Set.fromList . concatMap (stepPoint g) . Set.toList
 
-stepN :: Grid2 () -> Int -> Set Position2 -> Set Position2
+stepN :: Grid -> Int -> Set Position2 -> Set Position2
 stepN _ 0 ps = ps
 stepN g n ps = stepN g (pred n) $ step1 g ps
 
@@ -76,12 +77,13 @@ mkGarden :: Grid -> Set Position2 -> Input
 mkGarden g st =
   Map.map (const Sand) (gG g) `Map.union` Map.fromSet (const Reach) st
 
-reachableInSteps :: Position2 -> Int -> Grid2 () -> Set Position2
+reachableInSteps :: Position2 -> Int -> Grid -> Set Position2
 reachableInSteps p n g = stepN g n (Set.singleton p)
 
+traceReach g = ttraceF $ displayG . mkGarden g
+
 reachableInSteps1 :: Int -> Grid -> Set Position2
-reachableInSteps1 n g =
-  ttraceF (displayG . mkGarden g) $ reachableInSteps (Position2 0 0) n (gG g)
+reachableInSteps1 n g = traceReach g $ reachableInSteps (Position2 0 0) n g
 
 part1 :: Int -> Grid -> Int
 part1 n = length . reachableInSteps1 n
@@ -135,15 +137,17 @@ timesPredHalf i = half $ i * pred i
 timesSuccHalf :: Int -> Int
 timesSuccHalf = timesPredHalf . succ
 
-startingPoint :: Direction4 -> Grid2 () -> Position2
-startingPoint d1 g =
-  case d1 of
-    N -> Position2 (pred xmin) ymax
-    E -> Position2 xmin (pred ymin)
-    S -> Position2 (succ xmax) ymin
-    W -> Position2 xmax (succ ymax)
+expandCorner :: Direction4 -> Grid2 () -> (Position2, Grid)
+expandCorner d1 gG = (p, Grid {..})
   where
-    (Position2 xmin ymin, Position2 xmax ymax) = boundsG g
+    (Position2 xmin ymin, Position2 xmax ymax) = boundsG gG
+    p =
+      case d1 of
+        N -> Position2 (pred xmin) (succ ymax)
+        E -> Position2 (pred xmin) (pred ymin)
+        S -> Position2 (succ xmax) (pred ymin)
+        W -> Position2 (succ xmax) (succ ymax)
+    gBounds = boundsG $ Map.insert p () gG
 
 gridSize :: Grid2 () -> Int
 gridSize g = succ $ xmax - xmin
@@ -151,21 +155,32 @@ gridSize g = succ $ xmax - xmin
     (Position2 xmin _, Position2 xmax _) = boundsG g
 
 part2' :: Int -> Grid2 () -> Int
-part2' n g = 1 + 4 * (fill + full) + sum (map triangles allDir4)
+part2' n g = sum (map triangles allDir4) - line - 3 * center
   where
-    reach p n = length $ reachableInSteps p (traceShowF ("reach arg",) n) g
-    triangles d = less * reach p dLess + more * reach p dMore
+    triangles d =
+      less * reach p dLess + more * reach p dMore + full * fullReach
       where
-        p = startingPoint d g
-    r = gridSize g
-    r' = succ r
-    k = n `div` r'
+        (p, g') = expandCorner d g
+        reach p n =
+          length $ traceReach g' $ reachableInSteps p (traceShowF ("reach arg", ) n) g'
+        fullReach
+          | r1 == r2 = r1
+          | otherwise = error $ "fullReach: " <> show r1 <> " < " <> show r2
+          where
+            r1 = reach p dFull
+            r2 = reach p $ dFull + 10
+    r = succ $ gridSize g
+    k = n `div` r
     less = succ k
     more = k
     full = timesPredHalf k
-    dLess = n - k * r'
-    dMore = dLess + r'
-    fill = half $ timesPredHalf (pred n) + r * r * timesSuccHalf k
+    dLess = n - k * r
+    dMore = dLess + r
+    dFull = 2 * r
+    line = 4 * half (succ n)
+    center
+      | odd n = 0
+      | even n = 1
 
 tasks =
   Tasks
