@@ -29,7 +29,8 @@ data Grid = Grid
 findGnomeCenter :: Input -> Grid
 findGnomeCenter i = Grid {..}
   where
-    (start, Just Gnome) = fromSingleE "gnome" $ Map.toList $ Map.filter (== Just Gnome) i
+    (start, Just Gnome) =
+      fromSingleE "gnome" $ Map.toList $ Map.filter (== Just Gnome) i
     t = flip pointMinus start
     gG = Map.mapKeys t $ void $ Map.filter (== Just Sand) i
     gBounds@(Position2 xmin ymin, Position2 xmax ymax) = bimap t t $ boundsG i
@@ -40,7 +41,10 @@ findGnomeCenter i = Grid {..}
       | otherwise = error $ "non-square grid: " <> show (gSizeX, gSizeY)
 
 parser :: Parser Text Grid
-parser = findGnomeCenter <$> charGridP' (choiceP [('#', Just Sand), ('.', Nothing), ('S', Just Gnome)])
+parser =
+  findGnomeCenter
+    <$> charGridP'
+          (choiceP [('#', Just Sand), ('.', Nothing), ('S', Just Gnome)])
 
 testInput :: Grid
 testInput =
@@ -58,6 +62,24 @@ testInput =
         , ".......#..."
         , "..........."
         ]
+
+enlarge :: Int -> Grid -> Grid
+enlarge n g = Grid g' b' s'
+  where
+    nmin = negate n
+    nmax = n
+    g' = Map.fromList $ concatMap mkP $ Map.toList $ gG g
+    mkP (p, ()) =
+      [(offset x y p, ()) | x <- [nmin .. nmax], y <- [nmin .. nmax]]
+    offset x y p = p `pointPlus` Position2 (x * xdiff) (y * ydiff)
+    (pmin, pmax) = gBounds g
+    pdiff = pmax `pointMinus` pmin
+    xdiff = succ $ pX pdiff
+    ydiff = succ $ pY pdiff
+    b' =
+      traceShowF (gBounds g, )
+        $ bimap (offset nmin nmin) (offset nmax nmax) (gBounds g)
+    s' = n * gSize g
 
 stepPoint :: Grid -> Position2 -> [Position2]
 stepPoint g p = do
@@ -88,9 +110,13 @@ displayReach g range reach =
   where
     mkGarden g =
       Map.map (const '#') (gG g)
-        `Map.union` Map.fromSet (const 'O') range
-        `Map.union` Map.fromSet (const 'o') reach
-        `Map.union` Map.fromList [(Position2 x y, 'X') | x <- [xmin, xmax], y <- [ymin, ymax]]
+        `Map.union` Map.fromSet (const 'o') range
+        `Map.union` Map.fromSet (const 'O') reach
+        `Map.union` Map.fromList
+                      [ (Position2 x y, 'X')
+                      | x <- [xmin, xmax]
+                      , y <- [ymin, ymax]
+                      ]
     (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
 
 reachableInSteps1 :: Int -> Grid -> Set Position2
@@ -113,29 +139,13 @@ possibleReach p n g =
   where
     (Position2 x0 y0) = p
 
-hasNooks :: Int -> Grid -> Bool
-hasNooks n g = ttrace (displayReach g range reach) $ reach /= range
+part2Naive :: Int -> Grid -> Int
+part2Naive steps g = length $ reachableInSteps1 steps $ enlarge n g
   where
-    range = possibleReach origin n g
-    reach = reachableFrom origin n g
+    n = steps `div` gSize g
 
 part2 :: Int -> Grid -> Int
 part2 n g = error "part2"
-
-metadata :: Grid -> Text
-metadata g =
-  "nooks1="
-    <> tshow nooks1
-    <> " nooks2="
-    <> tshow nooks2
-    <> " size="
-    <> tshow sz
-  where
-    low = realSteps `mod` (sz `div` 2)
-    high = low + sz
-    nooks1 = hasNooks low g
-    nooks2 = hasNooks high g
-    sz = gSize g
 
 realSteps :: Int
 realSteps = 26501365
@@ -150,9 +160,16 @@ tasks =
     , taskBlind (part1 64) & taskPart 1
     , Assert "part 1 test" 16 $ part1 4 testInput
     , Assert "reachable in 1 test" 4 $ Set.size $ reachableInSteps1 1 testInput
-    , Assert "metadata" "nooks1=False nooks2=False size=11" $ metadata testInput
-    , taskBlind metadata
-    -- , Assert "all on single grid" (33, 30) $ allOnGrid testInput
+    , Assert "enlarge test" (25 * length (gG testInput))
+        $ length
+        $ gG
+        $ ttraceF (\g -> displayReach g Set.empty Set.empty)
+        $ enlarge 2 testInput
+    , let steps = 23
+       in Assert
+            "same as enlarge"
+            (part2Naive steps testInput)
+            (part2 steps testInput)
     -- can't apply the same algorithm to part 2 _example_ because it doesn't
     -- have the free cross in the middle
     -- , AssertExample "part 2 1" 2 $ part2 1
