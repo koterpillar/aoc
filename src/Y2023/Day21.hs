@@ -76,9 +76,7 @@ enlarge n g = Grid g' b' s'
     pdiff = pmax `pointMinus` pmin
     xdiff = succ $ pX pdiff
     ydiff = succ $ pY pdiff
-    b' =
-      traceShowF (gBounds g, )
-        $ bimap (offset nmin nmin) (offset nmax nmax) (gBounds g)
+    b' = bimap (offset nmin nmin) (offset nmax nmax) (gBounds g)
     s' = n * gSize g
 
 stepPoint :: Grid -> Position2 -> [Position2]
@@ -99,19 +97,13 @@ stepN g n ps = stepN g (pred n) $ step1 g ps
 reachableFrom :: Position2 -> Int -> Grid -> Set Position2
 reachableFrom p n g = stepN g n (Set.singleton p)
 
-displayReach :: Grid -> Set Position2 -> Set Position2 -> Text
-displayReach g range reach =
-  "range="
-    <> tshow (Set.size range)
-    <> " reach="
-    <> tshow (Set.size reach)
-    <> "\n"
-    <> displayG (mkGarden g)
+displayExtra :: Grid -> Map Position2 Char -> Text
+displayExtra g extra =
+  "extra=" <> tshow (Map.size extra) <> "\n" <> displayG (mkGarden g)
   where
     mkGarden g =
       Map.map (const '#') (gG g)
-        `Map.union` Map.fromSet (const 'o') range
-        `Map.union` Map.fromSet (const 'O') reach
+        `Map.union` extra
         `Map.union` Map.fromList
                       [ (Position2 x y, 'X')
                       | x <- [xmin, xmax]
@@ -119,12 +111,23 @@ displayReach g range reach =
                       ]
     (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
 
+displayReach :: Grid -> Set Position2 -> Text
+displayReach g = displayExtra g . Map.fromSet (const 'O')
+
 reachableInSteps1 :: Int -> Grid -> Set Position2
-reachableInSteps1 n g =
-  ttraceF (displayReach g Set.empty) $ reachableFrom origin n g
+reachableInSteps1 n g = ttraceF (displayReach g) $ reachableFrom origin n g
 
 part1 :: Int -> Grid -> Int
 part1 n = length . reachableInSteps1 n
+
+iterateReach :: Position2 -> Grid -> [Int]
+iterateReach p g = whileDiffers2 [length $ reachableFrom p n g | n <- [0 ..]]
+
+whileDiffers2 :: [Int] -> [Int]
+whileDiffers2 (x:rest@(y:z:_))
+  | x == z = [x, y]
+  | otherwise = x : whileDiffers2 rest
+whileDiffers2 xs = error $ "whileDiffers2: finite list: " <> show xs
 
 possibleReach :: Position2 -> Int -> Grid -> Set Position2
 possibleReach p n g =
@@ -142,10 +145,44 @@ possibleReach p n g =
 part2Naive :: Int -> Grid -> Int
 part2Naive steps g = length $ reachableInSteps1 steps $ enlarge n g
   where
-    n = steps `div` gSize g
+    n = succ $ steps `div` gSize g
+
+gMiddles :: Grid -> [Position2]
+gMiddles g =
+  [Position2 0 ymin, Position2 0 ymax, Position2 xmin 0, Position2 xmax 0]
+  where
+    (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
+
+gCorners :: Grid -> [Position2]
+gCorners g =
+  [ Position2 xmin ymin
+  , Position2 xmin ymax
+  , Position2 xmax ymin
+  , Position2 xmax ymax
+  ]
+  where
+    (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
+
+downSteps :: Int -> Int -> [Int]
+downSteps step start = [start,start - step .. 0]
 
 part2 :: Int -> Grid -> Int
-part2 n g = error "part2"
+part2 n g = center + lines + corners
+  where
+    center = traceShowF ("center", ) $ length $ reachableFrom origin n g
+    distanceToOutside = succ $ pX $ snd $ gBounds g
+    lineReach = downSteps (gSize g) (n - distanceToOutside)
+    lines =
+      traceShowF ("lines", )
+        $ sum [length $ reachableFrom p r g | r <- lineReach, p <- gMiddles g]
+    cornerReach = zipN 1 $ downSteps (gSize g) (n - 2 * distanceToOutside)
+    corners =
+      traceShowF ("corners", )
+        $ sum
+            [ k * length (reachableFrom p r g)
+            | (k, r) <- cornerReach
+            , p <- gCorners g
+            ]
 
 realSteps :: Int
 realSteps = 26501365
@@ -160,12 +197,14 @@ tasks =
     , taskBlind (part1 64) & taskPart 1
     , Assert "part 1 test" 16 $ part1 4 testInput
     , Assert "reachable in 1 test" 4 $ Set.size $ reachableInSteps1 1 testInput
+    , Assert "iterate reach" [1, 4, 7, 10, 16, 20, 27, 30, 36, 42, 43, 44, 44]
+        $ iterateReach origin testInput
     , Assert "enlarge test" (25 * length (gG testInput))
         $ length
         $ gG
-        $ ttraceF (\g -> displayReach g Set.empty Set.empty)
+        $ ttraceF (`displayExtra` Map.empty)
         $ enlarge 2 testInput
-    , let steps = 23
+    , let steps = 157
        in Assert
             "same as enlarge"
             (part2Naive steps testInput)
@@ -179,6 +218,6 @@ tasks =
     -- , AssertExample "part 2 100" 6536 $ part2 100
     -- , AssertExample "part 2 500" 167004 $ part2 500
     -- , AssertExample "part 2 1000" 668697 $ part2 1000
-    , taskBlind (part2 1)
-    , taskBlind (part2 realSteps) & taskPart 2
+    -- , taskBlind (part2 1)
+    -- , taskBlind (part2 realSteps) & taskPart 2
     ]
