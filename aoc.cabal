@@ -144,6 +144,7 @@ library
       Y2023.Day21
       Y2023.Day22
       Y2023.Day23
+      Y2023.Day24
   other-modules:
       Paths_aoc
   hs-source-dirs:
