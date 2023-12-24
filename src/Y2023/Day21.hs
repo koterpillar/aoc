@@ -115,7 +115,7 @@ displayReach :: Grid -> Set Position2 -> Text
 displayReach g = displayExtra g . Map.fromSet (const 'O')
 
 reachableInSteps1 :: Int -> Grid -> Set Position2
-reachableInSteps1 n g = ttraceF (displayReach g) $ reachableFrom origin n g
+reachableInSteps1 = reachableFrom origin
 
 part1 :: Int -> Grid -> Int
 part1 n = length . reachableInSteps1 n
@@ -143,8 +143,10 @@ possibleReach p n g =
     (Position2 x0 y0) = p
 
 part2Naive :: Int -> Grid -> Int
-part2Naive steps g = length $ reachableInSteps1 steps $ enlarge n g
+part2Naive steps g =
+  length $ ttraceF (displayReach g') $ reachableInSteps1 steps g'
   where
+    g' = enlarge n g
     n = succ $ steps `div` gSize g
 
 gMiddles :: Grid -> [Position2]
@@ -166,49 +168,61 @@ gCorners g =
 downSteps :: Int -> Int -> [Int]
 downSteps step start = [start,start - step .. 0]
 
+part2Line :: Position2 -> Int -> Grid -> Int
+part2Line middle n g
+  | full < 0 = 0
+  | otherwise = fullCount + remainderCount
+  where
+    n0 = n - distanceToOutside
+    sz = gSize g
+    full = n0 `div` sz
+    remainderN = n0 `mod` sz
+    fullCount = full * reachN middle n0
+    remainderCount = reachN middle remainderN
+    reachN p r = length $ reachableFrom p r g
+    distanceToOutside = succ $ pX $ snd $ gBounds g
+
 part2 :: Int -> Grid -> Int
 part2 n g = center + lines + corners
   where
+    sz = gSize g
+    reachN p r = reachableFrom p r g
     center = traceShowF ("center", ) $ length $ reachableFrom origin n g
     distanceToOutside = succ $ pX $ snd $ gBounds g
-    lineReach = downSteps (gSize g) (n - distanceToOutside)
-    lines =
-      traceShowF ("lines", )
-        $ sum [length $ reachableFrom p r g | r <- lineReach, p <- gMiddles g]
-    cornerReach = zipN 1 $ downSteps (gSize g) (n - 2 * distanceToOutside)
+    lines = sum [part2Line middle n g | middle <- gMiddles g]
+    cornerReach =
+      traceShowF ("cornerReach", sz, )
+        $ zipN 1
+        $ downSteps sz (n - 2 * distanceToOutside)
     corners =
       traceShowF ("corners", )
-        $ sum
-            [ k * length (reachableFrom p r g)
-            | (k, r) <- cornerReach
-            , p <- gCorners g
-            ]
+        $ sum [k * length (reachN p r) | (k, r) <- cornerReach, p <- gCorners g]
 
 realSteps :: Int
 realSteps = 26501365
 
 tasks =
-  Tasks
-    2023
-    21
-    (CodeBlock 0)
-    parser
-    [ AssertExample "part 1" 16 $ part1 6
-    , taskBlind (part1 64) & taskPart 1
-    , Assert "part 1 test" 16 $ part1 4 testInput
-    , Assert "reachable in 1 test" 4 $ Set.size $ reachableInSteps1 1 testInput
-    , Assert "iterate reach" [1, 4, 7, 10, 16, 20, 27, 30, 36, 42, 43, 44, 44]
-        $ iterateReach origin testInput
-    , Assert "enlarge test" (25 * length (gG testInput))
-        $ length
-        $ gG
-        $ ttraceF (`displayExtra` Map.empty)
-        $ enlarge 2 testInput
-    , let steps = 157
-       in Assert
-            "same as enlarge"
-            (part2Naive steps testInput)
-            (part2 steps testInput)
+  Tasks 2023 21 (CodeBlock 0) parser
+    $ [ AssertExample "part 1" 16 $ part1 6
+      , taskBlind (part1 64) & taskPart 1
+      , Assert "part 1 test" 16 $ part1 4 testInput
+      , Assert "reachable in 1 test" 4
+          $ Set.size
+          $ reachableInSteps1 1 testInput
+      , Assert "iterate reach" [1, 4, 7, 10, 16, 20, 27, 30, 36, 42, 43, 44, 44]
+          $ iterateReach origin testInput
+      , Assert "enlarge test" (25 * length (gG testInput))
+          $ length
+          $ gG
+          $ ttraceF (`displayExtra` Map.empty)
+          $ enlarge 2 testInput
+      ]
+        ++ [ Assert
+             ("same as enlarge " <> tshow steps)
+             (part2Naive steps testInput)
+             (part2 steps testInput)
+           | steps <- [0 .. 30] ++ [100, 101, 102, 156, 157]
+           ]
     -- can't apply the same algorithm to part 2 _example_ because it doesn't
     -- have the free cross in the middle
     -- , AssertExample "part 2 1" 2 $ part2 1
@@ -220,4 +234,4 @@ tasks =
     -- , AssertExample "part 2 1000" 668697 $ part2 1000
     -- , taskBlind (part2 1)
     -- , taskBlind (part2 realSteps) & taskPart 2
-    ]
+    -- ]
