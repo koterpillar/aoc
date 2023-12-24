@@ -81,18 +81,13 @@ hXY = fmap (\(x, y, _) -> (x, y))
 
 intersectXYWithin :: Range -> Hailstone P3 -> Hailstone P3 -> Bool
 intersectXYWithin r h1 h2 =
-  case hIntersectXY (hXY h1) (hXY h2) of
-    Nothing -> ttrace "parallel" False
-    Just (t1, t2, (x, y)) ->
-      if t1 < 0
-        then ttrace "t1 < 0" False
-        else if t2 < 0
-               then ttrace "t2 < 0" False
-               else if not (uncurry inRange r x)
-                      then ttrace "x out of range" False
-                      else if not (uncurry inRange r y)
-                             then ttrace "y out of range" False
-                             else True
+  isJust $ do
+    (t1, t2, (x, y)) <- hIntersectXY (hXY h1) (hXY h2)
+    guard $ t1 >= 0
+    guard $ t2 >= 0
+    guard $ uncurry inRange r x
+    guard $ uncurry inRange r y
+    pure ()
 
 part1 :: Range -> [Hailstone P3] -> Int
 part1 r = countIf (uncurry $ intersectXYWithin r) . pairs
