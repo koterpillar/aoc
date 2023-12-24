@@ -95,7 +95,7 @@ stepN _ 0 ps = ps
 stepN g n ps = stepN g (pred n) $ step1 g ps
 
 reachableFrom :: Position2 -> Int -> Grid -> Set Position2
-reachableFrom p n g = stepN g n (Set.singleton p)
+reachableFrom p n g = stepN g n (Set.singleton $ traceShow ("reachable", p, n) p)
 
 displayExtra :: Grid -> Map Position2 Char -> Text
 displayExtra g extra =
@@ -115,19 +115,20 @@ displayReach :: Grid -> Set Position2 -> Text
 displayReach g = displayExtra g . Map.fromSet (const 'O')
 
 reachableInSteps1 :: Int -> Grid -> Set Position2
-reachableInSteps1 = reachableFrom origin
+reachableInSteps1 n g = ttraceF (displayReach g) $ reachableFrom origin n g
 
 part1 :: Int -> Grid -> Int
 part1 n = length . reachableInSteps1 n
 
-iterateReach :: Position2 -> Grid -> [Int]
-iterateReach p g = whileDiffers2 [length $ reachableFrom p n g | n <- [0 ..]]
+iterateReach :: Position2 -> Int -> Grid -> [Int]
+iterateReach p start g =
+  whileDiffers [length $ reachableFrom p n g | n <- [start,start + 2 ..]]
 
-whileDiffers2 :: [Int] -> [Int]
-whileDiffers2 (x:rest@(y:z:_))
-  | x == z = [x, y]
-  | otherwise = x : whileDiffers2 rest
-whileDiffers2 xs = error $ "whileDiffers2: finite list: " <> show xs
+whileDiffers :: [Int] -> [Int]
+whileDiffers (x:rest@(y:_))
+  | x == y = [x]
+  | otherwise = x : whileDiffers rest
+whileDiffers xs = error $ "whileDiffers: finite list: " <> show xs
 
 possibleReach :: Position2 -> Int -> Grid -> Set Position2
 possibleReach p n g =
@@ -143,10 +144,8 @@ possibleReach p n g =
     (Position2 x0 y0) = p
 
 part2Naive :: Int -> Grid -> Int
-part2Naive steps g =
-  length $ ttraceF (displayReach g') $ reachableInSteps1 steps g'
+part2Naive steps g = length $ reachableInSteps1 steps $ enlarge n g
   where
-    g' = enlarge n g
     n = succ $ steps `div` gSize g
 
 gMiddles :: Grid -> [Position2]
@@ -168,35 +167,46 @@ gCorners g =
 downSteps :: Int -> Int -> [Int]
 downSteps step start = [start,start - step .. 0]
 
+assert :: (Eq a, Show a) => Text -> a -> a -> a
+assert msg expected actual
+  | expected == actual = actual
+  | otherwise =
+    error
+      $ "assert: " <> show msg <> ": " <> show expected <> " /= " <> show actual
+
 part2Line :: Position2 -> Int -> Grid -> Int
-part2Line middle n g
-  | full < 0 = 0
-  | otherwise = fullCount + remainderCount
+part2Line middle n g = fullCount + remainderCount
   where
     n0 = n - distanceToOutside
     sz = gSize g
-    full = n0 `div` sz
-    remainderN = n0 `mod` sz
-    fullCount = full * reachN middle n0
-    remainderCount = reachN middle remainderN
+    maxReach = sz * 2 -- might be less but this is safer and easier
+    full = max 0 $ (n0 - maxReach) `div` sz + 1
+    remainders = downSteps sz $ n0 - full * sz
+    fullCount = full * reachN middle maxReach
+    remainderCount = sum [reachN middle r | r <- remainders]
+    reachN p r = length $ reachableFrom p r g
+    distanceToOutside = succ $ pX $ snd $ gBounds g
+
+part2Corner :: Position2 -> Int -> Grid -> Int
+part2Corner corner n g = fullCount + remainderCount
+  where
+    n0 = n - 2 * distanceToOutside
+    sz = gSize g
+    maxReach = sz * 2 -- might be less but this is safer and easier
+    full = max 0 $ (n0 - maxReach) `div` sz + 1
+    remainders = downSteps sz $ n0 - full * sz
+    fullCount = (full * succ full) `div` 2 * reachN corner maxReach
+    remainderCount =
+      sum [k * reachN corner r | (k, r) <- zipN (succ full) remainders]
     reachN p r = length $ reachableFrom p r g
     distanceToOutside = succ $ pX $ snd $ gBounds g
 
 part2 :: Int -> Grid -> Int
 part2 n g = center + lines + corners
   where
-    sz = gSize g
-    reachN p r = reachableFrom p r g
-    center = traceShowF ("center", ) $ length $ reachableFrom origin n g
-    distanceToOutside = succ $ pX $ snd $ gBounds g
+    center = length $ reachableFrom origin (min n $ gSize g * 2) g
     lines = sum [part2Line middle n g | middle <- gMiddles g]
-    cornerReach =
-      traceShowF ("cornerReach", sz, )
-        $ zipN 1
-        $ downSteps sz (n - 2 * distanceToOutside)
-    corners =
-      traceShowF ("corners", )
-        $ sum [k * length (reachN p r) | (k, r) <- cornerReach, p <- gCorners g]
+    corners = sum [part2Corner corner n g | corner <- gCorners g]
 
 realSteps :: Int
 realSteps = 26501365
@@ -209,8 +219,10 @@ tasks =
       , Assert "reachable in 1 test" 4
           $ Set.size
           $ reachableInSteps1 1 testInput
-      , Assert "iterate reach" [1, 4, 7, 10, 16, 20, 27, 30, 36, 42, 43, 44, 44]
-          $ iterateReach origin testInput
+      , Assert "iterate reach 0" [1, 7, 16, 27, 36, 43, 44]
+          $ iterateReach origin 0 testInput
+      , Assert "iterate reach 1" [4, 10, 20, 30, 42, 44]
+          $ iterateReach origin 1 testInput
       , Assert "enlarge test" (25 * length (gG testInput))
           $ length
           $ gG
@@ -221,8 +233,9 @@ tasks =
              ("same as enlarge " <> tshow steps)
              (part2Naive steps testInput)
              (part2 steps testInput)
-           | steps <- [0 .. 30] ++ [100, 101, 102, 156, 157]
+           | steps <- [0 .. 40] ++ [100, 101, 102, 156, 157]
            ]
+        ++
     -- can't apply the same algorithm to part 2 _example_ because it doesn't
     -- have the free cross in the middle
     -- , AssertExample "part 2 1" 2 $ part2 1
@@ -232,6 +245,4 @@ tasks =
     -- , AssertExample "part 2 100" 6536 $ part2 100
     -- , AssertExample "part 2 500" 167004 $ part2 500
     -- , AssertExample "part 2 1000" 668697 $ part2 1000
-    -- , taskBlind (part2 1)
-    -- , taskBlind (part2 realSteps) & taskPart 2
-    -- ]
+         [taskBlind (part2 1), taskBlind (part2 realSteps) & taskPart 2]
