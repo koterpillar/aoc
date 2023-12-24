@@ -256,6 +256,9 @@ instance AnswerLike String where
 instance AnswerLike Int where
   answerToText = Text.pack . show
 
+instance AnswerLike Integer where
+  answerToText = Text.pack . show
+
 data Task a where
   Task :: AnswerLike b => (a -> b) -> b -> Task a
   Task'
