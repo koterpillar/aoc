@@ -115,21 +115,11 @@ displayExtra g extra =
 displayReach :: Grid -> Set Position2 -> Text
 displayReach g = displayExtra g . Map.fromSet (const 'O')
 
-reachableInSteps1 :: Int -> Grid -> Set Position2
-reachableInSteps1 n g = ttraceF (displayReach g) $ reachableFrom origin n g
+reachableFromTrace :: Position2 -> Int -> Grid -> Set Position2
+reachableFromTrace p n g = ttraceF (displayReach g) $ reachableFrom p n g
 
 part1 :: Int -> Grid -> Int
-part1 n = length . reachableInSteps1 n
-
--- iterateReach :: Position2 -> Int -> Grid -> [Int]
--- iterateReach p start g =
---   whileDiffers [length $ reachableFrom p n g | n <- [start,start + 2 ..]]
-
-whileDiffers :: [Int] -> [Int]
-whileDiffers (x:rest@(y:_))
-  | x == y = [x]
-  | otherwise = x : whileDiffers rest
-whileDiffers xs = error $ "whileDiffers: finite list: " <> show xs
+part1 n = length . reachableFromTrace origin n
 
 possibleReach :: Position2 -> Int -> Grid -> Set Position2
 possibleReach p n g =
@@ -207,13 +197,15 @@ part2 :: Int -> Grid -> Int
 part2 n g = center + lines + corners
   where
     center = length $ reachableFrom origin (min n $ gSize g * 2) g
-    lines = sum [part2Line middle n g | middle <- gMiddles g]
-    corners = sum [part2Corner corner n g | corner <- gCorners g]
+    -- lines = sum [part2Line middle n g | middle <- gMiddles g]
+    -- corners = sum [part2Corner corner n g | corner <- gCorners g]
+    lines = part2Line (Position2 xmin 0) n g where (Position2 xmin _, _) = gBounds g
+    corners = 0
 
 part2NaiveCheck :: Int -> Grid -> Text
 part2NaiveCheck steps g
   | Map.member (Position2 1 0) (gG g) = "Example, ignoring"
-  | naive == fast = "OK " <> tshow steps
+  | naive == fast = ttrace ("Result = " <> tshow fast) $ "OK " <> tshow steps
   | otherwise =
     terror
       $ "FAIL for "
@@ -224,7 +216,7 @@ part2NaiveCheck steps g
           <> tshow naive
   where
     naive = length naiveSet
-    naiveSet = reachableInSteps1 steps $ enlarge t g
+    naiveSet = reachableFrom origin steps $ enlarge t g
     fast = part2 steps g
     t = succ $ steps `div` gSize g
 
@@ -238,11 +230,7 @@ tasks =
       , Assert "part 1 test" 16 $ part1 4 testInput
       , Assert "reachable in 1 test" 4
           $ Set.size
-          $ reachableInSteps1 1 testInput
-      -- , Assert "iterate reach 0" [1, 7, 16, 27, 36, 43, 44]
-      --     $ iterateReach origin 0 testInput
-      -- , Assert "iterate reach 1" [4, 10, 20, 30, 42, 44]
-      --     $ iterateReach origin 1 testInput
+          $ reachableFrom origin 1 testInput
       , Assert "enlarge test" (25 * length (gG testInput))
           $ length
           $ gG
