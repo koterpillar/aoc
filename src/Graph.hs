@@ -8,6 +8,9 @@ import           Utils
 
 type Graph v = Map v (Set v)
 
+mapGraph :: Ord u => (v -> u) -> Graph v -> Graph u
+mapGraph f = mapFromListS . map (bimap f $ Set.map f) . Map.toList
+
 vicinity :: Ord v => Set v -> Graph v -> Set v
 vicinity vs graph = vs <> mconcat (mapMaybe (`mapLookup` graph) $ toList vs)
 
@@ -18,6 +21,10 @@ reverseGraph graph = Map.fromListWith mappend neighbors
       (v, vs) <- Map.toList graph
       v' <- toList vs
       pure (v', set1 v)
+
+bidirectional :: Ord v => Graph v -> Graph v
+bidirectional graph =
+  mapFromListS $ Map.toList graph <> Map.toList (reverseGraph graph)
 
 reachableFrom :: Ord v => v -> Graph v -> Set v
 reachableFrom v graph = iterateSettleL (`vicinity` graph) (set1 v)

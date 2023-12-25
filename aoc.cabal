@@ -145,6 +145,7 @@ library
       Y2023.Day22
       Y2023.Day23
       Y2023.Day24
+      Y2023.Day25
   other-modules:
       Paths_aoc
   hs-source-dirs:
@@ -176,6 +177,7 @@ library
     , microlens-platform
     , mtl
     , parallel
+    , random
     , split
     , text
     , time
@@ -218,6 +220,7 @@ executable main
     , microlens-platform
     , mtl
     , parallel
+    , random
     , split
     , text
     , time
