@@ -29,7 +29,7 @@ class Manifold t c where
 instance Manifold RInt RInt where
   tMulPlus t v x = t * v + x
 
-instance {-# OVERLAPS #-} (Manifold a b, Manifold a c) => Manifold a (b, c) where
+instance (Manifold a b, Manifold a c) => Manifold a (b, c) where
   tMulPlus t (v1, v2) (x1, x2) = (tMulPlus t v1 x1, tMulPlus t v2 x2)
 
 hAt :: Manifold t c => t -> Hailstone c -> c
@@ -92,6 +92,9 @@ intersectXYWithin r h1 h2 =
 part1 :: Range -> [Hailstone P3] -> Int
 part1 r = countIf (uncurry $ intersectXYWithin r) . pairs
 
+part2 :: [Hailstone P3] -> Int
+part2 = error "part2"
+
 tasks =
   Tasks
     2023
@@ -111,4 +114,5 @@ tasks =
             (Hailstone (150661115836739, 133213164517594) (184, 229))
     , AssertExample "part 1" 2 $ part1 exampleRange
     , taskBlind (part1 taskRange) & taskPart 1
+    , task part2 47 & taskPart 2
     ]
