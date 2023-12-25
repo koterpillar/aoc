@@ -95,7 +95,8 @@ stepN _ 0 ps = ps
 stepN g n ps = stepN g (pred n) $ step1 g ps
 
 reachableFrom :: Position2 -> Int -> Grid -> Set Position2
-reachableFrom p n g = stepN g n (Set.singleton $ traceShow ("reachable", p, n) p)
+reachableFrom p n g =
+  stepN g n (Set.singleton $ traceShow ("reachable", p, n) p)
 
 displayExtra :: Grid -> Map Position2 Char -> Text
 displayExtra g extra =
@@ -120,9 +121,9 @@ reachableInSteps1 n g = ttraceF (displayReach g) $ reachableFrom origin n g
 part1 :: Int -> Grid -> Int
 part1 n = length . reachableInSteps1 n
 
-iterateReach :: Position2 -> Int -> Grid -> [Int]
-iterateReach p start g =
-  whileDiffers [length $ reachableFrom p n g | n <- [start,start + 2 ..]]
+-- iterateReach :: Position2 -> Int -> Grid -> [Int]
+-- iterateReach p start g =
+--   whileDiffers [length $ reachableFrom p n g | n <- [start,start + 2 ..]]
 
 whileDiffers :: [Int] -> [Int]
 whileDiffers (x:rest@(y:_))
@@ -142,11 +143,6 @@ possibleReach p n g =
     ]
   where
     (Position2 x0 y0) = p
-
-part2Naive :: Int -> Grid -> Int
-part2Naive steps g = length $ reachableInSteps1 steps $ enlarge n g
-  where
-    n = succ $ steps `div` gSize g
 
 gMiddles :: Grid -> [Position2]
 gMiddles g =
@@ -182,7 +178,7 @@ part2Line middle n g = fullCount + remainderCount
     maxReach = sz * 2 -- might be less but this is safer and easier
     full = max 0 $ (n0 - maxReach) `div` sz + 1
     remainders = downSteps sz $ n0 - full * sz
-    fullCount = full * reachN middle maxReach
+    fullCount = full *? reachN middle maxReach
     remainderCount = sum [reachN middle r | r <- remainders]
     reachN p r = length $ reachableFrom p r g
     distanceToOutside = succ $ pX $ snd $ gBounds g
@@ -195,11 +191,17 @@ part2Corner corner n g = fullCount + remainderCount
     maxReach = sz * 2 -- might be less but this is safer and easier
     full = max 0 $ (n0 - maxReach) `div` sz + 1
     remainders = downSteps sz $ n0 - full * sz
-    fullCount = (full * succ full) `div` 2 * reachN corner maxReach
+    fullCount = (full * succ full) `div` 2 *? reachN corner maxReach
     remainderCount =
       sum [k * reachN corner r | (k, r) <- zipN (succ full) remainders]
     reachN p r = length $ reachableFrom p r g
     distanceToOutside = succ $ pX $ snd $ gBounds g
+
+(*?) :: Int -> Int -> Int
+0 *? _ = 0
+x *? y = x * y
+
+infixl 7 *?
 
 part2 :: Int -> Grid -> Int
 part2 n g = center + lines + corners
@@ -207,6 +209,24 @@ part2 n g = center + lines + corners
     center = length $ reachableFrom origin (min n $ gSize g * 2) g
     lines = sum [part2Line middle n g | middle <- gMiddles g]
     corners = sum [part2Corner corner n g | corner <- gCorners g]
+
+part2NaiveCheck :: Int -> Grid -> Text
+part2NaiveCheck steps g
+  | Map.member (Position2 1 0) (gG g) = "Example, ignoring"
+  | naive == fast = "OK " <> tshow steps
+  | otherwise =
+    terror
+      $ "FAIL for "
+          <> tshow steps
+          <> ": "
+          <> tshow fast
+          <> " /= "
+          <> tshow naive
+  where
+    naive = length naiveSet
+    naiveSet = reachableInSteps1 steps $ enlarge t g
+    fast = part2 steps g
+    t = succ $ steps `div` gSize g
 
 realSteps :: Int
 realSteps = 26501365
@@ -219,10 +239,10 @@ tasks =
       , Assert "reachable in 1 test" 4
           $ Set.size
           $ reachableInSteps1 1 testInput
-      , Assert "iterate reach 0" [1, 7, 16, 27, 36, 43, 44]
-          $ iterateReach origin 0 testInput
-      , Assert "iterate reach 1" [4, 10, 20, 30, 42, 44]
-          $ iterateReach origin 1 testInput
+      -- , Assert "iterate reach 0" [1, 7, 16, 27, 36, 43, 44]
+      --     $ iterateReach origin 0 testInput
+      -- , Assert "iterate reach 1" [4, 10, 20, 30, 42, 44]
+      --     $ iterateReach origin 1 testInput
       , Assert "enlarge test" (25 * length (gG testInput))
           $ length
           $ gG
@@ -230,10 +250,13 @@ tasks =
           $ enlarge 2 testInput
       ]
         ++ [ Assert
-             ("same as enlarge " <> tshow steps)
-             (part2Naive steps testInput)
-             (part2 steps testInput)
+             ("naive check test input " <> tshow steps)
+             ("OK " <> tshow steps)
+             (part2NaiveCheck steps testInput)
            | steps <- [0 .. 40] ++ [100, 101, 102, 156, 157]
+           ]
+        ++ [ taskBlind (part2NaiveCheck steps)
+           | steps <- [1 .. 250]
            ]
         ++
     -- can't apply the same algorithm to part 2 _example_ because it doesn't
@@ -245,4 +268,4 @@ tasks =
     -- , AssertExample "part 2 100" 6536 $ part2 100
     -- , AssertExample "part 2 500" 167004 $ part2 500
     -- , AssertExample "part 2 1000" 668697 $ part2 1000
-         [taskBlind (part2 1), taskBlind (part2 realSteps) & taskPart 2]
+         [taskBlind (part2 realSteps) & taskPart 2]
