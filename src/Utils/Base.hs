@@ -144,6 +144,11 @@ toNothing a b
 fromJustE :: String -> Maybe a -> a
 fromJustE = fromMaybe . error
 
+fromRightE :: Show a => String -> Either a b -> b
+fromRightE _ (Right b) = b
+fromRightE msg (Left a) =
+  error $ "fromRightE: " <> msg <> ": " <> show a
+
 fromSingleE :: Show a => String -> [a] -> a
 fromSingleE _ [a]  = a
 fromSingleE msg as = error $ "fromSingleE: " <> show as <> " " <> msg
