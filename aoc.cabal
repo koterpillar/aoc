@@ -31,6 +31,7 @@ library
       Evaluator
       Graph
       Grid
+      Grid.Pixel
       Memo
       Miniparse
       Miniparse.Base
@@ -166,6 +167,8 @@ library
     , aeson
     , astar
     , base >=4.7 && <5
+    , base64-bytestring
+    , bytestring
     , containers
     , directory
     , extra
@@ -209,6 +212,8 @@ executable main
     , aoc
     , astar
     , base >=4.7 && <5
+    , base64-bytestring
+    , bytestring
     , containers
     , directory
     , extra

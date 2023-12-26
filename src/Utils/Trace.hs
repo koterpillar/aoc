@@ -7,10 +7,15 @@ module Utils.Trace
   , traceShowM
   ) where
 
-import           Data.Text   (Text)
-import qualified Data.Text   as Text
+import           Data.ByteString (ByteString)
+import qualified Data.ByteString as ByteString
+
+import           Data.Text       (Text)
+import qualified Data.Text       as Text
 
 import           Debug.Trace
+import           GHC.IO
+import           System.IO
 
 traceF :: (a -> String) -> a -> a
 traceF f a = trace (f a) a
@@ -26,6 +31,16 @@ ttraceF f a = ttrace (f a) a
 
 ttraceM :: Monad m => Text -> m ()
 ttraceM = traceM . Text.unpack
+
+{-# NOINLINE btrace #-}
+btrace :: ByteString -> a -> a
+btrace m a =
+  unsafePerformIO $ do
+    ByteString.hPutStr stdout m
+    pure a
+
+btraceF :: (a -> ByteString) -> a -> a
+btraceF f a = btrace (f a) a
 
 prependShow :: Show a => String -> a -> String
 prependShow msg a = msg ++ " " ++ show a

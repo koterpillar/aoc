@@ -1,10 +1,17 @@
-module Grid where
+module Grid
+  ( module Grid
+  , ByteString
+  ) where
 
-import           Data.Hashable (Hashable (..))
+import           Data.Hashable   (Hashable (..))
 
-import qualified Data.Map      as Map
-import qualified Data.Text     as Text
+import           Data.ByteString (ByteString)
+import qualified Data.ByteString as ByteString
 
+import qualified Data.Map        as Map
+import qualified Data.Text       as Text
+
+import           Grid.Pixel
 import           Utils
 
 data Position2 = Position2
@@ -71,6 +78,8 @@ shrinkWithG scale fn = Map.mapKeysWith fn scalePoint
 
 class GridItem a where
   showInGrid :: a -> Char
+  showPixel :: a -> Pixel
+  showPixel = defaultPixel . showInGrid
 
 instance GridItem Char where
   showInGrid = id
@@ -102,6 +111,12 @@ middleDot = '·'
 displayG' :: (a -> Char) -> Grid2 a -> Text
 displayG' fn =
   Text.unlines . map (Text.pack . map (maybe middleDot fn)) . toMatrixG
+
+displayPixels :: GridItem a => Int -> Grid2 a -> ByteString
+displayPixels = displayPixels' showPixel
+
+displayPixels' :: (a -> Pixel) -> Int -> Grid2 a -> ByteString
+displayPixels' fn zf = kittyDisplay zf . map (map (maybe bgPixel fn)) . toMatrixG
 
 data Direction4
   = E

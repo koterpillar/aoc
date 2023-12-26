@@ -17,6 +17,8 @@ dependencies:
 - base >= 4.7 && < 5
 - aeson
 - astar
+- base64-bytestring
+- bytestring
 - containers
 - directory
 - extra
