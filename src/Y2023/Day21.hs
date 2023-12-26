@@ -46,8 +46,8 @@ parser =
     <$> charGridP'
           (choiceP [('#', Just Sand), ('.', Nothing), ('S', Just Gnome)])
 
-testInput :: Grid
-testInput =
+testInput1 :: Grid
+testInput1 =
   justParse parser
     $ Text.unlines
         [ "..........."
@@ -61,6 +61,21 @@ testInput =
         , ".......#..."
         , ".......#..."
         , "..........."
+        ]
+
+testInput :: Grid
+testInput =
+  justParse parser
+    $ Text.unlines
+        [ "........."
+        , ".###.#.#."
+        , ".###.#.#."
+        , ".###.###."
+        , "....S...."
+        , "........."
+        , ".....###."
+        , "........."
+        , "........."
         ]
 
 enlarge :: Int -> Grid -> Grid
@@ -121,32 +136,23 @@ reachableFromTrace p n g = ttraceF (displayReach g) $ reachableFrom p n g
 part1 :: Int -> Grid -> Int
 part1 n = length . reachableFromTrace origin n
 
-possibleReach :: Position2 -> Int -> Grid -> Set Position2
-possibleReach p n g =
-  Set.fromList
-    [ p `pointPlus` Position2 x y
-    | x <- [negate n .. n]
-    , y <- [negate (n - x),negate (n - x) + 2 .. n - x]
-    , abs x + abs y <= n
-    , insideBounds (gBounds g) (p `pointPlus` Position2 x y)
-    , Map.notMember (Position2 x y) (gG g)
-    ]
-  where
-    (Position2 x0 y0) = p
-
-gMiddles :: Grid -> [Position2]
+gMiddles :: Grid -> [(Position2, Int)]
 gMiddles g =
-  [Position2 0 ymin, Position2 0 ymax, Position2 xmin 0, Position2 xmax 0]
+  map
+    (\p -> (p, manhattanDistance origin p + 1))
+    [Position2 0 ymin, Position2 0 ymax, Position2 xmin 0, Position2 xmax 0]
   where
     (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
 
-gCorners :: Grid -> [Position2]
+gCorners :: Grid -> [(Position2, Int)]
 gCorners g =
-  [ Position2 xmin ymin
-  , Position2 xmin ymax
-  , Position2 xmax ymin
-  , Position2 xmax ymax
-  ]
+  map
+    (\p -> (p, manhattanDistance origin p + 2))
+    [ Position2 xmin ymin
+    , Position2 xmin ymax
+    , Position2 xmax ymin
+    , Position2 xmax ymax
+    ]
   where
     (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
 
@@ -161,31 +167,52 @@ assert msg expected actual
       $ "assert: " <> show msg <> ": " <> show expected <> " /= " <> show actual
 
 part2Line :: Position2 -> Int -> Grid -> Int
-part2Line middle n g = fullCount + remainderCount
+part2Line middle n g
+  | n < 0 = 0
+  | otherwise =
+    ttraceF
+      (\r ->
+         "partLine "
+           <> tshow n
+           <> " full="
+           <> tshow full
+           <> "*"
+           <> tshow fullReach
+           <> "="
+           <> tshow fullCount
+           <> " remainders="
+           <> tshow remainders
+           <> "("
+           <> tshow remainderReach
+           <> ")="
+           <> tshow remainderCount
+           <> " total="
+           <> tshow r)
+      $ fullCount + remainderCount
   where
-    n0 = n - distanceToOutside
     sz = gSize g
-    maxReach = sz * 2 -- might be less but this is safer and easier
-    full = max 0 $ (n0 - maxReach) `div` sz + 1
-    remainders = downSteps sz $ n0 - full * sz
-    fullCount = full *? reachN middle maxReach
-    remainderCount = sum [reachN middle r | r <- remainders]
-    reachN p r = length $ reachableFrom p r g
-    distanceToOutside = succ $ pX $ snd $ gBounds g
+    maxReach = sz + sz `div` 2 + 10 + (sz + n) `mod` 2
+    full = max 0 $ (n - maxReach) `div` sz + 1
+    remainders = downSteps sz $ n - full * sz
+    fullReach = reachN middle maxReach
+    fullCount = full *? fullReach
+    remainderReach = [reachN middle r | r <- remainders]
+    remainderCount = sum remainderReach
+    reachN p r = length $ reachableFromTrace p r g
 
 part2Corner :: Position2 -> Int -> Grid -> Int
-part2Corner corner n g = fullCount + remainderCount
+part2Corner corner n g
+  | n < 0 = 0
+  | otherwise = fullCount + remainderCount
   where
-    n0 = n - 2 * distanceToOutside
     sz = gSize g
-    maxReach = sz * 2 -- might be less but this is safer and easier
-    full = max 0 $ (n0 - maxReach) `div` sz + 1
-    remainders = downSteps sz $ n0 - full * sz
-    fullCount = (full * succ full) `div` 2 *? reachN corner maxReach
+    maxReach = sz * 2 + 10 + n `mod` 2
+    full = max 0 $ (n - maxReach) `div` sz + 1
+    remainders = downSteps sz $ n - full * sz
+    fullCount = full * succ full `div` 2 *? reachN corner maxReach
     remainderCount =
       sum [k * reachN corner r | (k, r) <- zipN (succ full) remainders]
-    reachN p r = length $ reachableFrom p r g
-    distanceToOutside = succ $ pX $ snd $ gBounds g
+    reachN p r = length $ reachableFromTrace p r g
 
 (*?) :: Int -> Int -> Int
 0 *? _ = 0
@@ -197,10 +224,20 @@ part2 :: Int -> Grid -> Int
 part2 n g = center + lines + corners
   where
     center = length $ reachableFrom origin (min n $ gSize g * 2) g
-    -- lines = sum [part2Line middle n g | middle <- gMiddles g]
-    -- corners = sum [part2Corner corner n g | corner <- gCorners g]
-    lines = part2Line (Position2 xmin 0) n g where (Position2 xmin _, _) = gBounds g
-    corners = 0
+    lines =
+      sum
+        $ traceShowF
+            ("part2Line results", )
+            [ part2Line middle (traceShowF ("part2Line arg", ) (n - d)) g
+            | (middle, d) <- traceShowF ("gMiddles", ) (gMiddles g)
+            ]
+    corners =
+      sum
+        $ traceShowF
+            ("part2Corner results", )
+            [ part2Corner corner (traceShowF ("part2Corner arg", ) (n - d)) g
+            | (corner, d) <- gCorners g
+            ]
 
 part2NaiveCheck :: Int -> Grid -> Text
 part2NaiveCheck steps g
@@ -216,7 +253,7 @@ part2NaiveCheck steps g
           <> tshow naive
   where
     naive = length naiveSet
-    naiveSet = reachableFrom origin steps $ enlarge t g
+    naiveSet = reachableFromTrace origin steps $ enlarge t g
     fast = part2 steps g
     t = succ $ steps `div` gSize g
 
@@ -243,9 +280,7 @@ tasks =
              (part2NaiveCheck steps testInput)
            | steps <- [0 .. 40] ++ [100, 101, 102, 156, 157]
            ]
-        ++ [ taskBlind (part2NaiveCheck steps)
-           | steps <- [1 .. 250]
-           ]
+        ++ [taskBlind (part2NaiveCheck steps) | steps <- [460]]
         ++
     -- can't apply the same algorithm to part 2 _example_ because it doesn't
     -- have the free cross in the middle
