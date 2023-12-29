@@ -1,12 +1,9 @@
 module Grid
   ( module Grid
-  , ByteString
+  , LazyByteString
   ) where
 
 import           Data.Hashable   (Hashable (..))
-
-import           Data.ByteString (ByteString)
-import qualified Data.ByteString as ByteString
 
 import qualified Data.Map        as Map
 import qualified Data.Text       as Text
@@ -112,10 +109,10 @@ displayG' :: (a -> Char) -> Grid2 a -> Text
 displayG' fn =
   Text.unlines . map (Text.pack . map (maybe middleDot fn)) . toMatrixG
 
-displayPixels :: GridItem a => Int -> Grid2 a -> ByteString
+displayPixels :: GridItem a => Int -> Grid2 a -> LazyByteString
 displayPixels = displayPixels' showPixel
 
-displayPixels' :: (a -> Pixel) -> Int -> Grid2 a -> ByteString
+displayPixels' :: (a -> Pixel) -> Int -> Grid2 a -> LazyByteString
 displayPixels' fn zf = kittyDisplay zf . map (map (maybe bgPixel fn)) . toMatrixG
 
 data Direction4

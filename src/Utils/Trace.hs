@@ -9,6 +9,7 @@ module Utils.Trace
 
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Lazy as LBS
 
 import           Data.Text       (Text)
 import qualified Data.Text       as Text
@@ -41,6 +42,16 @@ btrace m a =
 
 btraceF :: (a -> ByteString) -> a -> a
 btraceF f a = btrace (f a) a
+
+{-# NOINLINE lbtrace #-}
+lbtrace :: LBS.ByteString -> a -> a
+lbtrace m a =
+  unsafePerformIO $ do
+    LBS.hPutStr stdout m
+    pure a
+
+lbtraceF :: (a -> LBS.ByteString) -> a -> a
+lbtraceF f a = lbtrace (f a) a
 
 prependShow :: Show a => String -> a -> String
 prependShow msg a = msg ++ " " ++ show a
