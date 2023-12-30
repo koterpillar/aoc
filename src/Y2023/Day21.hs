@@ -169,13 +169,35 @@ assert msg expected actual
     error
       $ "assert: " <> show msg <> ": " <> show expected <> " /= " <> show actual
 
-part2Line :: Position2 -> Int -> Grid -> Int
-part2Line middle n g
+data Extremity
+  = Line
+  | Corner
+  deriving (Show)
+
+exIntegral :: Extremity -> Int -> Int
+exIntegral Line n   = n
+exIntegral Corner n = n * succ n `div` 2
+
+exMultiple :: Extremity -> Int -> Int
+exMultiple Line _   = 1
+exMultiple Corner n = n
+
+exMaxReach :: Extremity -> Int -> Int
+exMaxReach Line n   = n + n `div` 2
+exMaxReach Corner n = n + n
+
+normaliseParity :: Int -> Int -> Int
+normaliseParity example n = n + (n - example) `mod` 2
+
+part2Extremity :: Extremity -> Position2 -> Int -> Grid -> Int
+part2Extremity ex middle n g
   | n < 0 = 0
   | otherwise =
     ttraceF
       (\r ->
-         "partLine "
+         "part"
+           <> tshow ex
+           <> " "
            <> tshow n
            <> " full="
            <> tshow full
@@ -194,27 +216,16 @@ part2Line middle n g
       $ fullCount + remainderCount
   where
     sz = gSize g
-    maxReach = sz + sz `div` 2 + 10 + (sz + n) `mod` 2
+    maxReach = normaliseParity n $ exMaxReach ex sz
     full = max 0 $ (n - maxReach) `div` sz + 1
     remainders = downSteps sz $ n - full * sz
     fullReach = reachN middle maxReach
-    fullCount = full *? fullReach
-    remainderReach = [reachN middle r | r <- remainders]
+    fullCount = exIntegral ex full *? fullReach
+    remainderReach =
+      [ exMultiple ex k * reachN middle r
+      | (k, r) <- zipN (succ full) remainders
+      ]
     remainderCount = sum remainderReach
-    reachN p r = length $ reachableFromTrace p r g
-
-part2Corner :: Position2 -> Int -> Grid -> Int
-part2Corner corner n g
-  | n < 0 = 0
-  | otherwise = fullCount + remainderCount
-  where
-    sz = gSize g
-    maxReach = sz * 2 + 10 + n `mod` 2
-    full = max 0 $ (n - maxReach) `div` sz + 1
-    remainders = downSteps sz $ n - full * sz
-    fullCount = full * succ full `div` 2 *? reachN corner maxReach
-    remainderCount =
-      sum [k * reachN corner r | (k, r) <- zipN (succ full) remainders]
     reachN p r = length $ reachableFromTrace p r g
 
 (*?) :: Int -> Int -> Int
@@ -231,14 +242,22 @@ part2 n g = center + lines + corners
       sum
         $ traceShowF
             ("part2Line results", )
-            [ part2Line middle (traceShowF ("part2Line arg", ) (n - d)) g
+            [ part2Extremity
+              Line
+              middle
+              (traceShowF ("part2Line arg", ) (n - d))
+              g
             | (middle, d) <- traceShowF ("gMiddles", ) (gMiddles g)
             ]
     corners =
       sum
         $ traceShowF
             ("part2Corner results", )
-            [ part2Corner corner (traceShowF ("part2Corner arg", ) (n - d)) g
+            [ part2Extremity
+              Corner
+              corner
+              (traceShowF ("part2Corner arg", ) (n - d))
+              g
             | (corner, d) <- gCorners g
             ]
 
@@ -278,12 +297,13 @@ tasks =
           $ enlarge 2 testInput
       ]
         ++ [ Assert
-             ("naive check test input " <> tshow steps)
+             ("naive check test input " <> tshow i <> " steps " <> tshow steps)
              ("OK " <> tshow steps)
-             (part2NaiveCheck steps testInput)
+             (part2NaiveCheck steps input)
            | steps <- [0 .. 40] ++ [100, 101, 102, 156, 157]
+           , (i, input) <- zipN 0 [testInput, testInput1]
            ]
-        ++ [taskBlind (part2NaiveCheck steps) | steps <- [460]]
+        ++ [taskBlind (part2NaiveCheck steps) | steps <- [310, 311]]
         ++
     -- can't apply the same algorithm to part 2 _example_ because it doesn't
     -- have the free cross in the middle
