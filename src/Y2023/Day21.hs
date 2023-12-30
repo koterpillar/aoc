@@ -70,7 +70,7 @@ testInput =
         [ "........."
         , ".###.#.#."
         , ".###.#.#."
-        , ".###.###."
+        , ".#.#.###."
         , "....S...."
         , "........."
         , ".....###."
@@ -118,7 +118,7 @@ reachableFrom p n g =
   stepN g n (Set.singleton $ traceShow ("reachable", p, n) p)
 
 displayExtra :: Grid -> Map Position2 Char -> LazyByteString
-displayExtra g extra = displayPixels 10 $ mkGarden g
+displayExtra g extra = displayPixels 6 $ mkGarden g
   where
     mkGarden g =
       Map.map (const '#') (gG g)
@@ -237,7 +237,7 @@ infixl 7 *?
 part2 :: Int -> Grid -> Int
 part2 n g = center + lines + corners
   where
-    center = length $ reachableFrom origin (min n $ gSize g * 2) g
+    center = length $ reachableFrom origin (min n $ normaliseParity n $ gSize g + 2) g
     lines =
       sum
         $ traceShowF
