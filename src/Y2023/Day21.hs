@@ -78,6 +78,10 @@ testInput =
         , "........."
         ]
 
+miniInput :: Grid
+miniInput =
+  justParse parser $ Text.unlines [".....", ".#...", "..S..", "...#.", "....."]
+
 enlarge :: Int -> Grid -> Grid
 enlarge n g = Grid g' b' s'
   where
@@ -113,9 +117,8 @@ reachableFrom :: Position2 -> Int -> Grid -> Set Position2
 reachableFrom p n g =
   stepN g n (Set.singleton $ traceShow ("reachable", p, n) p)
 
-displayExtra :: Grid -> Map Position2 Char -> Text
-displayExtra g extra =
-  "extra=" <> tshow (Map.size extra) <> "\n" <> displayG (mkGarden g)
+displayExtra :: Grid -> Map Position2 Char -> LazyByteString
+displayExtra g extra = displayPixels 10 $ mkGarden g
   where
     mkGarden g =
       Map.map (const '#') (gG g)
@@ -127,11 +130,11 @@ displayExtra g extra =
                       ]
     (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
 
-displayReach :: Grid -> Set Position2 -> Text
+displayReach :: Grid -> Set Position2 -> LazyByteString
 displayReach g = displayExtra g . Map.fromSet (const 'O')
 
 reachableFromTrace :: Position2 -> Int -> Grid -> Set Position2
-reachableFromTrace p n g = ttraceF (displayReach g) $ reachableFrom p n g
+reachableFromTrace p n g = lbtraceF (displayReach g) $ reachableFrom p n g
 
 part1 :: Int -> Grid -> Int
 part1 n = length . reachableFromTrace origin n
@@ -271,7 +274,7 @@ tasks =
       , Assert "enlarge test" (25 * length (gG testInput))
           $ length
           $ gG
-          $ ttraceF (`displayExtra` Map.empty)
+          $ lbtraceF (`displayExtra` Map.empty)
           $ enlarge 2 testInput
       ]
         ++ [ Assert
