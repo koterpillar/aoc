@@ -54,7 +54,7 @@ testInput1 =
         , ".####.##.#."
         , ".####.#...."
         , ".####.#..#."
-        , ".####.####."
+        , ".####.##.#."
         , ".....S....."
         , ".......#..."
         , "......####."
@@ -159,75 +159,6 @@ gCorners g =
   where
     (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
 
-downSteps :: Int -> Int -> [Int]
-downSteps step start = [start,start - step .. 0]
-
-assert :: (Eq a, Show a) => Text -> a -> a -> a
-assert msg expected actual
-  | expected == actual = actual
-  | otherwise =
-    error
-      $ "assert: " <> show msg <> ": " <> show expected <> " /= " <> show actual
-
-data Extremity
-  = Line
-  | Corner
-  deriving (Show)
-
-exIntegral :: Extremity -> Int -> Int
-exIntegral Line n   = n
-exIntegral Corner n = n * succ n `div` 2
-
-exMultiple :: Extremity -> Int -> Int
-exMultiple Line _   = 1
-exMultiple Corner n = n
-
-exMaxReach :: Extremity -> Int -> Int
-exMaxReach Line n   = n + n `div` 2
-exMaxReach Corner n = n + n
-
-normaliseParity :: Int -> Int -> Int
-normaliseParity example n = n + (n - example) `mod` 2
-
-part2Extremity :: Extremity -> Position2 -> Int -> Grid -> Int
-part2Extremity ex middle n g
-  | n < 0 = 0
-  | otherwise =
-    ttraceF
-      (\r ->
-         "part"
-           <> tshow ex
-           <> " "
-           <> tshow n
-           <> " full="
-           <> tshow full
-           <> "*"
-           <> tshow fullReach
-           <> "="
-           <> tshow fullCount
-           <> " remainders="
-           <> tshow remainders
-           <> "("
-           <> tshow remainderReach
-           <> ")="
-           <> tshow remainderCount
-           <> " total="
-           <> tshow r)
-      $ fullCount + remainderCount
-  where
-    sz = gSize g
-    maxReach = normaliseParity n $ exMaxReach ex sz
-    full = max 0 $ (n - maxReach) `div` sz + 1
-    remainders = downSteps sz $ n - full * sz
-    fullReach = reachN middle maxReach
-    fullCount = exIntegral ex full *? fullReach
-    remainderReach =
-      [ exMultiple ex k * reachN middle r
-      | (k, r) <- zipN (succ full) remainders
-      ]
-    remainderCount = sum remainderReach
-    reachN p r = length $ reachableFromTrace p r g
-
 (*?) :: Int -> Int -> Int
 0 *? _ = 0
 x *? y = x * y
@@ -235,44 +166,46 @@ x *? y = x * y
 infixl 7 *?
 
 part2 :: Int -> Grid -> Int
-part2 n g = center + lines + corners
+part2 n g =
+  traceShow ("center", center, "lines", lines, "corners", corners)
+    $ center + lines + corners
   where
-    center = length $ reachableFrom origin (min n $ normaliseParity n $ gSize g + 2) g
+    sz = gSize g
+    k = succ n `div` sz
+    toCorner = sz - 1
+    maxReach = toCorner + (toCorner - n) `mod` 2
+    full1 = length $ reachableFromTrace origin maxReach g
+    full2 = length $ reachableFromTrace origin (succ maxReach) g
+    sqr a = a * a
+    k' = max 0 $ pred k
+    center
+      | n <= sz = length $ reachableFromTrace origin n g
+      | otherwise = sqr k *? full1 + sqr k' *? full2
     lines =
       sum
-        $ traceShowF
-            ("part2Line results", )
-            [ part2Extremity
-              Line
+        [ length
+          $ reachableFromTrace
               middle
-              (traceShowF ("part2Line arg", ) (n - d))
+              (traceShowF ("part2Line", "n", n, "d", d, "sz", sz, "arg", )
+                 $ (n - d) `mod` sz)
               g
-            | (middle, d) <- traceShowF ("gMiddles", ) (gMiddles g)
-            ]
+        | (middle, d) <-  gMiddles g
+        , n >= d
+        ]
     corners =
       sum
-        $ traceShowF
-            ("part2Corner results", )
-            [ part2Extremity
-              Corner
-              corner
-              (traceShowF ("part2Corner arg", ) (n - d))
-              g
-            | (corner, d) <- gCorners g
-            ]
+        [ k *? length (reachableFromTrace corner n' g) + k' *? length (reachableFromTrace corner (n' + sz) g)
+        | (corner, d) <- traceShowF ("gCorners", ) (gCorners g)
+        , n >= d
+        , let n' = traceShowF ("part2Corner", "n", n, "d", d, "sz", sz, "k", k, "k'", k', "arg",) $ (n - d) `mod` sz
+        ]
 
 part2NaiveCheck :: Int -> Grid -> Text
 part2NaiveCheck steps g
   | Map.member (Position2 1 0) (gG g) = "Example, ignoring"
   | naive == fast = ttrace ("Result = " <> tshow fast) $ "OK " <> tshow steps
   | otherwise =
-    terror
-      $ "FAIL for "
-          <> tshow steps
-          <> ": "
-          <> tshow fast
-          <> " /= "
-          <> tshow naive
+    "FAIL for " <> tshow steps <> ": " <> tshow fast <> " /= " <> tshow naive
   where
     naive = length naiveSet
     naiveSet = reachableFromTrace origin steps $ enlarge t g
@@ -303,7 +236,7 @@ tasks =
            | steps <- [0 .. 40] ++ [100, 101, 102, 156, 157]
            , (i, input) <- zipN 0 [testInput, testInput1]
            ]
-        ++ [taskBlind (part2NaiveCheck steps) | steps <- [310, 311]]
+        ++ [taskBlind (part2NaiveCheck steps) | steps <- [310, 311, 460, 461]]
         ++
     -- can't apply the same algorithm to part 2 _example_ because it doesn't
     -- have the free cross in the middle
