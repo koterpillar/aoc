@@ -58,7 +58,7 @@ defaultPixel c   = error $ "defaultPixel: " <> show c
 
 -- https://sw.kovidgoyal.net/kitty/graphics-protocol/#rgb-and-rgba-data
 kittyDisplay :: Int -> [[Pixel]] -> LazyByteString
-kittyDisplay zf ps = Builder.toLazyByteString $ go True pixels
+kittyDisplay zf ps = Builder.toLazyByteString $ go True pixels <> "\n"
   where
     imgEscape :: [(Char, Builder)] -> ByteString -> Builder
     imgEscape attrs payload =
