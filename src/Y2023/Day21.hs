@@ -21,10 +21,23 @@ data GardenItem
 type Input = Grid2 (Maybe GardenItem)
 
 data Grid = Grid
-  { gG      :: Grid2 ()
-  , gBounds :: (Position2, Position2)
-  , gSize   :: Int
+  { gG    :: Grid2 ()
+  , gSize :: Int
   } deriving (Eq, Ord, Show)
+
+gMaxReach :: Grid -> Int
+gMaxReach g = (gSize g - 1) `div` 2
+
+gContains :: Position2 -> Grid -> Bool
+gContains (Position2 x y) g = abs x <= gMaxReach g && abs y <= gMaxReach g
+
+gFree :: Position2 -> Grid -> Bool
+gFree p g = gContains p g && Map.notMember p (gG g)
+
+gWrap :: Grid -> Int -> Int
+gWrap g = wrapRange (negate r) r
+  where
+    r = gMaxReach g
 
 findGnomeCenter :: Input -> Grid
 findGnomeCenter i = Grid {..}
@@ -33,7 +46,7 @@ findGnomeCenter i = Grid {..}
       fromSingleE "gnome" $ Map.toList $ Map.filter (== Just Gnome) i
     t = flip pointMinus start
     gG = Map.mapKeys t $ void $ Map.filter (== Just Sand) i
-    gBounds@(Position2 xmin ymin, Position2 xmax ymax) = bimap t t $ boundsG i
+    gBounds@(Position2 xmin ymin, Position2 xmax ymax) = boundsG i
     gSizeX = xmax - xmin + 1
     gSizeY = ymax - ymin + 1
     gSize
@@ -80,125 +93,85 @@ testInput =
 
 miniInput :: Grid
 miniInput =
-  justParse parser $ Text.unlines [".....", ".#...", "..S..", "...#.", "....."]
+  justParse parser $ Text.unlines ["...#.", ".#...", "..S..", "...#.", "....."]
 
 enlarge :: Int -> Grid -> Grid
-enlarge n g = Grid g' b' s'
+enlarge n (Grid g sz) = Grid g' sz'
   where
-    nmin = negate n
-    nmax = n
-    g' = Map.fromList $ concatMap mkP $ Map.toList $ gG g
-    mkP (p, ()) =
-      [(offset x y p, ()) | x <- [nmin .. nmax], y <- [nmin .. nmax]]
-    offset x y p = p `pointPlus` Position2 (x * xdiff) (y * ydiff)
-    (pmin, pmax) = gBounds g
-    pdiff = pmax `pointMinus` pmin
-    xdiff = succ $ pX pdiff
-    ydiff = succ $ pY pdiff
-    b' = bimap (offset nmin nmin) (offset nmax nmax) (gBounds g)
-    s' = n * gSize g
+    range = [negate n .. n]
+    g' = Map.fromList $ concatMap mkP $ Map.toList g
+    mkP (p, ()) = [(offset x y p, ()) | x <- range, y <- range]
+    offset x y p = p `pointPlus` Position2 (x * sz) (y * sz)
+    sz' = length range * sz
 
-stepPoint :: Grid -> Position2 -> [Position2]
-stepPoint g p = do
-  d <- allDir4
-  let p' = walk d p
-  guard $ insideBounds (gBounds g) p'
-  guard $ Map.notMember p' (gG g)
-  pure p'
+type PointPredicate = Position2 -> Bool
 
-step1 :: Grid -> Set Position2 -> Set Position2
-step1 g = Set.fromList . concatMap (stepPoint g) . Set.toList
+reachableInSteps :: PointPredicate -> Int -> Position2 -> Set Position2
+reachableInSteps valid n = iterateNL n go . Set.singleton
+  where
+    go = Set.fromList . concatMap expand . Set.toList
+    expand p = do
+      d <- allDir4
+      let p' = walk d p
+      guard $ valid p'
+      pure p'
 
-stepN :: Grid -> Int -> Set Position2 -> Set Position2
-stepN _ 0 ps = ps
-stepN g n ps = stepN g (pred n) $ step1 g ps
+reachable1 :: Grid -> Int -> Set Position2
+reachable1 g n = reachableInSteps valid n origin
+  where
+    valid p = gContains p g && gFree p g
 
-reachableFrom :: Position2 -> Int -> Grid -> Set Position2
-reachableFrom p n g =
-  stepN g n (Set.singleton $ traceShow ("reachable", p, n) p)
+reachable1Trace :: Grid -> Int -> Set Position2
+reachable1Trace g n = traceReach g $ reachable1 g n
+
+part1 :: Int -> Grid -> Int
+part1 n g = length $ reachable1Trace g n
 
 displayExtra :: Grid -> Map Position2 Char -> LazyByteString
-displayExtra g extra = displayPixels 6 $ mkGarden g
+displayExtra g extra = displayPixels 12 $ mkGarden g
   where
-    mkGarden g =
-      Map.map (const '#') (gG g)
-        `Map.union` extra
-        `Map.union` Map.fromList
-                      [ (Position2 x y, 'X')
-                      | x <- [xmin, xmax]
-                      , y <- [ymin, ymax]
-                      ]
-    (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
+    mkGarden g = Map.map (const '#') (gG g) `Map.union` extra
 
 displayReach :: Grid -> Set Position2 -> LazyByteString
 displayReach g = displayExtra g . Map.fromSet (const 'O')
 
-reachableFromTrace :: Position2 -> Int -> Grid -> Set Position2
-reachableFromTrace p n g = lbtraceF (displayReach g) $ reachableFrom p n g
+displayGrid :: Grid -> LazyByteString
+displayGrid g = displayExtra g Map.empty
 
-part1 :: Int -> Grid -> Int
-part1 n = length . reachableFromTrace origin n
+traceReach :: Grid -> Set Position2 -> Set Position2
+traceReach g = lbtraceF (displayReach g)
 
-gMiddles :: Grid -> [(Position2, Int)]
-gMiddles g =
-  map
-    (\p -> (p, manhattanDistance origin p + 1))
-    [Position2 0 ymin, Position2 0 ymax, Position2 xmin 0, Position2 xmax 0]
+sameSign :: Int -> Int -> Bool
+sameSign a b = a * b >= 0
+
+type Quadrant = (Int, Int)
+
+quadrants :: [Quadrant]
+quadrants = [(qx, qy) | qx <- [-1, 1], qy <- [-1, 1]]
+
+inQuadrant :: Quadrant -> Position2 -> Bool
+inQuadrant (qx, qy) (Position2 x y) = sameSign x qx && sameSign y qy
+
+reachableQuadrant :: Quadrant -> Grid -> Int -> Set Position2
+reachableQuadrant q g n = reachableInSteps valid n origin
   where
-    (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
-
-gCorners :: Grid -> [(Position2, Int)]
-gCorners g =
-  map
-    (\p -> (p, manhattanDistance origin p + 2))
-    [ Position2 xmin ymin
-    , Position2 xmin ymax
-    , Position2 xmax ymin
-    , Position2 xmax ymax
-    ]
-  where
-    (Position2 xmin ymin, Position2 xmax ymax) = gBounds g
-
-(*?) :: Int -> Int -> Int
-0 *? _ = 0
-x *? y = x * y
-
-infixl 7 *?
+    valid p@(Position2 x y) =
+      inQuadrant q p && gFree (Position2 (gWrap g x) (gWrap g y)) g
 
 part2 :: Int -> Grid -> Int
 part2 n g =
-  traceShow ("center", center, "lines", lines, "corners", corners)
-    $ center + lines + corners
+  traceShow ("q", quadrantSum, "c", centerFix, "l", lineFix)
+    $ quadrantSum - centerFix - lineFix
   where
-    sz = gSize g
-    k = succ n `div` sz
-    toCorner = sz - 1
-    maxReach = toCorner + (toCorner - n) `mod` 2
-    full1 = length $ reachableFromTrace origin maxReach g
-    full2 = length $ reachableFromTrace origin (succ maxReach) g
-    sqr a = a * a
-    k' = max 0 $ pred k
-    center
-      | n <= sz = length $ reachableFromTrace origin n g
-      | otherwise = sqr k *? full1 + sqr k' *? full2
-    lines =
-      sum
-        [ length
-          $ reachableFromTrace
-              middle
-              (traceShowF ("part2Line", "n", n, "d", d, "sz", sz, "arg", )
-                 $ (n - d) `mod` sz)
-              g
-        | (middle, d) <-  gMiddles g
-        , n >= d
-        ]
-    corners =
-      sum
-        [ k *? length (reachableFromTrace corner n' g) + k' *? length (reachableFromTrace corner (n' + sz) g)
-        | (corner, d) <- traceShowF ("gCorners", ) (gCorners g)
-        , n >= d
-        , let n' = traceShowF ("part2Corner", "n", n, "d", d, "sz", sz, "k", k, "k'", k', "arg",) $ (n - d) `mod` sz
-        ]
+    quadrantReach =
+      lbtraceF
+        (displayReach g . mconcat)
+        [reachableQuadrant q g n | q <- quadrants]
+    quadrantSum = sum $ map length quadrantReach
+    centerFix
+      | even n = 3
+      | otherwise = 0
+    lineFix = 4 * (succ n `div` 2)
 
 part2NaiveCheck :: Int -> Grid -> Text
 part2NaiveCheck steps g
@@ -208,32 +181,32 @@ part2NaiveCheck steps g
     "FAIL for " <> tshow steps <> ": " <> tshow fast <> " /= " <> tshow naive
   where
     naive = length naiveSet
-    naiveSet = reachableFromTrace origin steps $ enlarge t g
+    naiveSet = reachable1 (enlarge t g) steps
     fast = part2 steps g
     t = succ $ steps `div` gSize g
 
 realSteps :: Int
 realSteps = 26501365
 
+traceGrid :: Grid -> Grid
+traceGrid = lbtraceF displayGrid
+
 tasks =
   Tasks 2023 21 (CodeBlock 0) parser
     $ [ AssertExample "part 1" 16 $ part1 6
       , taskBlind (part1 64) & taskPart 1
       , Assert "part 1 test" 16 $ part1 4 testInput
-      , Assert "reachable in 1 test" 4
-          $ Set.size
-          $ reachableFrom origin 1 testInput
-      , Assert "enlarge test" (25 * length (gG testInput))
+      , Assert "enlarge length" (25 * length (gG testInput))
           $ length
           $ gG
-          $ lbtraceF (`displayExtra` Map.empty)
+          $ traceGrid
           $ enlarge 2 testInput
       ]
         ++ [ Assert
              ("naive check test input " <> tshow i <> " steps " <> tshow steps)
              ("OK " <> tshow steps)
              (part2NaiveCheck steps input)
-           | steps <- [0 .. 40] ++ [100, 101, 102, 156, 157]
+           | steps <- [0 .. 80] ++ [100, 101, 102, 156, 157]
            , (i, input) <- zipN 0 [testInput, testInput1]
            ]
         ++ [taskBlind (part2NaiveCheck steps) | steps <- [310, 311, 460, 461]]
