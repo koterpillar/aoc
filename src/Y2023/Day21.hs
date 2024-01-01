@@ -39,6 +39,9 @@ gWrap g = wrapRange (negate r) r
   where
     r = gMaxReach g
 
+gFreeWrap :: Position2 -> Grid -> Bool
+gFreeWrap (Position2 x y) g = gFree (Position2 (gWrap g x) (gWrap g y)) g
+
 findGnomeCenter :: Input -> Grid
 findGnomeCenter i = Grid {..}
   where
@@ -155,19 +158,80 @@ inQuadrant (qx, qy) (Position2 x y) = sameSign x qx && sameSign y qy
 reachableQuadrant :: Quadrant -> Grid -> Int -> Set Position2
 reachableQuadrant q g n = reachableInSteps valid n origin
   where
-    valid p@(Position2 x y) =
-      inQuadrant q p && gFree (Position2 (gWrap g x) (gWrap g y)) g
+    valid p = inQuadrant q p && gFreeWrap p g
+
+reachableQuadrantOnly :: Quadrant -> Grid -> Int -> Set Position2
+reachableQuadrantOnly q g n = Set.filter (maxDistance $ pred sz) $ reachableInSteps valid n origin
+  where
+    maxDistance n p = let Position2 dx dy = pointMinus p origin in abs dx <= n && abs dy <= n
+    sz = gSize g
+    valid p =
+      inQuadrant q p && gFreeWrap p g && maxDistance sz p
+
+sqr :: Int -> Int
+sqr a = a * a
+
+(*?) :: Int -> Int -> Int
+_ *? 0 = 0
+a *? b = a * b
+
+infixl 7 *?
+
+normaliseParity :: Int -> Int -> Int
+normaliseParity example n = n + (example - n) `mod` 2
+
+part2Q :: Int -> Grid -> Quadrant -> Int
+part2Q n g q =
+  traceShow
+    ("n="
+       <> show n
+       <> ", k="
+       <> show k
+       <> ", f1="
+       <> show f1
+       <> ", f2="
+       <> show f2
+       <> ", r1="
+       <> show r1
+       <> ", r2="
+       <> show r2
+       <> ", c1="
+       <> show c1
+       <> ", c2="
+       <> show c2
+       <> ", p1="
+       <> show p1
+       <> ", p2="
+       <> show p2)
+    $ f1 *? r1 + f2 *? r2 + p1 *? c1 + p2 *? c2
+  where
+    naive = length $ traceReach g' $ reachableQuadrant q g n
+    sz = gSize g
+    k = n `div` sz
+    d1 = n `mod` sz
+    d2 = d1 + sz
+    f1 = sqr $ max 0 $ pred k `div` 2
+    f2 = max 0 $ (k `div` 2) * pred (k `div` 2)
+    r1 =
+      length $ traceReach g' $ reachableQuadrantOnly q g $ normaliseParity n sz
+    r2 =
+      length
+        $ traceReach g
+        $ reachableQuadrantOnly q g
+        $ normaliseParity n
+        $ succ sz
+    c1 = length $ traceReach g' $ reachableQuadrant q g d1
+    c2 = length $ traceReach g' $ reachableQuadrant q g d2
+    p1 = succ k
+    p2 = k
+    g' = enlarge (succ k) g
 
 part2 :: Int -> Grid -> Int
 part2 n g =
   traceShow ("q", quadrantSum, "c", centerFix, "l", lineFix)
     $ quadrantSum - centerFix - lineFix
   where
-    quadrantReach =
-      lbtraceF
-        (displayReach g . mconcat)
-        [reachableQuadrant q g n | q <- quadrants]
-    quadrantSum = sum $ map length quadrantReach
+    quadrantSum = sum $ map (part2Q n g) quadrants
     centerFix
       | even n = 3
       | otherwise = 0
