@@ -160,12 +160,7 @@ inQuadrant :: Quadrant -> Position2 -> Bool
 inQuadrant (qx, qy) (Position2 x y) = sameSign x qx && sameSign y qy
 
 reachableQuadrant :: Quadrant -> Grid -> Int -> Set Position2
-reachableQuadrant q g n = reachableInSteps valid n origin
-  where
-    valid p = inQuadrant q p && gFreeWrap p g
-
-reachableQuadrantOnly :: Quadrant -> Grid -> Int -> Set Position2
-reachableQuadrantOnly q g n =
+reachableQuadrant q g n =
   Set.filter (maxDistance $ pred sz) $ reachableInSteps valid n origin
   where
     maxDistance n p =
@@ -212,29 +207,33 @@ part2Q n g q =
        <> ", p1="
        <> show p1
        <> ", p2="
-       <> show p2)
-    $ f1 *? r1 + f2 *? r2 + p1 *? c1 + p2 *? c2
+       <> show p2
+       <> ", res="
+       <> show res)
+    res
   where
+    res = f1 *? r1 + f2 *? r2 + p1 *? c1 + p2 *? c2
     sz = gSize g
     k = n `div` sz
     d1 = n `mod` sz
     d2 = d1 + sz
     f1 = sqr $ k `div` 2
-    f2 = let k' = succ k `div` 2 in k' * pred k'
+    f2 =
+      let k' = succ k `div` 2
+       in k' * pred k'
+    max = sz * 2
     r1 =
       length
-        $ traceReach g'
-        $ reachable1 g
+        $ reachableQuadrant q g
         $ traceShowF ("r1 arg", )
-        $ normaliseParity n sz
+        $ normaliseParity n max
     r2 =
       length
-        $ traceReach g'
-        $ reachable1 g
+        $ reachableQuadrant q g
         $ traceShowF ("r2 arg", )
-        $ normaliseParity (succ n) sz
-    c1 = length $ traceReach g' $ reachableQuadrantOnly q g d1
-    c2 = length $ traceReach g' $ reachableQuadrantOnly q g d2
+        $ normaliseParity (succ n) max
+    c1 = length $ reachableQuadrant q g d1
+    c2 = length $ reachableQuadrant q g d2
     p1 = succ k
     p2 = k
     g' = enlarge 1 g
@@ -259,7 +258,7 @@ part2NaiveCheck steps g
   where
     naive = length naiveSet
     naiveG = enlarge t g
-    naiveSet = traceReach naiveG $ reachable1 naiveG steps
+    naiveSet = reachable1 naiveG steps
     fast = part2 steps g
     t = succ $ steps `div` gSize g
 
@@ -273,7 +272,21 @@ tasks =
   Tasks 2023 21 (CodeBlock 0) parser
     $ [ AssertExample "part 1" 16 $ part1 6
       , taskBlind (part1 64) & taskPart 1
-      , Assert "part 1 test" 16 $ part1 4 testInput
+      , Assert "part 1 test 0" 1 $ part1 0 testInput
+      , Assert "part 1 test 1" 4 $ part1 1 testInput
+      , Assert "part 1 test 2" 7 $ part1 2 testInput
+      , Assert "part 1 test 4" 16 $ part1 4 testInput
+      , Assert "enlarge length" (25 * length (gG testInput))
+          $ length
+          $ gG
+          $ traceGrid
+          $ enlarge 2 testInput
+      , AssertExample "part 1" 16 $ part1 6
+      , taskBlind (part1 64) & taskPart 1
+      , Assert "part 1 test 0" 1 $ part1 0 testInput
+      , Assert "part 1 test 1" 4 $ part1 1 testInput
+      , Assert "part 1 test 2" 7 $ part1 2 testInput
+      , Assert "part 1 test 4" 16 $ part1 4 testInput
       , Assert "enlarge length" (25 * length (gG testInput))
           $ length
           $ gG
