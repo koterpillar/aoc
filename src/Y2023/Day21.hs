@@ -219,8 +219,8 @@ part2Q n g q =
     k = n `div` sz
     d1 = n `mod` sz
     d2 = d1 + sz
-    f1 = sqr $ max 0 $ pred k `div` 2
-    f2 = max 0 $ (k `div` 2) * pred (k `div` 2)
+    f1 = sqr $ k `div` 2
+    f2 = let k' = succ k `div` 2 in k' * pred k'
     r1 =
       length
         $ traceReach g'
