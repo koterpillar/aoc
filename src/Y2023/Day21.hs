@@ -33,7 +33,7 @@ gContains :: Position2 -> Grid -> Bool
 gContains (Position2 x y) g = abs x <= gMaxReach g && abs y <= gMaxReach g
 
 gFree :: Position2 -> Grid -> Bool
-gFree p g = gContains p g && Map.notMember p (gG g)
+gFree p g = Map.notMember p (gG g)
 
 gWrap :: Grid -> Int -> Int
 gWrap g = wrapRange (negate r) r
@@ -165,18 +165,20 @@ reachableQuadrant q g n = reachableInSteps valid n origin
     valid p = inQuadrant q p && gFreeWrap p g
 
 reachableQuadrantOnly :: Quadrant -> Grid -> Int -> Set Position2
-reachableQuadrantOnly q g n = Set.filter (maxDistance $ pred sz) $ reachableInSteps valid n origin
+reachableQuadrantOnly q g n =
+  Set.filter (maxDistance $ pred sz) $ reachableInSteps valid n origin
   where
-    maxDistance n p = let Position2 dx dy = pointMinus p origin in abs dx <= n && abs dy <= n
+    maxDistance n p =
+      let Position2 dx dy = pointMinus p origin
+       in abs dx <= n && abs dy <= n
     sz = gSize g
-    valid p =
-      inQuadrant q p && gFreeWrap p g && maxDistance sz p
+    valid p = inQuadrant q p && gFreeWrap p g && maxDistance sz p
 
 sqr :: Int -> Int
 sqr a = a * a
 
 (*?) :: Int -> Int -> Int
-_ *? 0 = 0
+0 *? _ = 0
 a *? b = a * b
 
 infixl 7 *?
@@ -199,6 +201,10 @@ part2Q n g q =
        <> show r1
        <> ", r2="
        <> show r2
+       <> ", d1="
+       <> show d1
+       <> ", d2="
+       <> show d2
        <> ", c1="
        <> show c1
        <> ", c2="
@@ -209,7 +215,6 @@ part2Q n g q =
        <> show p2)
     $ f1 *? r1 + f2 *? r2 + p1 *? c1 + p2 *? c2
   where
-    naive = length $ traceReach g' $ reachableQuadrant q g n
     sz = gSize g
     k = n `div` sz
     d1 = n `mod` sz
@@ -217,18 +222,22 @@ part2Q n g q =
     f1 = sqr $ max 0 $ pred k `div` 2
     f2 = max 0 $ (k `div` 2) * pred (k `div` 2)
     r1 =
-      length $ traceReach g' $ reachableQuadrantOnly q g $ normaliseParity n sz
+      length
+        $ traceReach g'
+        $ reachable1 g
+        $ traceShowF ("r1 arg", )
+        $ normaliseParity n sz
     r2 =
       length
-        $ traceReach g
-        $ reachableQuadrantOnly q g
-        $ normaliseParity n
-        $ succ sz
-    c1 = length $ traceReach g' $ reachableQuadrant q g d1
-    c2 = length $ traceReach g' $ reachableQuadrant q g d2
+        $ traceReach g'
+        $ reachable1 g
+        $ traceShowF ("r2 arg", )
+        $ normaliseParity (succ n) sz
+    c1 = length $ traceReach g' $ reachableQuadrantOnly q g d1
+    c2 = length $ traceReach g' $ reachableQuadrantOnly q g d2
     p1 = succ k
     p2 = k
-    g' = enlarge (succ k) g
+    g' = enlarge 1 g
 
 part2 :: Int -> Grid -> Int
 part2 n g =
@@ -249,7 +258,8 @@ part2NaiveCheck steps g
     "FAIL for " <> tshow steps <> ": " <> tshow fast <> " /= " <> tshow naive
   where
     naive = length naiveSet
-    naiveSet = reachable1 (enlarge t g) steps
+    naiveG = enlarge t g
+    naiveSet = traceReach naiveG $ reachable1 naiveG steps
     fast = part2 steps g
     t = succ $ steps `div` gSize g
 
