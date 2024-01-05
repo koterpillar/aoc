@@ -21,8 +21,9 @@ data GardenItem
 type Input = Grid2 (Maybe GardenItem)
 
 data Grid = Grid
-  { gG    :: Grid2 ()
-  , gSize :: Int
+  { gG            :: Grid2 ()
+  , gSize         :: Int
+  , gOriginalSize :: Int
   } deriving (Eq, Ord, Show)
 
 gMaxReach :: Grid -> Int
@@ -55,6 +56,7 @@ findGnomeCenter i = Grid {..}
     gSize
       | gSizeX == gSizeY = gSizeX
       | otherwise = error $ "non-square grid: " <> show (gSizeX, gSizeY)
+    gOriginalSize = gSize
 
 parser :: Parser Text Grid
 parser =
@@ -99,7 +101,7 @@ miniInput =
   justParse parser $ Text.unlines ["...#.", ".#...", "..S..", "...#.", "....."]
 
 enlarge :: Int -> Grid -> Grid
-enlarge n (Grid g sz) = Grid g' sz'
+enlarge n (Grid g sz osz) = Grid g' sz' osz
   where
     range = [negate n .. n]
     g' = Map.fromList $ concatMap mkP $ Map.toList g
@@ -131,9 +133,11 @@ part1 :: Int -> Grid -> Int
 part1 n g = length $ reachable1Trace g n
 
 displayExtra :: Grid -> Map Position2 Char -> LazyByteString
-displayExtra g extra = displayPixels 12 $ mkGarden g
+displayExtra g extra = displayPixels opts $ mkGarden g
   where
     mkGarden g = Map.map (const '#') (gG g) `Map.union` extra
+    opts =
+      pixelZoom 10 <> pixelCheckerSize (gOriginalSize g) <> pixelCheckerOffset 1
 
 displayReach :: Grid -> Set Position2 -> LazyByteString
 displayReach g = displayExtra g . Map.fromSet (const 'O')
@@ -182,7 +186,7 @@ normaliseParity example n = n + (example - n) `mod` 2
 
 part2Q :: Int -> Grid -> Quadrant -> Int
 part2Q n g q =
-  traceShow
+  trace
     ("n="
        <> show n
        <> ", k="

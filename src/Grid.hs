@@ -1,6 +1,9 @@
 module Grid
   ( module Grid
   , LazyByteString
+  , pixelZoom
+  , pixelCheckerOffset
+  , pixelCheckerSize
   ) where
 
 import           Data.Hashable   (Hashable (..))
@@ -109,11 +112,11 @@ displayG' :: (a -> Char) -> Grid2 a -> Text
 displayG' fn =
   Text.unlines . map (Text.pack . map (maybe middleDot fn)) . toMatrixG
 
-displayPixels :: GridItem a => Int -> Grid2 a -> LazyByteString
+displayPixels :: GridItem a => PixelDisplayOptions -> Grid2 a -> LazyByteString
 displayPixels = displayPixels' showPixel
 
-displayPixels' :: (a -> Pixel) -> Int -> Grid2 a -> LazyByteString
-displayPixels' fn zf = kittyDisplay zf . map (map (maybe bgPixel fn)) . toMatrixG
+displayPixels' :: (a -> Pixel) -> PixelDisplayOptions -> Grid2 a -> LazyByteString
+displayPixels' fn opts = kittyDisplay opts . map (map (maybe bgPixel fn)) . toMatrixG
 
 data Direction4
   = E
