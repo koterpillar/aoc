@@ -47,11 +47,13 @@ module Utils
   , unless
   , void
   , when
+  , whileM
   ) where
 
 import           Control.Applicative       (liftA2, (<|>))
 import           Control.Arrow             ((&&&), (***))
 import           Control.Monad
+import           Control.Monad.Extra
 
 import           Data.Bifunctor            (bimap, first, second)
 
