@@ -7,6 +7,7 @@ import qualified Data.Set                   as Set
 import qualified Data.Text                  as Text
 
 import           AOC
+import           Graph                      (dot)
 import           Utils
 
 type MKey = Text
@@ -17,8 +18,8 @@ data Pulse
   deriving (Eq, Ord, Enum, Bounded)
 
 instance Show Pulse where
-  show High = "high"
-  show Low  = "low"
+  show High = "hi"
+  show Low  = "lo"
 
 data MType
   = FlipFlop
@@ -41,10 +42,11 @@ instance Show Send where
   show (Send f p t) = Text.unpack f <> " -" <> show p <> "-> " <> Text.unpack t
 
 data Machine = Machine
-  { maModules      :: Map MKey Module
-  , maFlipFlops    :: Map MKey Bool
-  , maConjunctions :: Map MKey (Map MKey Pulse)
-  , maQueue        :: [Send]
+  { maModules      :: !(Map MKey Module)
+  , maFlipFlops    :: !(Map MKey Bool)
+  , maConjunctions :: !(Map MKey (Map MKey Pulse))
+  , maQueue        :: ![Send]
+  , maHistory      :: ![Send]
   } deriving (Eq, Ord, Show)
 
 input :: MKey
@@ -69,89 +71,76 @@ mkMachine ms = Machine {..}
     cInit dest =
       Map.fromList [(src, Low) | src <- Map.findWithDefault [] dest inputsFor]
     maQueue = []
+    maHistory = []
 
-queue :: [Send] -> State Machine ()
-queue sends = modify $ \ma -> ma {maQueue = maQueue ma ++ sends}
+maSend :: [Send] -> State Machine ()
+maSend sends =
+  modify $ \ma ->
+    ma
+      {maQueue = maQueue ma ++ sends, maHistory = reverse sends ++ maHistory ma}
 
-send :: Machine -> Maybe (Send, Machine)
-send machine =
-  case maQueue machine of
-    [] -> Nothing
-    (send@(Send k0 p k):q) ->
-      Just
-        $ (send, )
-        $ flip execState machine
-        $ do
-            -- traceShowM send
-            modify $ \ma -> ma {maQueue = tail $ maQueue ma}
-            m' <- gets $ Map.lookup k . maModules
-            for_ m' $ \m -> do
-              ps' <-
-                case mType m of
-                  FlipFlop ->
-                    if p == High
-                      then pure Nothing
-                      else do
-                        f <- gets $ mapLookupE "send ff" k . maFlipFlops
-                        let f' = not f
-                        modify $ \ma ->
-                          ma {maFlipFlops = Map.insert k f' $ maFlipFlops ma}
-                        pure
-                          $ Just
-                          $ if f'
-                              then High
-                              else Low
-                  Conjunction -> do
-                    c <- gets $ mapLookupE "send c" k . maConjunctions
-                    let c' = Map.insert k0 p c
-                    modify $ \ma ->
-                      ma {maConjunctions = Map.insert k c' $ maConjunctions ma}
-                    pure
-                      $ Just
-                      $ if all (== High) c'
-                          then Low
-                          else High
-                  Input -> pure $ Just p
-              queue [Send k p' k' | p' <- toList ps', k' <- mDestinations m]
-
-pushButton :: Machine -> ([Send], Machine)
-pushButton ma
-  | notNull $ maQueue ma =
-    error $ "cannot push button while still settling: " <> show ma
-  | otherwise = go $ ma {maQueue = [Send "button" Low input]}
+maDequeue :: State Machine (Maybe Send)
+maDequeue = gets maQueue >>= go
   where
-    go x =
-      case send x of
-        Nothing      -> ([], x)
-        Just (s, x') -> first (s :) $ go x'
+    go :: [Send] -> State Machine (Maybe Send)
+    go [] = pure Nothing
+    go (s:ss) = do
+      modify $ \ma -> ma {maQueue = ss}
+      pure $ Just s
+
+maCycle :: State Machine Bool
+maCycle = maDequeue >>= go
+  where
+    go Nothing = pure False
+    go (Just (Send k0 p k)) = do
+      m' <- gets $ Map.lookup k . maModules
+      for_ m' $ \m -> do
+        ps' <-
+          case mType m of
+            FlipFlop ->
+              if p == High
+                then pure Nothing
+                else do
+                  f <- gets $ mapLookupE "send ff" k . maFlipFlops
+                  let f' = not f
+                  modify $ \ma ->
+                    ma {maFlipFlops = Map.insert k f' $ maFlipFlops ma}
+                  pure
+                    $ Just
+                    $ if f'
+                        then High
+                        else Low
+            Conjunction -> do
+              c <- gets $ mapLookupE "send c" k . maConjunctions
+              let c' = Map.insert k0 p c
+              modify $ \ma ->
+                ma {maConjunctions = Map.insert k c' $ maConjunctions ma}
+              pure
+                $ Just
+                $ if all (== High) c'
+                    then Low
+                    else High
+            Input -> pure $ Just p
+        maSend [Send k p' k' | p' <- toList ps', k' <- mDestinations m]
+      pure True
+
+maPushButton :: State Machine ()
+maPushButton = do
+  initialQueue <- gets maQueue
+  when (notNull initialQueue) $ error "cannot push button while still settling"
+  maSend [Send "button" Low input]
+  whileM maCycle
 
 part1 :: Machine -> Int
 part1 ma = countElem High r * countElem Low r
   where
-    (r', _) = go 1000 ma
-    r = map sPulse r'
-    go :: Int -> Machine -> ([Send], Machine)
-    go 0 m = ([], m)
-    go n m = first (s ++) $ go (pred n) m'
-      where
-        (s, m') = pushButton m
+    r =
+      map sPulse
+        $ maHistory
+        $ execState (replicateM_ 1000 maPushButton) ma
 
 allDestinations :: Machine -> Set MKey
 allDestinations = Set.fromList . concatMap mDestinations . Map.elems . maModules
-
-mst :: Machine -> Text
-mst ma = Text.unlines [ffs, cos]
-  where
-    ffs = Text.unwords (map ff $ Map.toList $ maFlipFlops ma)
-    ff (k, True)  = Text.toUpper k
-    ff (k, False) = Text.toLower k
-    cos = Text.unwords $ map co $ Map.toList $ maConjunctions ma
-    co (c, cs) = c <> Text.pack (map p $ toList cs)
-    p High = '#'
-    p Low  = '.'
-
-pushForever :: Machine -> [[Send]]
-pushForever = unfoldr $ Just . pushButton
 
 target2 :: MKey
 target2 = "rx"
@@ -167,46 +156,22 @@ targetComponents m = sendsTo proxy m
   where
     proxy = fromSingleE "targetComponents.proxy" $ sendsTo target2 m
 
-indices :: (a -> Bool) -> [a] -> [(Int, a)]
-indices f = filter (f . snd) . zipN 0
-
-indicesAgain :: (a -> Bool) -> [[a]] -> [(Int, Int, a)]
-indicesAgain f xs = [(i, j, x) | (i, ys) <- zipN 0 xs, (j, x) <- indices f ys]
-
 part2 :: Machine -> Int
 part2 m
   | target2 `notElem` allDestinations m = 0
-  | otherwise = error $ show $ foldr1 lSneakyMerge $ map lowsToTarget targets
-  where
-    allSends = pushForever m
-    targets = traceShowF ("targets", ) $ targetComponents m
-    lowsToTarget t =
-      lFixSneaky
-        $ lFrom
-        $ map fst
-        $ indices (any $ \s -> sTo s == t && sPulse s == Low) allSends
+  | otherwise = error "part2a"
 
-data Linear = Linear
-  { lStart :: Int
-  , lInc   :: Int
-  } deriving (Show)
+modifyTarget :: (MKey -> MKey -> Bool) -> Machine -> Machine
+modifyTarget f ma =
+  ma
+    { maModules =
+        Map.mapWithKey
+          (\k m -> m {mDestinations = filter (f k) $ mDestinations m})
+          $ maModules ma
+    }
 
-lFrom :: [Int] -> Linear
-lFrom (a:b:c:_) =
-  if c - b == b - a
-    then Linear a (b - a)
-    else error $ "lFrom: different deltas: " <> show [c - b, b - a]
-
-lFixSneaky :: Linear -> Linear
-lFixSneaky l@(Linear a b)
-  | b == succ a = Linear (-1) b
-  | otherwise = error $ "Expected origin at -1, got " <> show l
-
-lSneakyMerge :: Linear -> Linear -> Linear
-lSneakyMerge l1@(Linear a1 b1) l2@(Linear a2 b2)
-  | a1 == negate 1 && a2 == negate 1 = Linear (-1) (lcm b1 b2)
-  | otherwise =
-    error $ "Expected origin at -1, got " <> show l1 <> " and " <> show l2
+maDot :: Machine -> Text
+maDot ma = dot id $ Map.map (Set.fromList . mDestinations) $ maModules ma
 
 parser :: Parser Text Machine
 parser =
