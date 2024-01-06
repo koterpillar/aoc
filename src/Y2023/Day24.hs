@@ -11,9 +11,7 @@ import           Data.Ratio
 import           AOC
 import           Utils
 
-type RInt = Ratio Integer
-
-type P3 = (RInt, RInt, RInt)
+type P3 = (Rational, Rational, Rational)
 
 data Hailstone t = Hailstone
   { hPos :: t
@@ -26,7 +24,7 @@ instance Functor Hailstone where
 class Manifold t c where
   tMulPlus :: t -> c -> c -> c
 
-instance Manifold RInt RInt where
+instance Manifold Rational Rational where
   tMulPlus t v x = t * v + x
 
 instance (Manifold a b, Manifold a c) => Manifold a (b, c) where
@@ -41,7 +39,7 @@ parser = linesP &** tsplitP " @ " &* ap2P Hailstone p3p p3p
     p3p = tsplitP "," &* ap3P (,,) ratioP ratioP ratioP
     ratioP = fromIntegral <$> readP @Integer
 
-type Range = (RInt, RInt)
+type Range = (Rational, Rational)
 
 exampleRange :: Range
 exampleRange = (7, 27)
@@ -102,14 +100,16 @@ tasks =
     (CodeBlock 0)
     parser
     [ Assert "hIntersectXY" (Just (2, 1, (2, 2)))
-        $ hIntersectXY @RInt (Hailstone (0, 0) (1, 1)) (Hailstone (2, 1) (0, 1))
+        $ hIntersectXY @Rational
+            (Hailstone (0, 0) (1, 1))
+            (Hailstone (2, 1) (0, 1))
     , Assert
         "hIntersectXY from task"
         (Just
            ( 47551182481306990 % 47919
            , 6631215366719602 % 15973
            , (3626653630736638815 % 15973, 3646362195818317820 % 15973)))
-        $ hIntersectXY @RInt
+        $ hIntersectXY @Rational
             (Hailstone (468183773350185, 269960480220160) (-243, -42))
             (Hailstone (150661115836739, 133213164517594) (184, 229))
     , AssertExample "part 1" 2 $ part1 exampleRange
