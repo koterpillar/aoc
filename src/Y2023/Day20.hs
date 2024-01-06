@@ -193,15 +193,11 @@ maPushUntil p = go 0
     go1 n True  = pure n
     go1 n False = maPushButton >> go (succ n)
 
+pushUntilTarget :: Machine -> Int
+pushUntilTarget = evalState $ maPushUntil $ any turnsOn . maHistory
+
 part2a :: Machine -> Int
-part2a m =
-  error
-    $ show
-    $ map
-        (evalState (maPushUntil $ any turnsOn . maHistory) . ttraceF maDot)
-        mcs
-  where
-    mcs = maComponents m
+part2a = foldr1 lcm . map pushUntilTarget . maComponents
 
 modifyTarget :: (MKey -> MKey -> Bool) -> Machine -> Machine
 modifyTarget f ma =
