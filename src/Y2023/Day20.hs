@@ -7,7 +7,7 @@ import qualified Data.Set                   as Set
 import qualified Data.Text                  as Text
 
 import           AOC
-import           Graph                      (dot)
+import           Graph
 import           Utils
 
 type MKey = Text
@@ -134,10 +134,7 @@ maPushButton = do
 part1 :: Machine -> Int
 part1 ma = countElem High r * countElem Low r
   where
-    r =
-      map sPulse
-        $ maHistory
-        $ execState (replicateM_ 1000 maPushButton) ma
+    r = map sPulse $ maHistory $ execState (replicateM_ 1000 maPushButton) ma
 
 allDestinations :: Machine -> Set MKey
 allDestinations = Set.fromList . concatMap mDestinations . Map.elems . maModules
@@ -156,10 +153,55 @@ targetComponents m = sendsTo proxy m
   where
     proxy = fromSingleE "targetComponents.proxy" $ sendsTo target2 m
 
+maCleanup :: Machine -> Machine
+maCleanup ma
+  | Set.null unreachable = ma
+  | otherwise = maCleanup $ maDelete unreachable ma
+  where
+    unreachable = unreachableFrom target2 $ reverseGraph $ maGraph ma
+
+maDelete :: Set MKey -> Machine -> Machine
+maDelete ks ma =
+  maCleanup
+    $ ma
+        { maModules = Map.map mdk $ dk $ maModules ma
+        , maConjunctions = Map.map dk $ dk $ maConjunctions ma
+        , maFlipFlops = dk $ maFlipFlops ma
+        }
+  where
+    dk = Map.filterWithKey (\k _ -> Set.notMember k ks)
+    mdk m = m {mDestinations = filter (`Set.notMember` ks) $ mDestinations m}
+
+maGraph :: Machine -> Graph MKey
+maGraph = Map.map (Set.fromList . mDestinations) . maModules
+
+maComponents :: Machine -> [Machine]
+maComponents ma =
+  [maDelete (Set.fromList $ filter (/= comp) comps) ma | comp <- comps]
+  where
+    comps = targetComponents ma
+
 part2 :: Machine -> Int
 part2 m
   | target2 `notElem` allDestinations m = 0
-  | otherwise = error "part2a"
+  | otherwise = part2a m
+
+maPushUntil :: (Machine -> Bool) -> State Machine Int
+maPushUntil p = go 0
+  where
+    go n = gets p >>= go1 n
+    go1 n True  = pure n
+    go1 n False = maPushButton >> go (succ n)
+
+part2a :: Machine -> Int
+part2a m =
+  error
+    $ show
+    $ map
+        (evalState (maPushUntil $ any turnsOn . maHistory) . ttraceF maDot)
+        mcs
+  where
+    mcs = maComponents m
 
 modifyTarget :: (MKey -> MKey -> Bool) -> Machine -> Machine
 modifyTarget f ma =
@@ -171,7 +213,7 @@ modifyTarget f ma =
     }
 
 maDot :: Machine -> Text
-maDot ma = dot id $ Map.map (Set.fromList . mDestinations) $ maModules ma
+maDot = dot id . maGraph
 
 parser :: Parser Text Machine
 parser =
