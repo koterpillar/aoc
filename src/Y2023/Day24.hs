@@ -54,14 +54,22 @@ data Hailstone t = Hailstone
 instance Functor Hailstone where
   fmap f (Hailstone p v) = Hailstone (f p) (f v)
 
-class Manifold t c where
+class Num t =>
+      Manifold t c
+  where
   tMulPlus :: t -> c -> c -> c
+
+instance Manifold Int Int where
+  tMulPlus t v x = t * v + x
 
 instance Manifold Rational Rational where
   tMulPlus t v x = t * v + x
 
 instance (Manifold a b, Manifold a c) => Manifold a (b, c) where
   tMulPlus t (v1, v2) (x1, x2) = (tMulPlus t v1 x1, tMulPlus t v2 x2)
+
+instance Manifold a b => Manifold a (V3 b) where
+  tMulPlus t v x = tMulPlus t <$> v <*> x
 
 hAt :: Manifold t c => t -> Hailstone c -> c
 hAt t (Hailstone p v) = tMulPlus t v p
@@ -128,7 +136,8 @@ h3Int = fmap $ fmap $ fmap floor
 
 possibleSpeed :: Hailstone Int -> Hailstone Int -> Maybe (Set Int)
 possibleSpeed (Hailstone pa va) (Hailstone pb vb)
-  | va == vb =
+  | va /= vb = Nothing
+  | otherwise =
     let d = abs $ pb - pa
      in Just
           $ Set.fromList
@@ -139,22 +148,68 @@ possibleSpeed (Hailstone pa va) (Hailstone pb vb)
               , v1 <- [v0, d `div` v0]
               , v <- [va - v1, va + v1]
               ]
+
+intersectionTime :: Int -> Int -> Hailstone Int -> Hailstone Int -> Maybe Int
+intersectionTime v dt (Hailstone pa va) (Hailstone pb vb)
+  | va == vb = Nothing
+  | otherwise = Just $ (pa - pb + (v - vb) * dt) `div` (vb - va)
+
+intersectionTime3 :: I3 -> Int -> Hailstone I3 -> Hailstone I3 -> Maybe Int
+intersectionTime3 v dt ha hb = go v3x <|> go v3y <|> go v3z
+  where
+    go f = intersectionTime (f v) dt (f <$> ha) (f <$> hb)
+
+intersectionDt :: Int -> Hailstone Int -> Hailstone Int -> Maybe Int
+intersectionDt v (Hailstone pa va) (Hailstone pb vb)
+  | va /= vb = Nothing
+  | otherwise = Just $ (pb - pa) `div` (v - va)
+
+intersectionDt3 :: I3 -> Hailstone I3 -> Hailstone I3 -> Maybe Int
+intersectionDt3 v ha hb = go v3x <|> go v3y <|> go v3z
+  where
+    go f = intersectionDt (f v) (f <$> ha) (f <$> hb)
+
+intersectionPoint3 :: I3 -> Hailstone I3 -> Hailstone I3 -> Maybe (Int, I3)
+intersectionPoint3 v ha hb = do
+  dt <- intersectionDt3 v ha hb
+  t <- intersectionTime3 v dt ha hb
+  pure (t, hAt t ha)
+
+mapMaybePairs :: (a -> a -> Maybe b) -> [a] -> [b]
+mapMaybePairs f = mapMaybe (uncurry f) . pairs
+
+findSpeed :: [Hailstone I3] -> [I3]
+findSpeed hs = V3 <$> go v3x <*> go v3y <*> go v3z
+  where
+    go f =
+      Set.toList
+        $ foldr1 Set.intersection
+        $ mapMaybePairs possibleSpeed
+        $ fmap (fmap f) hs
+
+hBacktrack :: Manifold a b => b -> a -> b -> b
+hBacktrack v t p = hAt (negate t) (Hailstone p v)
+
+allEqual :: Eq a => [a] -> Maybe a
+allEqual [] = Nothing
+allEqual (x:xs)
+  | all (== x) xs = Just x
   | otherwise = Nothing
 
-part2Test :: [Hailstone R3] -> Text
-part2Test hs0 =
-  tshow [("x", speedGcd v3x), ("y", speedGcd v3y), ("z", speedGcd v3z)]
-  where
-    speedGcd f =
-      traceShowId
-        $ foldr1 Set.intersection
-        $ mapMaybe (uncurry possibleSpeed)
-        $ pairs
-        $ fmap (fmap f) hs
-    hs = h3Int hs0
-
 part2 :: [Hailstone R3] -> Int
-part2 = error "part 2"
+part2 hs0 =
+  fromSingleE "multiple possibilities" $ do
+    let hs = h3Int hs0
+    v <- findSpeed hs
+    traceShowM ("v", v)
+    p0 <-
+      toList
+        $ allEqual
+        $ mapMaybePairs
+            (fmap (fmap (uncurry $ hBacktrack v)) . intersectionPoint3 v)
+            hs
+    traceShowM ("p0", p0)
+    pure $ v3x p0 + v3y p0 + v3z p0
 
 tasks =
   Tasks
@@ -181,6 +236,11 @@ tasks =
         $ possibleSpeed (Hailstone 0 0) (Hailstone 3 0)
     , Assert "possible speed 3 1" (Just $ Set.fromList [-2, 0, 2, 4])
         $ possibleSpeed (Hailstone 0 1) (Hailstone 3 1)
-    , taskBlind part2Test
+    , Assert "intersection point" (Just 2)
+        $ intersectionTime 5 2 (Hailstone 0 2) (Hailstone 18 (-1))
+    , Assert "intersection dt" (Just 5)
+        $ intersectionDt 1 (Hailstone 0 0) (Hailstone 5 0)
+    , Assert "intersection dt again" (Just 5)
+        $ intersectionDt 0 (Hailstone 0 (-1)) (Hailstone 5 (-1))
     , task part2 47 & taskPart 2
     ]
