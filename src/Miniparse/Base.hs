@@ -214,7 +214,7 @@ pa &+ pb = pairP &* (pa &= pb)
 infixl 8 &+
 
 (&|) :: Parser a b -> Parser a b -> Parser a b
-pa &| pb = Parser $ \a -> runParse pa a <|> runParse pb a
+pa &| pb = Parser $ runParse pa <> runParse pb
 
 singleP :: Show a => Parser [a] a
 singleP =

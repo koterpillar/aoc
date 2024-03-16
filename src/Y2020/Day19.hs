@@ -40,11 +40,11 @@ getRule rules idx = mapLookupE "rule" idx rules
 matcher :: Rules -> Int -> StateParser Message ()
 matcher rules idx = go (getRule rules idx)
   where
-    go (RChar c) = unconsSP_ >>= guard . (== c)
-    go (RRecurse rs) = foldr1 (<|>) $ map goSeq rs
-    go (RMany i) = void $ many (matcher rules i)
+    go (RChar c) = unconsSP_ >>= guardSP ("Expected: " <> [c]) . (== c)
+    go (RRecurse rs) = foldr1 altSP $ map goSeq rs
+    go (RMany i) = void $ manySP (matcher rules i)
     go (RBalanced a b) = do
-      as <- length <$> many (matcher rules a)
+      as <- length <$> manySP (matcher rules a)
       replicateM_ as (matcher rules b)
     goSeq = traverse_ $ matcher rules
 
@@ -111,10 +111,10 @@ matcher2 (R2Set l alts) =
 matcher2 (R2Many r) = error "R2Many should be replaced with R2Magic"
 matcher2 (R2Balanced a b) = error "R2Balanced should be replaced with R2Magic"
 matcher2 (R2Magic a b) = do
-  la <- length <$> many (matcher2 a)
-  lb <- length <$> many (matcher2 b)
-  guard $ la > lb
-  guard $ lb > 0
+  la <- length <$> manySP (matcher2 a)
+  lb <- length <$> manySP (matcher2 b)
+  guardSP "la > lb" $ la > lb
+  guardSP "lb > 0" $ lb > 0
 
 runMatcher2 :: Rules -> Message -> Either String ()
 runMatcher2 rules = runParse (stateP $ matcher2 (convert rules))

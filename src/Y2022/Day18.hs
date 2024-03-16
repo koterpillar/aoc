@@ -3,6 +3,7 @@
 
 module Y2022.Day18 where
 
+import           Control.Monad
 import           Control.Monad.State.Strict
 
 import qualified Data.Map                   as Map
