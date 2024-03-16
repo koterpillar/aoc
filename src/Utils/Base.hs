@@ -160,6 +160,12 @@ lastE :: String -> [a] -> a
 lastE msg [] = error msg
 lastE _ x    = last x
 
+indexE :: Show a => String -> Int -> [a] -> a
+indexE msg i xs
+  | i < 0 = error $ "indexE: " <> show i <> " is negative: " <> msg
+  | i >= length xs = error $ "indexE: " <> show i <> " too large (length " <> show (length xs) <> "): " <> msg
+  | otherwise = xs !! i
+
 findTuple :: Foldable t => (a -> Bool) -> t (k, a) -> Maybe k
 findTuple fn = fmap fst . find (fn . snd)
 

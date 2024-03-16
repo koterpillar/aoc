@@ -192,9 +192,9 @@ showExamples page =
 
 selectExample :: ExampleScraper -> Text -> Text
 selectExample ShowExamples   = terror . showExamples
-selectExample (CodeBlock n)  = (!! n) . codeBlocks
+selectExample (CodeBlock n)  = indexE "code blocks" n . codeBlocks
 selectExample LastCodeBlock  = last . codeBlocks
-selectExample (InlineCode n) = (!! n) . inlineCode
+selectExample (InlineCode n) = indexE "inline code" n . inlineCode
 selectExample LastInlineCode = last . inlineCode
 selectExample (Inline text)  = const text
 
