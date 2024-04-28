@@ -152,16 +152,10 @@ library
   hs-source-dirs:
       src
   default-extensions:
-      BangPatterns
-      FlexibleInstances
       FunctionalDependencies
       LambdaCase
-      MultiParamTypeClasses
       OverloadedStrings
-      RankNTypes
       RecordWildCards
-      TupleSections
-      TypeApplications
   build-depends:
       MissingH
     , aeson
@@ -186,7 +180,7 @@ library
     , time
     , unordered-containers
     , vector
-  default-language: Haskell2010
+  default-language: GHC2021
 
 executable main
   main-is: Main.hs
@@ -195,16 +189,10 @@ executable main
   hs-source-dirs:
       main
   default-extensions:
-      BangPatterns
-      FlexibleInstances
       FunctionalDependencies
       LambdaCase
-      MultiParamTypeClasses
       OverloadedStrings
-      RankNTypes
       RecordWildCards
-      TupleSections
-      TypeApplications
   ghc-options: -threaded -with-rtsopts=-N
   build-depends:
       MissingH
@@ -231,4 +219,4 @@ executable main
     , time
     , unordered-containers
     , vector
-  default-language: Haskell2010
+  default-language: GHC2021

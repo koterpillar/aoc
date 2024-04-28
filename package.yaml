@@ -38,17 +38,12 @@ dependencies:
 - vector
 - unordered-containers
 
+language: GHC2021
 default-extensions:
-  - BangPatterns
-  - FlexibleInstances
   - FunctionalDependencies
   - LambdaCase
-  - MultiParamTypeClasses
   - OverloadedStrings
-  - RankNTypes
   - RecordWildCards
-  - TupleSections
-  - TypeApplications
 
 library:
   source-dirs: src
