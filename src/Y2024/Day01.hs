@@ -27,6 +27,4 @@ tasks =
     1
     (CodeBlock 0)
     parser
-    [ task part1 11 & taskPart 1
-    , task part2 31 & taskPart 2
-    ]
+    [task part1 11 & taskPart 1, task part2 31 & taskPart 2]
