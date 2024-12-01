@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -147,6 +147,7 @@ library
       Y2023.Day23
       Y2023.Day24
       Y2023.Day25
+      Y2024.Day01
   other-modules:
       Paths_aoc
   hs-source-dirs:
