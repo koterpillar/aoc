@@ -17,6 +17,8 @@ module Utils
   , Map
   , Set
   , Text
+  , (.:)
+  , (.:.)
   , ($>)
   , (<=<)
   , (<|>)
@@ -58,6 +60,8 @@ import           Control.Monad.Extra
 import           Data.Bifunctor            (bimap, first, second)
 
 import           Data.Char                 (chr, isDigit, isLower, isUpper, ord)
+
+import           Data.Composition          ((.:), (.:.))
 
 import           Data.Containers.ListUtils (nubInt)
 

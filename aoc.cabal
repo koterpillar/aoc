@@ -164,6 +164,7 @@ library
     , base >=4.7 && <5
     , base64-bytestring
     , bytestring
+    , composition
     , containers
     , directory
     , extra
@@ -203,6 +204,7 @@ executable main
     , base >=4.7 && <5
     , base64-bytestring
     , bytestring
+    , composition
     , containers
     , directory
     , extra

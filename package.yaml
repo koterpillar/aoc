@@ -19,6 +19,7 @@ dependencies:
 - astar
 - base64-bytestring
 - bytestring
+- composition
 - containers
 - directory
 - extra

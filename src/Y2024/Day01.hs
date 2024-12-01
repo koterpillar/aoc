@@ -10,8 +10,7 @@ import           Utils
 parser :: Parser Text ([Int], [Int])
 parser = fmap unzip $ linesP &** (wordsP &* (integerP &+ integerP))
 
-
-part1 (as, bs) = sum $ map abs $ zipWith (-) as' bs'
+part1 (as, bs) = sum $ zipWith (abs .: (-)) as' bs'
   where
     as' = sort as
     bs' = sort bs
