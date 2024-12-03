@@ -28,15 +28,20 @@ failSP = lift . Left
 guardSP :: err -> Bool -> StateParserT err src ()
 guardSP err b = unless b $ failSP err
 
-altSP :: StateParserT err src dest -> StateParserT err src dest -> StateParserT err src dest
+altSP ::
+     StateParserT err src dest
+  -> StateParserT err src dest
+  -> StateParserT err src dest
 altSP a b = StateT $ \s -> runStateT a s <> runStateT b s
 
 manySP :: StateParserT err src dest -> StateParserT err src [dest]
 manySP p = go []
   where
-    go acc = StateT $ \s -> case runStateT p s of
-      Left _ -> Right (acc, s)
-      Right (x, s') -> runStateT (go (acc ++ [x])) s'
+    go acc =
+      StateT $ \s ->
+        case runStateT p s of
+          Left _        -> Right (acc, s)
+          Right (x, s') -> runStateT (go (acc ++ [x])) s'
 
 unconsSP :: StateParserT e [a] (Maybe a)
 unconsSP =
@@ -49,10 +54,16 @@ unconsSP_ = unconsSP >>= maybe (failSP "unconsSP_: end of input") pure
 
 ensureUnconsSP :: (Eq a, Show a) => Maybe a -> StateParser [a] ()
 ensureUnconsSP expected =
-  unconsSP >>= \actual -> guardSP ("expected " <> show expected <> " but got " <> show actual) (actual == expected)
+  unconsSP >>= \actual ->
+    guardSP
+      ("expected " <> show expected <> " but got " <> show actual)
+      (actual == expected)
 
 ensureUnconsSP_ :: (Eq a, Show a) => a -> StateParser [a] ()
 ensureUnconsSP_ = ensureUnconsSP . Just
+
+ensureStartSP :: (Eq a, Show a) => [a] -> StateParser [a] ()
+ensureStartSP = mapM_ ensureUnconsSP_
 
 putBackSP :: a -> StateParserT err [a] ()
 putBackSP x = modify (x :)
