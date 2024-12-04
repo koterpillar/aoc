@@ -24,7 +24,7 @@ hexToBin = Text.justifyRight 4 '0' . tshowBin . fst . head . readHex . (: [])
 type Grid = Grid2 ()
 
 grid :: Text -> Grid
-grid seed = mapFromList $ zip points (repeat ())
+grid seed = mapFromList $ map (, ()) points
   where
     points = [Position2 x y | y <- [0 .. 127], x <- ones y]
     ones y = [x | (x, '1') <- zipN 0 bin]
