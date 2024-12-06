@@ -88,51 +88,6 @@ walk1s grid bounds pd@(p, d)
       r' <- walk1s grid bounds p'
       pure $ nextOutcome pd r'
 
-walk2 :: Grid2 () -> Bounds -> GuardPos -> Set Position2
-walk2 grid bounds pd@(p, d) = evalState (walk2s grid bounds pd) Map.empty
-
-walk2s ::
-     Grid2 ()
-  -> Bounds
-  -> GuardPos
-  -> State (Map GuardPos Outcome) (Set Position2)
-walk2s grid bounds pd@(p, d)
-  | not $ insideBounds bounds p = pure Set.empty
-  | otherwise =
-    gets (Map.lookup pd) >>= \case
-      Just _ -> pure Set.empty
-      Nothing -> do
-        modify $ Map.insert pd Pending
-        let pS = walk d p
-        if Map.member pS grid
-            -- we have to turn
-            -- no need to switch from Pending, as we aren't interested in the
-            -- outcome (just the return value)
-          then walk2s grid bounds (p, turnRight d)
-          else do
-            -- we can go straight
-            -- have we already stepped there (maybe in a different direction)?
-            stepped <- or <$> traverse (\d -> gets $ Map.member (pS, d)) allDir4
-            if stepped
-              then walk2s grid bounds (pS, d) -- can't add an obstacle, continue straight
-              else do
-                -- if we put an obstacle here...
-                let grid' = Map.insert pS () grid
-                -- and run (with a copy of the state!)
-                -- do we have a loop? if yes then add this to the result
-                wr <- gets $ evalState (walk1s grid' bounds (p, turnRight d))
-                -- for printing later
-                ks <- gets Map.keys
-                let extra = reverse $ (pS, 'O') : map (second showInGrid) ks
-                -- get the rest of the possibilities
-                rs <- walk2s grid bounds (pS, d)
-                pure
-                  $ case wr of
-                      Outside _ -> rs
-                      _ ->
-                        lbtrace (displayPixels mempty $ showWalk grid extra)
-                          $ Set.insert pS rs
-
 showWalk :: GridItem i => Grid2 () -> [(Position2, i)] -> Grid2 Char
 showWalk g path =
   flip execState (fmap (const '#') g) $ do
@@ -146,16 +101,16 @@ part1 (start, grid, bounds) =
     Loop -> error "unexpected loop"
 
 part2 :: Input2 -> Int
-part2 (start, grid, bounds) =
-  length $ join $ map checkObstacle $ Set.toList possibleObstacles
+part2 (start, grid, bounds) = countIf makesLoop allObstacles
   where
-    possibleObstacles = walk2 grid bounds start
-    checkObstacle p =
-      let grid' = Map.insert p () grid
-          res = walk1 grid' bounds start
-       in case res of
-            Loop      -> [p]
-            Outside _ -> error "unexpected outside"
+    (Position2 xmin ymin, Position2 xmax ymax) = bounds
+    makesLoop p = walk1 (Map.insert p () grid) bounds start == Loop
+    allObstacles = do
+      x <- [xmin .. xmax]
+      y <- [ymin .. ymax]
+      let p = Position2 x y
+      guard $ not $ Map.member p grid
+      pure p
 
 tasks =
   Tasks
