@@ -75,6 +75,10 @@ defaultPixel '#' = fgPixel
 defaultPixel '·' = bgPixel
 defaultPixel 'O' = Pixel (255, 0, 0)
 defaultPixel 'X' = Pixel (0, 255, 0)
+defaultPixel '^' = Pixel colorLightGray
+defaultPixel 'v' = Pixel colorLightGray
+defaultPixel '>' = Pixel colorLightGray
+defaultPixel '<' = Pixel colorLightGray
 defaultPixel c   = error $ "defaultPixel: " <> show c
 
 data PixelDisplayOptions = PixelDisplayOptions
@@ -141,7 +145,7 @@ kittyDisplay PixelDisplayOptions {..} ps =
     width = zoom * length (headE "kittyDisplay: empty data" ps)
     height = zoom * length ps
     zoomMap :: Monoid b => (Int -> a -> b) -> [a] -> b
-    zoomMap fn = foldMap (uncurry fn) . concatMap (replicate zoom) . zipN 0
+    zoomMap fn = foldMap (foldMap (uncurry fn) . replicate zoom) . zipN 0
     pixels =
       Base64.encode
         $ Lazy.toStrict
