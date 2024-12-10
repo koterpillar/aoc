@@ -61,8 +61,8 @@ tasks =
     (CodeBlock 4)
     parser
     [ task part1 36 & taskPart 1
-    , task part2 3 & taskScraper (CodeBlock 5) & taskPart 2
-    , task part2 13 & taskScraper (CodeBlock 7) & taskPart 2
-    , task part2 227 & taskScraper (CodeBlock 8) & taskPart 2
+    , task part2 3 & taskScraper (CodeBlock 5)
+    , task part2 13 & taskScraper (CodeBlock 7)
+    , task part2 227 & taskScraper (CodeBlock 8)
     , task part2 81 & taskPart 2
     ]
