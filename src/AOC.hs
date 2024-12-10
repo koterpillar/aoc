@@ -292,6 +292,10 @@ taskPart :: Int -> Task a -> Task a
 taskPart part t@Task' {} = t {_taskPart = Just part}
 taskPart _ t             = terror $ "Cannot override part for: " <> taskName t
 
+taskNoPart :: Task a -> Task a
+taskNoPart t@Task' {} = t {_taskPart = Nothing}
+taskNoPart t          = terror $ "Cannot remove part from: " <> taskName t
+
 taskName :: Task a -> Text
 taskName Task {}                  = "Task"
 taskName Task' {}                 = "Task"
