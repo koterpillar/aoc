@@ -6,6 +6,7 @@ module Memo
   , unsafeMemo2
   , unsafeMemo3
   , stateMemo
+  , stateMemo2
   ) where
 
 import           Control.Monad.State
@@ -47,11 +48,11 @@ unsafeMemo3 ::
   -> (a -> b -> c -> o)
 unsafeMemo3 = curry3 . unsafeMemo . uncurry3
 
-type MF a o r = forall m. Monad m => (a -> m o) -> m r
+type MFR a o r = forall m. Monad m => (a -> m o) -> m r
 
-type MF1 a o = forall m. Monad m => (a -> m o) -> a -> m o
+type MF a o = forall m. Monad m => (a -> m o) -> a -> m o
 
-stateMemo :: (Hashable a, Show a, Show o) => MF1 a o -> MF a o r -> r
+stateMemo :: (Hashable a, Show a, Show o) => MF a o -> MFR a o r -> r
 stateMemo fn cont = evalState (cont go) HashMap.empty
   where
     go a =
@@ -61,3 +62,14 @@ stateMemo fn cont = evalState (cont go) HashMap.empty
           r <- fn go a
           modify $ HashMap.insert a r
           pure r
+
+type MFR2 a b o r = forall m. Monad m => (a -> b -> m o) -> m r
+
+type MF2 a b o = forall m. Monad m => (a -> b -> m o) -> a -> b -> m o
+
+stateMemo2 ::
+     (Hashable a, Hashable b, Show a, Show b, Show o)
+  => MF2 a b o
+  -> MFR2 a b o r
+  -> r
+stateMemo2 fn cont = stateMemo (uncurry . fn . curry) (cont . curry)

@@ -22,11 +22,11 @@ evolve v =
         else [2024 * v]
 
 evolveN :: Int -> [Int] -> Int
-evolveN n vs = stateMemo go (\rgo -> mgo rgo n vs)
+evolveN n vs = stateMemo2 go (\rgo -> mgo rgo n vs)
   where
-    go _ (0, _)   = pure 1
-    go rgo (n, v) = mgo rgo (pred n) (evolve v)
-    mgo rgo n vs = sum <$> traverse (curry rgo n) vs
+    go _ 0 _   = pure 1
+    go rgo n v = mgo rgo (pred n) (evolve v)
+    mgo rgo n vs = sum <$> traverse (rgo n) vs
 
 part1 :: [Int] -> Int
 part1 = evolveN 25
