@@ -17,6 +17,10 @@ data Button p = Button
   , bScale :: Int
   } deriving (Ord, Eq, Show, Functor, Foldable, Traversable)
 
+bMultiply :: Int -> Button Position2 -> Button Position2
+bMultiply n b =
+  b {bStep = pointM n $ bStep b, bCost = n * bCost b, bScale = n * bScale b}
+
 data Machine' p = Machine
   { mButtons   :: Map Char (Button p)
   , mPrize     :: p
@@ -76,16 +80,55 @@ target m = foldMap (uncurry go) . Map.toList
     go b n = pointM n $ bStep $ mapLookupE "target" b $ mButtons m
 
 simplify :: Machine -> Machine
-simplify = simplifyGcd
+simplify =
+  traceShowF ("simplif>", )
+    . simplifyOdd pX
+    . simplifyOdd pY
+    . simplifyGcd
+    . traceShowF ("original", )
+
+gcd_ :: (Functor f, Foldable f) => (p -> Int) -> f p -> Int
+gcd_ coord = foldr1 gcd . fmap coord
+
+mGcd :: Machine -> Position2
+mGcd m = Position2 (go pX) (go pY)
+  where
+    go = flip gcd_ m
 
 simplifyGcd :: Machine -> Machine
-simplifyGcd m = posDiv r <$> m
+simplifyGcd m =
+  (if r == Position2 1 1
+     then id
+     else traceShow ("simplifyGcd", r))
+    $ fmap (posDiv $ mGcd m) m
   where
+    r = mGcd m
     posDiv (Position2 dx dy) (Position2 x y) =
       Position2 (x `div` dx) (y `div` dy)
-    r = Position2 (go pX) (go pY)
-    go :: (Position2 -> Int) -> Int
-    go pCoord = foldr1 gcd $ toList $ fmap pCoord m
+
+mMultiply :: Char -> Int -> Machine -> Machine
+mMultiply b n m = m {mButtons = Map.adjust (bMultiply n) b $ mButtons m}
+
+simplifyOdd :: (Position2 -> Int) -> Machine -> Machine
+simplifyOdd coord m0 = foldr (uncurry go) m0 $ Map.toList (mButtons m0)
+  where
+    go :: Char -> Button Position2 -> Machine -> Machine
+    go c b m
+      | gRest /= 1 =
+        trace
+          ("found "
+             <> show c
+             <> " which has coordinate "
+             <> show bY
+             <> " and without it GCD is "
+             <> show gRest)
+          $ simplifyGcd
+          $ mMultiply c gRest m
+      | otherwise = m
+      where
+        mRest = m {mButtons = Map.delete c $ mButtons m}
+        bY = coord $ bStep b
+        gRest = coord $ mGcd mRest
 
 winning :: Maybe Int -> Machine -> Maybe Int
 winning l = winning' l . simplify
@@ -94,7 +137,7 @@ totalCost :: Machine -> Presses -> Int
 totalCost m pp = mExtraCost m + pressesCost m pp
 
 winning' :: Maybe Int -> Machine -> Maybe Int
-winning' limit m = traceShowF (m, r, ) . totalCost m <$> r
+winning' limit m = traceShowF (m, r, ) $ fmap (totalCost m) r
   where
     steps = take 12 $ iterate (* 10) 1
     r =
