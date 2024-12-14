@@ -11,16 +11,19 @@ import           Grid
 import           Path
 import           Utils
 
-data Button = Button
-  { bStep  :: Position2
+data Button p = Button
+  { bStep  :: p
   , bCost  :: Int
   , bScale :: Int
-  } deriving (Ord, Eq, Show)
+  } deriving (Ord, Eq, Show, Functor, Foldable, Traversable)
 
-data Machine = Machine
-  { mButtons :: Map Char Button
-  , mPrize   :: Position2
-  } deriving (Ord, Eq, Show)
+data Machine' p = Machine
+  { mButtons   :: Map Char (Button p)
+  , mPrize     :: p
+  , mExtraCost :: Int
+  } deriving (Ord, Eq, Show, Functor, Foldable, Traversable)
+
+type Machine = Machine' Position2
 
 machineLineP :: Parser Text Position2
 machineLineP = pureP cleanup &* wordsP &* ap2P Position2 integerP integerP
@@ -33,8 +36,9 @@ machineLineP = pureP cleanup &* wordsP &* ap2P Position2 integerP integerP
              else c)
 
 mkMachine :: Position2 -> Position2 -> Position2 -> Machine
-mkMachine a b =
-  Machine $ Map.fromList [('A', Button a 3 1), ('B', Button b 1 1)]
+mkMachine a b p = Machine buttons p 0
+  where
+    buttons = Map.fromList [('A', Button a 3 1), ('B', Button b 1 1)]
 
 parser :: Parser Text [Machine]
 parser = lineGroupsP &** ap3P mkMachine machineLineP machineLineP machineLineP
@@ -71,8 +75,26 @@ target m = foldMap (uncurry go) . Map.toList
   where
     go b n = pointM n $ bStep $ mapLookupE "target" b $ mButtons m
 
+simplify :: Machine -> Machine
+simplify = simplifyGcd
+
+simplifyGcd :: Machine -> Machine
+simplifyGcd m = posDiv r <$> m
+  where
+    posDiv (Position2 dx dy) (Position2 x y) =
+      Position2 (x `div` dx) (y `div` dy)
+    r = Position2 (go pX) (go pY)
+    go :: (Position2 -> Int) -> Int
+    go pCoord = foldr1 gcd $ toList $ fmap pCoord m
+
 winning :: Maybe Int -> Machine -> Maybe Int
-winning limit m = traceShowF (m, r, ) . pressesCost m <$> r
+winning l = winning' l . simplify
+
+totalCost :: Machine -> Presses -> Int
+totalCost m pp = mExtraCost m + pressesCost m pp
+
+winning' :: Maybe Int -> Machine -> Maybe Int
+winning' limit m = traceShowF (m, r, ) . totalCost m <$> r
   where
     steps = take 12 $ iterate (* 10) 1
     r =
@@ -114,12 +136,10 @@ winnable m t
   where
     d = mPrize m `pointMinus` t
     overshot :: (Position2 -> Int) -> (Position2 -> Int) -> Bool
-    overshot pTry pResult = all (overshotButton pTry pResult) $ Map.elems $ mButtons m
+    overshot pTry pResult =
+      all (overshotButton pTry pResult) $ Map.elems $ mButtons m
     overshotButton ::
-         (Position2 -> Int)
-      -> (Position2 -> Int)
-      -> Button
-      -> Bool
+         (Position2 -> Int) -> (Position2 -> Int) -> Button Position2 -> Bool
     overshotButton pTry pResult mButton = maxResult < prizeResult
       where
         prizeResult = pResult (mPrize m)
