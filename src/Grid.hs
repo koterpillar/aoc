@@ -22,6 +22,12 @@ data Position2 = Position2
 instance Hashable Position2 where
   hashWithSalt s (Position2 x y) = hashWithSalt s (x, y)
 
+instance Semigroup Position2 where
+  Position2 x1 y1 <> Position2 x2 y2 = Position2 (x1 + x2) (y1 + y2)
+
+instance Monoid Position2 where
+  mempty = Position2 0 0
+
 pointM :: Int -> Position2 -> Position2
 pointM m (Position2 x y) = Position2 (m * x) (m * y)
 
