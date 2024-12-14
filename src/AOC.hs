@@ -10,6 +10,7 @@ module AOC
   , taskBlind
   , taskPart
   , taskScraper
+  , taskTimeout
   , processTasks
   , module Miniparse
   ) where
@@ -265,7 +266,8 @@ data Task a where
     :: AnswerLike b=> { _taskFn :: a -> b
                       , _taskExampleAnswer :: Maybe b
                       , _taskScraper :: Maybe ExampleScraper
-                      , _taskPart :: Maybe Int}
+                      , _taskPart :: Maybe Int
+                      , _taskTimeout :: Maybe Int}
     -> Task a
   Assert :: (Eq b, Show b) => Text -> b -> b -> Task a
   AssertExample :: (Eq b, Show b) => Text -> b -> (a -> b) -> Task a
@@ -276,6 +278,7 @@ task _taskFn a = Task' {..}
     _taskExampleAnswer = Just a
     _taskScraper = Nothing
     _taskPart = Nothing
+    _taskTimeout = Nothing
 
 taskBlind :: AnswerLike b => (a -> b) -> Task a
 taskBlind _taskFn = Task' {..}
@@ -283,6 +286,7 @@ taskBlind _taskFn = Task' {..}
     _taskExampleAnswer = Nothing
     _taskScraper = Nothing
     _taskPart = Nothing
+    _taskTimeout = Nothing
 
 taskScraper :: ExampleScraper -> Task a -> Task a
 taskScraper scraper t@Task' {} = t {_taskScraper = Just scraper}
@@ -296,24 +300,31 @@ taskNoPart :: Task a -> Task a
 taskNoPart t@Task' {} = t {_taskPart = Nothing}
 taskNoPart t          = terror $ "Cannot remove part from: " <> taskName t
 
+taskTimeout :: Int -> Task a -> Task a
+taskTimeout timeout t@Task' {} = t {_taskTimeout = Just timeout}
+taskTimeout _ t                = terror $ "Cannot override timeout for: " <> taskName t
+
 taskName :: Task a -> Text
 taskName Task {}                  = "Task"
 taskName Task' {}                 = "Task"
 taskName (Assert name _ _)        = name
 taskName (AssertExample name _ _) = name
 
-taskTimeout :: Int -- seconds
-taskTimeout = 40
+getTimeout :: Task a -> Int -- seconds
+getTimeout (Task' _ _ _ _ (Just t)) = t
+getTimeout _                        = 40
 
 processTasks :: Tasks -> IO ()
 processTasks (Tasks year day scraper parser tasks) = do
   Text.putStrLn $ "Year " <> tshow year <> ", day " <> tshow day
   for_ tasks $ \task -> do
+    let timeoutValue = getTimeout task
     result <-
-      timeout (taskTimeout * 1000000) $ processTask year day scraper parser task
+      timeout (timeoutValue * 1000000)
+        $ processTask year day scraper parser task
     when (isNothing result)
       $ terror
-      $ taskName task <> ": timeout after " <> tshow taskTimeout <> " seconds"
+      $ taskName task <> ": timeout after " <> tshow timeoutValue <> " seconds"
 
 processTask ::
      Integer -> Int -> ExampleScraper -> Parser Text a -> Task a -> IO ()
@@ -323,8 +334,8 @@ processTask year day globalScraper parser (Task solve expected) =
     day
     globalScraper
     parser
-    (Task' solve (Just expected) Nothing Nothing)
-processTask year day globalScraper parser (Task' solve exampleAnswer taskScraper part) = do
+    (Task' solve (Just expected) Nothing Nothing Nothing)
+processTask year day globalScraper parser (Task' solve exampleAnswer taskScraper part _) = do
   let scraper = fromMaybe globalScraper taskScraper
   example <- justParse parser <$> getExample year day scraper
   let exampleResult = solve example
