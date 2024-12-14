@@ -38,7 +38,7 @@ aStar ::
      (Hashable a, Ord a, Ord c, Num c)
   => (a -> [a]) -- ^ possible moves
   -> (a -> a -> c) -- ^ cost of the move
-  -> (a -> c) -- ^ estimate distance to goal
+  -> (a -> c) -- ^ estimate distance to goal, MUST NOT overestimate
   -> (a -> Bool) -- ^ is this the goal?
   -> a -- ^ start
   -> Maybe [a] -- ^ path to goal
@@ -47,7 +47,7 @@ aStar moves = AStar.aStar (hashSetFromList . moves)
 aStarDepth ::
      (Hashable a, Ord a, Ord c, Num c)
   => (a -> [a]) -- ^ possible moves
-  -> (a -> c) -- ^ estimate distance to goal
+  -> (a -> c) -- ^ estimate distance to goal, MUST NOT overestimate
   -> (a -> Bool) -- ^ is this the goal?
   -> a -- ^ start
   -> Maybe [a] -- ^ path to goal
@@ -56,7 +56,7 @@ aStarDepth moves = aStar moves (const $ const 1)
 aStarDepthGoal ::
      (Hashable a, Ord a, Ord c, Num c)
   => (a -> [a]) -- ^ possible moves
-  -> (a -> c) -- ^ estimate distance to goal
+  -> (a -> c) -- ^ estimate distance to goal, MUST NOT overestimate, MUST be zero at the goal
   -> a -- ^ start
   -> Maybe [a] -- ^ path to goal
 aStarDepthGoal moves distanceToGoal = aStarDepth moves distanceToGoal isGoal
