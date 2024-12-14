@@ -1,4 +1,6 @@
-module Y2022.Day13 where
+module Y2022.Day13
+  ( tasks
+  ) where
 
 import           Data.Aeson
 

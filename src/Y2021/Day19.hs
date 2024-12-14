@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
-module Y2021.Day19 where
+module Y2021.Day19
+  ( tasks
+  ) where
 
 import           Control.Monad.State
 import           Control.Monad.Writer

@@ -1,4 +1,6 @@
-module Y2021.Day03 where
+module Y2021.Day03
+  ( tasks
+  ) where
 
 import           AOC
 import           Bit

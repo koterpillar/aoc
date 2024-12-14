@@ -1,6 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Y2023.Day21 where
+module Y2023.Day21
+  ( tasks
+  ) where
 
 import qualified Data.Map  as Map
 import qualified Data.Set  as Set
@@ -177,7 +179,6 @@ sqr a = a * a
 a *? b = a * b
 
 infixl 7 *?
-
 normaliseParity :: Int -> Int -> Int
 normaliseParity example n = n + (example - n) `mod` 2
 

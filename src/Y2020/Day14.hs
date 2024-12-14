@@ -1,4 +1,6 @@
-module Y2020.Day14 where
+module Y2020.Day14
+  ( tasks
+  ) where
 
 import           Control.Monad (zipWithM)
 

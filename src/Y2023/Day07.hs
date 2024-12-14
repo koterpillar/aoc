@@ -1,4 +1,6 @@
-module Y2023.Day07 where
+module Y2023.Day07
+  ( tasks
+  ) where
 
 import           Data.Ord  (Down (..))
 

@@ -1,6 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Y2023.Day22 where
+module Y2023.Day22
+  ( tasks
+  ) where
 
 import           Control.Monad.State
 

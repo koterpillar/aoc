@@ -1,4 +1,6 @@
-module Y2022.Day06 where
+module Y2022.Day06
+  ( tasks
+  ) where
 
 import qualified Data.Set as Set
 

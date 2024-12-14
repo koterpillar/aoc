@@ -1,7 +1,9 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Y2021.Day24 where
+module Y2021.Day24
+  ( tasks
+  ) where
 
 import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map

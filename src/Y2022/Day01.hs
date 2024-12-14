@@ -1,4 +1,6 @@
-module Y2022.Day01 where
+module Y2022.Day01
+  ( tasks
+  ) where
 
 import           AOC
 import           Utils

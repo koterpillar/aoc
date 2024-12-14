@@ -1,6 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Y2023.Day23 where
+module Y2023.Day23
+  ( tasks
+  ) where
 
 import           Control.Monad.State.Strict
 

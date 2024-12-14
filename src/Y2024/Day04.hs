@@ -1,4 +1,6 @@
-module Y2024.Day04 where
+module Y2024.Day04
+  ( tasks
+  ) where
 
 import           Data.Char
 

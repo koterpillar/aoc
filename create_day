@@ -27,7 +27,9 @@ printf -v DAY0 "%02d" "$DAY"
 FILE="$DIR/Day${DAY0}.hs"
 
 cat > "$FILE" <<EOF
-module Y${YEAR}.Day${DAY0} where
+module Y${YEAR}.Day${DAY0}
+  ( tasks
+  ) where
 
 import qualified Data.Map  as Map
 import qualified Data.Set  as Set

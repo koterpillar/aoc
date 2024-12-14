@@ -1,4 +1,6 @@
-module Y2021.Day12 where
+module Y2021.Day12
+  ( tasks
+  ) where
 
 import qualified Data.Map  as Map
 import qualified Data.Text as Text

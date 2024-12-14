@@ -1,6 +1,8 @@
 {-# LANGUAGE ExplicitForAll #-}
 
-module Y2021.Day22 where
+module Y2021.Day22
+  ( tasks
+  ) where
 
 import           Control.Monad (foldM)
 

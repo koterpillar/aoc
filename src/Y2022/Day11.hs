@@ -1,7 +1,9 @@
 {-# LANGUAGE Strict          #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Y2022.Day11 where
+module Y2022.Day11
+  ( tasks
+  ) where
 
 import           Control.Monad.State.Strict
 import qualified Data.Map                   as Map

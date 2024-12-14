@@ -1,4 +1,6 @@
-module Y2020.Day11 where
+module Y2020.Day11
+  ( tasks
+  ) where
 
 import           AOC
 import           Graph

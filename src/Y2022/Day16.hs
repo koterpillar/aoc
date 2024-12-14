@@ -1,6 +1,8 @@
 {-# LANGUAGE Strict #-}
 
-module Y2022.Day16 where
+module Y2022.Day16
+  ( tasks
+  ) where
 
 import           Control.Monad.State.Strict
 

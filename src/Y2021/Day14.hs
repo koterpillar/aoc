@@ -1,4 +1,6 @@
-module Y2021.Day14 where
+module Y2021.Day14
+  ( tasks
+  ) where
 
 import qualified Data.Text as Text
 

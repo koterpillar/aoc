@@ -1,4 +1,6 @@
-module Y2023.Day18 where
+module Y2023.Day18
+  ( tasks
+  ) where
 
 import           Control.Parallel.Strategies (parMap, rpar)
 

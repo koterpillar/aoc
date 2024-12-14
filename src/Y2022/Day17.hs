@@ -1,7 +1,9 @@
 {-# LANGUAGE Strict          #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Y2022.Day17 where
+module Y2022.Day17
+  ( tasks
+  ) where
 
 import           Control.Monad.State.Strict
 

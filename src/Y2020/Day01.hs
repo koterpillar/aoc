@@ -1,4 +1,6 @@
-module Y2020.Day01 where
+module Y2020.Day01
+  ( tasks
+  ) where
 
 import           AOC
 import           Path

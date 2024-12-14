@@ -1,6 +1,8 @@
 {-# LANGUAGE Strict #-}
 
-module Y2022.Day20 where
+module Y2022.Day20
+  ( tasks
+  ) where
 
 import qualified Data.Map  as Map
 import qualified Data.Set  as Set

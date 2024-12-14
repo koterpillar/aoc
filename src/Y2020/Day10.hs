@@ -1,4 +1,6 @@
-module Y2020.Day10 where
+module Y2020.Day10
+  ( tasks
+  ) where
 
 import qualified Data.Map.Strict as Map
 

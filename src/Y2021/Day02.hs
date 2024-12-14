@@ -1,4 +1,6 @@
-module Y2021.Day02 where
+module Y2021.Day02
+  ( tasks
+  ) where
 
 import           AOC
 import           Grid

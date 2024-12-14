@@ -1,4 +1,6 @@
-module Y2020.Day18 where
+module Y2020.Day18
+  ( tasks
+  ) where
 
 import           AOC
 import           Evaluator

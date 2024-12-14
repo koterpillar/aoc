@@ -1,6 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Y2022.Day24 where
+module Y2022.Day24
+  ( tasks
+  ) where
 
 import qualified Data.Map as Map
 

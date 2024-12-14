@@ -1,4 +1,6 @@
-module Y2022.Day07 where
+module Y2022.Day07
+  ( tasks
+  ) where
 
 import           Control.Monad.State
 

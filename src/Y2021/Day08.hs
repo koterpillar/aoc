@@ -1,4 +1,6 @@
-module Y2021.Day08 where
+module Y2021.Day08
+  ( tasks
+  ) where
 
 import           Data.Foldable
 
