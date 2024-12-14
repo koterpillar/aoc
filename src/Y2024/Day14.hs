@@ -2,12 +2,13 @@ module Y2024.Day14
   ( tasks
   ) where
 
-import qualified Data.Map  as Map
-import qualified Data.Set  as Set
-import qualified Data.Text as Text
+import qualified Data.Map   as Map
+import qualified Data.Set   as Set
+import qualified Data.Text  as Text
 
 import           AOC
 import           Grid
+import           Grid.Pixel
 import           Utils
 
 data Robot = Robot
@@ -50,27 +51,54 @@ countQuadrants :: Position2 -> [Robot] -> Int
 countQuadrants sz =
   product . traceShowId . mapFromListCount . mapMaybe (quadrant sz)
 
-rDisplay :: Position2 -> [Robot] -> Text
-rDisplay sz =
-  displayG
+rDisplay' :: Position2 -> [Robot] -> LazyByteString
+rDisplay' sz =
+  displayPixels' color mempty
     . flip Map.union mids
-    . fmap showInGrid
-    . mapFromListCount @Position2 @Int
+    . mapFromListCount
     . map rPos
   where
+    color :: Int -> Pixel
+    color c
+      | c < 0 = Pixel (200, 200, 200)
+      | otherwise = Pixel (0, 128 - c' * 16, 0)
+      where
+        c' = fromInteger $ min 7 $ toInteger c
     Position2 mx my = mid sz
     mids =
       Map.fromList
-        $ map (, ' ')
+        $ map (, -1)
         $ [Position2 mx y | y <- [0 .. pY sz - 1]]
             ++ [Position2 x my | x <- [0 .. pX sz - 1]]
+
+rDisplay :: [Robot] -> LazyByteString
+rDisplay = rDisplay' realSize
 
 part1 :: Position2 -> [Robot] -> Int
 part1 sz =
   countQuadrants sz
-    . ttraceF (rDisplay sz)
+    . lbtraceF (rDisplay' sz)
     . map (rGo sz 100)
-    . ttraceF (rDisplay sz)
+    . lbtraceF (rDisplay' sz)
+
+variance :: [Int] -> Int
+variance xs = sum $ map (\x -> (x - m) ^ 2) xs
+  where
+    m = sum xs `div` length xs
+
+rVariance :: [Robot] -> Int
+rVariance rs = variance (map (pX . rPos) rs) + variance (map (pY . rPos) rs)
+
+part2 :: [Robot] -> Int
+part2 rs =
+  if length rs < 30
+    then (-1)
+    else go 0 rs
+  where
+    go :: Int -> [Robot] -> Int
+    go n rs
+      | rVariance rs < 400000 = lbtrace (rDisplay rs) n
+      | otherwise = go (succ n) $ map (rGo realSize 1) rs
 
 tasks =
   Tasks
@@ -80,4 +108,5 @@ tasks =
     parser
     [ AssertExample "example size" 12 (part1 exampleSize)
     , taskBlind (part1 realSize) & taskPart 1
+    , taskBlind part2 & taskPart 2
     ]
