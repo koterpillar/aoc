@@ -11,10 +11,15 @@ import           Grid
 import           Path
 import           Utils
 
+data Button = Button
+  { bStep  :: Position2
+  , bCost  :: Int
+  , bScale :: Int
+  } deriving (Ord, Eq, Show)
+
 data Machine = Machine
-  { mA     :: Position2
-  , mB     :: Position2
-  , mPrize :: Position2
+  { mButtons :: Map Char Button
+  , mPrize   :: Position2
   } deriving (Ord, Eq, Show)
 
 machineLineP :: Parser Text Position2
@@ -27,42 +32,57 @@ machineLineP = pureP cleanup &* wordsP &* ap2P Position2 integerP integerP
              then ' '
              else c)
 
+mkMachine :: Position2 -> Position2 -> Position2 -> Machine
+mkMachine a b =
+  Machine $ Map.fromList [('A', Button a 3 1), ('B', Button b 1 1)]
+
 parser :: Parser Text [Machine]
-parser = lineGroupsP &** ap3P Machine machineLineP machineLineP machineLineP
+parser = lineGroupsP &** ap3P mkMachine machineLineP machineLineP machineLineP
 
-type Presses = (Int, Int) -- number of A and B
+type Presses = Map Char Int
 
-underLimit :: Maybe Int -> Presses -> Bool
-underLimit Nothing _           = True
-underLimit (Just limit) (a, b) = a <= limit && b <= limit
+underLimit :: Maybe Int -> Int -> Bool
+underLimit Nothing      = const True
+underLimit (Just limit) = (limit >=)
 
 nextMoves :: Machine -> [Int] -> Maybe Int -> Presses -> [Presses]
-nextMoves m vs limit p@(a, b) =
-  filter (winnable m . target m)
-    $ filter (underLimit limit)
-    $ [(a + v, b) | v <- vs] ++ [(a, b + v) | v <- vs]
+nextMoves m scale limit pp = do
+  (b, button) <- Map.toList $ mButtons m
+  let p = fromMaybe 0 $ Map.lookup b pp
+  v <- scale
+  let p' = p + v
+  guard $ underLimit limit $ p' * bScale button
+  let pp' = Map.insert b p' pp
+  guard $ winnable m $ target m pp'
+  pure pp'
 
-pressesCost :: Presses -> Int
-pressesCost (a, b) = a * 3 + b
+pressesCost :: Machine -> Presses -> Int
+pressesCost m pp =
+  sum
+    [ n * bCost (mapLookupE "pressesCost" b (mButtons m))
+    | (b, n) <- Map.toList pp
+    ]
 
-moveCost :: Presses -> Presses -> Int
-moveCost = (-) `on` pressesCost
+moveCost :: Machine -> Presses -> Presses -> Int
+moveCost m = (-) `on` pressesCost m
 
 target :: Machine -> Presses -> Position2
-target Machine {..} (a, b) = pointM a mA `pointPlus` pointM b mB
+target m = foldMap (uncurry go) . Map.toList
+  where
+    go b n = pointM n $ bStep $ mapLookupE "target" b $ mButtons m
 
 winning :: Maybe Int -> Machine -> Maybe Int
-winning limit m = traceShowF (m, r, ) . pressesCost <$> r
+winning limit m = traceShowF (m, r, ) . pressesCost m <$> r
   where
     steps = take 12 $ iterate (* 10) 1
     r =
       last
         <$> aStar
               (nextMoves m steps limit)
-              moveCost
+              (moveCost m)
               distanceToGoal
               isGoal
-              (0, 0)
+              Map.empty
     isGoal p = target m p == mPrize m
     distanceToGoal p =
       traceShowF ("distance estimate", p, t, prize, )
@@ -76,11 +96,11 @@ estimateToGoal m p =
   traceShowF ("distance estimate", m, p, )
     $ minimum
     $ do
-        (mButton, mkPresses) <- [(mA, (, 0)), (mB, (0, ))]
+        (b, button) <- Map.toList $ mButtons m
         pCoord <- [pX, pY]
         let amount =
-              (pCoord prize - pCoord (target m p)) `div` pCoord (mButton m)
-        pure $ pressesCost $ mkPresses amount
+              (pCoord prize - pCoord (target m p)) `div` pCoord (bStep button)
+        pure $ pressesCost m $ Map.singleton b amount
   where
     prize = mPrize m
 
@@ -94,16 +114,16 @@ winnable m t
   where
     d = mPrize m `pointMinus` t
     overshot :: (Position2 -> Int) -> (Position2 -> Int) -> Bool
-    overshot pTry pResult = all (overshotAcc pTry pResult) [mA, mB]
-    overshotAcc ::
+    overshot pTry pResult = all (overshotButton pTry pResult) $ Map.elems $ mButtons m
+    overshotButton ::
          (Position2 -> Int)
       -> (Position2 -> Int)
-      -> (Machine -> Position2)
+      -> Button
       -> Bool
-    overshotAcc pTry pResult mButton = maxResult < prizeResult
+    overshotButton pTry pResult mButton = maxResult < prizeResult
       where
         prizeResult = pResult (mPrize m)
-        pButton = mButton m
+        pButton = bStep mButton
         maxResult = pResult t + pResult pButton * maxSteps
         maxSteps = (pTry (mPrize m) - pTry t) `div` pTry pButton
 
@@ -119,8 +139,7 @@ part2 :: [Machine] -> Int
 part2 = sum . mapMaybe (winning Nothing . harderPrize)
 
 testMachine :: Machine
-testMachine =
-  Machine {mA = Position2 10 1, mB = Position2 1 10, mPrize = Position2 p p}
+testMachine = mkMachine (Position2 10 1) (Position2 1 10) (Position2 p p)
   where
     p = 11
 
