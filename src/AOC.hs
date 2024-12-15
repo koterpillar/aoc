@@ -260,6 +260,9 @@ instance AnswerLike Int where
 instance AnswerLike Integer where
   answerToText = Text.pack . show
 
+instance AnswerLike () where
+  answerToText () = mempty
+
 data Task a where
   Task :: AnswerLike b => (a -> b) -> b -> Task a
   Task'
