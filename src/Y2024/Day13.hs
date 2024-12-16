@@ -29,6 +29,18 @@ data Machine' p = Machine
 
 type Machine = Machine' Position2
 
+mMultiply :: Char -> Int -> Machine -> Machine
+mMultiply b n m = m {mButtons = Map.adjust (bMultiply n) b $ mButtons m}
+
+mPress :: Char -> Int -> Machine -> Machine
+mPress b n m =
+  m
+    { mPrize = mPrize m `pointMinus` (n `pointM` bStep button)
+    , mExtraCost = mExtraCost m + n * bCost button
+    }
+  where
+    button = mapLookupE "mPress" b $ mButtons m
+
 machineLineP :: Parser Text Position2
 machineLineP = pureP cleanup &* wordsP &* ap2P Position2 integerP integerP
   where
@@ -82,10 +94,17 @@ target m = foldMap (uncurry go) . Map.toList
 simplify :: Machine -> Machine
 simplify =
   traceShowF ("simplif>", )
-    . simplifyOdd pX
-    . simplifyOdd pY
-    . simplifyGcd
+    . iterateSettleL simplify1
     . traceShowF ("original", )
+
+coordsList :: [(Char, Position2 -> Int)]
+coordsList = [('x', pX), ('y', pY)]
+
+forCoords :: (Char -> (Position2 -> Int) -> a -> a) -> a -> a
+forCoords f = flip (foldr $ uncurry f) coordsList
+
+simplify1 :: Machine -> Machine
+simplify1 = forCoords simplifyOdd . simplifyGcd
 
 gcd_ :: (Functor f, Foldable f) => (p -> Int) -> f p -> Int
 gcd_ coord = foldr1 gcd . fmap coord
@@ -97,28 +116,30 @@ mGcd m = Position2 (go pX) (go pY)
 
 simplifyGcd :: Machine -> Machine
 simplifyGcd m =
-  (if r == Position2 1 1
-     then id
-     else traceShow ("simplifyGcd", r))
+  forCoords
+    (\coordChar coord ->
+       if coord r == 1
+         then id
+         else trace ("Dividing " <> [coordChar] <> " by GCD " <> show (coord r)))
     $ fmap (posDiv $ mGcd m) m
   where
     r = mGcd m
     posDiv (Position2 dx dy) (Position2 x y) =
       Position2 (x `div` dx) (y `div` dy)
 
-mMultiply :: Char -> Int -> Machine -> Machine
-mMultiply b n m = m {mButtons = Map.adjust (bMultiply n) b $ mButtons m}
-
-simplifyOdd :: (Position2 -> Int) -> Machine -> Machine
-simplifyOdd coord m0 = foldr (uncurry go) m0 $ Map.toList (mButtons m0)
+simplifyOdd :: Char -> (Position2 -> Int) -> Machine -> Machine
+simplifyOdd coordChar coord m0 =
+  foldr (uncurry go) m0 $ Map.toList (mButtons m0)
   where
     go :: Char -> Button Position2 -> Machine -> Machine
     go c b m
       | gRest /= 1 =
         trace
-          ("found "
-             <> show c
-             <> " which has coordinate "
+          ("Button "
+             <> [c]
+             <> " has "
+             <> [coordChar]
+             <> " coordinate "
              <> show bY
              <> " and without it GCD is "
              <> show gRest)
