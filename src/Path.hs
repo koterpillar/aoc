@@ -44,6 +44,17 @@ aStar ::
   -> Maybe [a] -- ^ path to goal
 aStar moves = AStar.aStar (hashSetFromList . moves)
 
+aStarGoal ::
+     (Hashable a, Ord a, Ord c, Num c)
+  => (a -> [a]) -- ^ possible moves
+  -> (a -> a -> c) -- ^ cost of the move
+  -> (a -> c) -- ^ estimate distance to goal, MUST NOT overestimate, MUST be zero at the goal
+  -> a -- ^ start
+  -> Maybe [a] -- ^ path to goal
+aStarGoal moves cost distanceToGoal = aStar moves cost distanceToGoal isGoal
+  where
+    isGoal = (== 0) . distanceToGoal
+
 aStarDepth ::
      (Hashable a, Ord a, Ord c, Num c)
   => (a -> [a]) -- ^ possible moves
