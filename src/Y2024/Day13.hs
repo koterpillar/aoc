@@ -18,8 +18,10 @@ data Button p = Button
   } deriving (Ord, Eq, Show, Functor, Foldable, Traversable)
 
 bMultiply :: Int -> Button Position2 -> Button Position2
-bMultiply n b =
-  b {bStep = pointM n $ bStep b, bCost = n * bCost b, bScale = n * bScale b}
+bMultiply n b
+  | n <= 0 = error $ "bMultiply: " <> show n
+  | otherwise =
+    b {bStep = pointM n $ bStep b, bCost = n * bCost b, bScale = n * bScale b}
 
 data Machine' p = Machine
   { mButtons   :: Map Char (Button p)
@@ -28,6 +30,16 @@ data Machine' p = Machine
   } deriving (Ord, Eq, Show, Functor, Foldable, Traversable)
 
 type Machine = Machine' Position2
+
+mButton :: Char -> Machine' p -> Button p
+mButton b = mapLookupE "mButton" b . mButtons
+
+mOtherButton :: Char -> Machine -> Button Position2
+mOtherButton b m =
+  case filter ((/= b) . fst) (Map.toList $ mButtons m) of
+    [(_, r)] -> r
+    []       -> error "mOtherButton: no other button"
+    _        -> error "mOtherButton: multiple other buttons"
 
 mMultiply :: Char -> Int -> Machine -> Machine
 mMultiply b n m = m {mButtons = Map.adjust (bMultiply n) b $ mButtons m}
@@ -39,7 +51,10 @@ mPress b n m =
     , mExtraCost = mExtraCost m + n * bCost button
     }
   where
-    button = mapLookupE "mPress" b $ mButtons m
+    button = mButton b m
+
+mWon :: Machine -> Bool
+mWon m = mPrize m == Position2 0 0
 
 machineLineP :: Parser Text Position2
 machineLineP = pureP cleanup &* wordsP &* ap2P Position2 integerP integerP
@@ -77,11 +92,7 @@ nextMoves m scale limit pp = do
   pure pp'
 
 pressesCost :: Machine -> Presses -> Int
-pressesCost m pp =
-  sum
-    [ n * bCost (mapLookupE "pressesCost" b (mButtons m))
-    | (b, n) <- Map.toList pp
-    ]
+pressesCost m pp = sum [n * bCost (mButton b m) | (b, n) <- Map.toList pp]
 
 moveCost :: Machine -> Presses -> Presses -> Int
 moveCost m = (-) `on` pressesCost m
@@ -89,11 +100,11 @@ moveCost m = (-) `on` pressesCost m
 target :: Machine -> Presses -> Position2
 target m = foldMap (uncurry go) . Map.toList
   where
-    go b n = pointM n $ bStep $ mapLookupE "target" b $ mButtons m
+    go b n = pointM n $ bStep $ mButton b m
 
 simplify :: Machine -> Machine
 simplify =
-  traceShowF ("simplif>", )
+  traceShowF ("s-result", )
     . iterateSettleL simplify1
     . traceShowF ("original", )
 
@@ -104,7 +115,7 @@ forCoords :: (Char -> (Position2 -> Int) -> a -> a) -> a -> a
 forCoords f = flip (foldr $ uncurry f) coordsList
 
 simplify1 :: Machine -> Machine
-simplify1 = forCoords simplifyOdd . simplifyGcd
+simplify1 = simplifyOffset . simplifyOdd . simplifyGcd
 
 gcd_ :: (Functor f, Foldable f) => (p -> Int) -> f p -> Int
 gcd_ coord = foldr1 gcd . fmap coord
@@ -127,29 +138,96 @@ simplifyGcd m =
     posDiv (Position2 dx dy) (Position2 x y) =
       Position2 (x `div` dx) (y `div` dy)
 
-simplifyOdd :: Char -> (Position2 -> Int) -> Machine -> Machine
-simplifyOdd coordChar coord m0 =
-  foldr (uncurry go) m0 $ Map.toList (mButtons m0)
+forButtons ::
+     (Char -> Button p -> Machine' p -> Machine' p) -> Machine' p -> Machine' p
+forButtons go m0 =
+  foldr (\b m -> go b (mButton b m) m) m0 $ Map.keys $ mButtons m0
+
+simplifyOdd :: Machine -> Machine
+simplifyOdd = forCoords goCoord
   where
-    go :: Char -> Button Position2 -> Machine -> Machine
-    go c b m
-      | gRest /= 1 =
-        trace
-          ("Button "
-             <> [c]
-             <> " has "
-             <> [coordChar]
-             <> " coordinate "
-             <> show bY
-             <> " and without it GCD is "
-             <> show gRest)
-          $ simplifyGcd
-          $ mMultiply c gRest m
-      | otherwise = m
+    goCoord coordChar coord = forButtons go
       where
-        mRest = m {mButtons = Map.delete c $ mButtons m}
-        bY = coord $ bStep b
-        gRest = coord $ mGcd mRest
+        go :: Char -> Button Position2 -> Machine -> Machine
+        go c b m
+          | mWon m = m
+          | gRest /= 1 =
+            trace
+              ("Button "
+                 <> [c]
+                 <> " has "
+                 <> [coordChar]
+                 <> " coordinate "
+                 <> show bY
+                 <> " and without it GCD is "
+                 <> show gRest)
+              $ simplifyGcd
+              $ mMultiply c gRest m
+          | otherwise = m
+          where
+            mRest = m {mButtons = Map.delete c $ mButtons m}
+            bY = coord $ bStep b
+            gRest = coord $ mGcd mRest
+
+mImpossible :: Machine
+mImpossible =
+  Machine
+    { mButtons = Map.fromList [('A', Button step 1 1), ('B', Button step 1 1)]
+    , mPrize = prize
+    , mExtraCost = 0
+    }
+  where
+    step = Position2 10 10
+    prize = Position2 1 1
+
+simplifyOffset :: Machine -> Machine
+simplifyOffset = forCoords goC
+  where
+    goC coordChar coord = forButtons go
+      where
+        go buttonChar button1 m
+          | cp == 0 = m
+          | gcd c1 c2 > 1 && gcd c1 cp == 1 && gcd c2 cp == 1 =
+            trace
+              ("IMPOSSIBLE MACHINE: buttons GCD "
+                 <> show (gcd c1 c2)
+                 <> " but 1 with prize")
+              mImpossible
+          | gcd c1 c2 == 1 && gcd c1 cp == 1 =
+            case findPresses c1 c2 cp of
+              Nothing -> traceShow ("IMPOSSIBLE MACHINE", m) mImpossible
+              Just presses
+                | presses > 0 ->
+                  traceShowF ("offset >", )
+                    $ trace
+                        ("buttons "
+                           <> [coordChar]
+                           <> ": "
+                           <> show c1
+                           <> " "
+                           <> show c2
+                           <> "; prize "
+                           <> show cp
+                           <> "; pressing "
+                           <> show presses
+                           <> " times")
+                    $ mPress buttonChar presses m
+                | otherwise -> m
+          | otherwise = m
+          where
+            presses = findPresses c1 c2 cp
+            button2 = mOtherButton buttonChar m
+            bc = coord . bStep
+            c1 = coord $ bStep button1
+            c2 = coord $ bStep button2
+            cp = coord $ mPrize m
+
+findPresses :: Int -> Int -> Int -> Maybe Int
+findPresses c1 c2 cp
+  | cp < 0 = Nothing
+  | c2 == 1 = Just 0
+  | gcd c2 cp > 1 = Just 0
+  | otherwise = fmap succ $ findPresses c1 c2 $ cp - c1
 
 winning :: Maybe Int -> Machine -> Maybe Int
 winning l = winning' l . simplify
@@ -162,7 +240,7 @@ winning' limit m = traceShowF (m, r, ) $ fmap (totalCost m) r
   where
     steps = take 12 $ iterate (* 10) 1
     r =
-      last
+      fromMaybe mempty . listToMaybe . reverse
         <$> aStar
               (nextMoves m steps limit)
               (moveCost m)
@@ -170,9 +248,7 @@ winning' limit m = traceShowF (m, r, ) $ fmap (totalCost m) r
               isGoal
               Map.empty
     isGoal p = target m p == mPrize m
-    distanceToGoal p =
-      traceShowF ("distance estimate", p, t, prize, )
-        $ manhattanDistance t prize
+    distanceToGoal p = manhattanDistance t prize
       where
         t = target m p
         prize = mPrize m
