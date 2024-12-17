@@ -24,7 +24,7 @@ data Instr
   = SHR Register Combo
   | BXL Int
   | BST Combo
-  | JNZ Int
+  | LOOPZ
   | BXC
   | OUT Combo
   deriving (Ord, Eq, Show)
@@ -39,7 +39,8 @@ parseOps (i:o:rest) = go i o : parseOps rest
     go 0 o = SHR 'A' (mkC o)
     go 1 o = BXL o
     go 2 o = BST (mkC o)
-    go 3 o = JNZ o
+    go 3 0 = LOOPZ
+    go 3 o = error $ "unexpected loop to " <> show o
     go 4 _ = BXC
     go 5 o = OUT (mkC o)
     go 6 o = SHR 'B' (mkC o)
@@ -58,11 +59,7 @@ data Machine = Machine
   { mRegisters :: Registers
   , mProgram   :: Program
   , mPC        :: Int
-  , mOutputRev :: [Int]
   } deriving (Ord, Eq, Show)
-
-mOutput :: Machine -> [Int]
-mOutput = reverse . mOutputRev
 
 mInstruction :: Machine -> Maybe Instr
 mInstruction m = listToMaybe $ drop (mPC m `div` 2) $ mProgram m
@@ -77,12 +74,9 @@ mRegister r = mapLookupE "mRegister" r . mRegisters
 mSetRegister :: Register -> Int -> Machine -> Machine
 mSetRegister r v m = m {mRegisters = Map.insert r v $ mRegisters m}
 
-mWrite :: Int -> Machine -> Machine
-mWrite o m = m {mOutputRev = o : mOutputRev m}
-
 parser :: Parser Text Machine
 parser =
-  (\(r, p) -> Machine r p 0 [])
+  (\(r, p) -> Machine r p 0)
     <$> tsplitP "\n\n"
           &* ((Map.fromList <$> linesP &** registerValueP)
                 &+ (pureP (Text.dropWhile (/= ' '))
@@ -97,25 +91,30 @@ parser =
 mAdvance :: Machine -> Machine
 mAdvance m = m {mPC = mPC m + 2}
 
-mPerform :: Instr -> Machine -> Machine
+mPerform :: Instr -> Machine -> Maybe (Int, Machine)
 mPerform (SHR r o) m =
-  mSetRegister r (mRegister 'A' m `shiftR` mComboOperand o m) m
-mPerform (OUT o) m = mWrite (mComboOperand o m `mod` 8) m
-mPerform (JNZ o) m
-  | mRegister 'A' m == 0 = m
-  | otherwise = m {mPC = o - 2} -- -2 because of mAdvance
-mPerform (BST o) m = mSetRegister 'B' (mComboOperand o m `mod` 8) m
-mPerform (BXL o) m = mSetRegister 'B' (o `xor` mRegister 'B' m) m
-mPerform BXC m = mSetRegister 'B' (mRegister 'C' m `xor` mRegister 'B' m) m
+  mStep
+    $ mAdvance
+    $ mSetRegister r (mRegister 'A' m `shiftR` mComboOperand o m) m
+mPerform (OUT o) m = Just (mComboOperand o m `mod` 8, mAdvance m)
+mPerform LOOPZ m
+  | mRegister 'A' m == 0 = mStep $ mAdvance m
+  | otherwise = mStep $ m {mPC = 0}
+mPerform (BST o) m =
+  mStep $ mAdvance $ mSetRegister 'B' (mComboOperand o m `mod` 8) m
+mPerform (BXL o) m =
+  mStep $ mAdvance $ mSetRegister 'B' (o `xor` mRegister 'B' m) m
+mPerform BXC m =
+  mStep $ mAdvance $ mSetRegister 'B' (mRegister 'C' m `xor` mRegister 'B' m) m
 
-mStep :: Machine -> Maybe Machine
+mStep :: Machine -> Maybe (Int, Machine)
 mStep m =
   case mInstruction m of
     Nothing -> Nothing
-    Just i  -> Just $ mAdvance $ mPerform i m
+    Just i  -> mPerform i m
 
 mRun :: Machine -> [Int]
-mRun = mOutput . iterateMaybeL (traceShowId . mStep)
+mRun = unfoldr mStep
 
 part1 :: Machine -> Text
 part1 = commas . mRun
