@@ -9,6 +9,8 @@ import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
+import           GHC.Base  (VecElem (Int16ElemRep))
+import           Path
 import           Utils
 
 type Register = Char
@@ -21,30 +23,38 @@ data Combo
   deriving (Ord, Eq, Show)
 
 data Instr
-  = SHR Register Combo
+  = ASHR Register Combo
   | BXL Int
   | BST Combo
-  | LOOPZ
   | BXC
   | OUT Combo
   deriving (Ord, Eq, Show)
 
 type Program = [Instr]
 
-parseOps :: [Int] -> Program
-parseOps [] = []
-parseOps [a] = error "odd number of ops"
-parseOps (i:o:rest) = go i o : parseOps rest
+type Tape = [Int]
+
+parseOps :: Tape -> Program
+parseOps = parseOps' . verifyLoop
   where
-    go 0 o = SHR 'A' (mkC o)
+    verifyLoop p =
+      if takeEnd 2 p == [3, 0]
+        then dropEnd 2 p
+        else error "missing loop at the end"
+
+parseOps' :: Tape -> Program
+parseOps' [] = []
+parseOps' [a] = error "odd number of ops"
+parseOps' (i:o:rest) = go i o : parseOps' rest
+  where
+    go 0 o = ASHR 'A' (mkC o)
     go 1 o = BXL o
     go 2 o = BST (mkC o)
-    go 3 0 = LOOPZ
     go 3 o = error $ "unexpected loop to " <> show o
     go 4 _ = BXC
     go 5 o = OUT (mkC o)
-    go 6 o = SHR 'B' (mkC o)
-    go 7 o = SHR 'C' (mkC o)
+    go 6 o = ASHR 'B' (mkC o)
+    go 7 o = ASHR 'C' (mkC o)
     go i o = error $ "invalid instruction " <> show i <> " " <> show o
     mkC 0 = CI 0
     mkC 1 = CI 1
@@ -74,13 +84,16 @@ mRegister r = mapLookupE "mRegister" r . mRegisters
 mSetRegister :: Register -> Int -> Machine -> Machine
 mSetRegister r v m = m {mRegisters = Map.insert r v $ mRegisters m}
 
-parser :: Parser Text Machine
+mkMachine :: Registers -> Tape -> Machine
+mkMachine r t = Machine r (parseOps t) 0
+
+type MachineRepr = (Registers, Tape)
+
+parser :: Parser Text MachineRepr
 parser =
-  (\(r, p) -> Machine r p 0)
-    <$> tsplitP "\n\n"
-          &* ((Map.fromList <$> linesP &** registerValueP)
-                &+ (pureP (Text.dropWhile (/= ' '))
-                      &* fmap parseOps (integersP ",")))
+  tsplitP "\n\n"
+    &* ((Map.fromList <$> linesP &** registerValueP)
+          &+ (pureP (Text.dropWhile (/= ' ')) &* integersP ","))
   where
     registerValueP :: Parser Text (Register, Int)
     registerValueP =
@@ -91,36 +104,75 @@ parser =
 mAdvance :: Machine -> Machine
 mAdvance m = m {mPC = mPC m + 2}
 
-mPerform :: Instr -> Machine -> Maybe (Int, Machine)
-mPerform (SHR r o) m =
+mPerform :: Maybe Instr -> Machine -> Maybe (Int, Machine)
+mPerform (Just (ASHR r o)) m =
   mStep
     $ mAdvance
     $ mSetRegister r (mRegister 'A' m `shiftR` mComboOperand o m) m
-mPerform (OUT o) m = Just (mComboOperand o m `mod` 8, mAdvance m)
-mPerform LOOPZ m
+mPerform (Just (OUT o)) m = Just (mComboOperand o m `mod` 8, mAdvance m)
+mPerform Nothing m
   | mRegister 'A' m == 0 = mStep $ mAdvance m
   | otherwise = mStep $ m {mPC = 0}
-mPerform (BST o) m =
+mPerform (Just (BST o)) m =
   mStep $ mAdvance $ mSetRegister 'B' (mComboOperand o m `mod` 8) m
-mPerform (BXL o) m =
+mPerform (Just (BXL o)) m =
   mStep $ mAdvance $ mSetRegister 'B' (o `xor` mRegister 'B' m) m
-mPerform BXC m =
+mPerform (Just BXC) m =
   mStep $ mAdvance $ mSetRegister 'B' (mRegister 'C' m `xor` mRegister 'B' m) m
 
 mStep :: Machine -> Maybe (Int, Machine)
 mStep m =
   case mInstruction m of
-    Nothing -> Nothing
-    Just i  -> mPerform i m
+    Just (ASHR r o) ->
+      mStep
+        $ mAdvance
+        $ mSetRegister r (mRegister 'A' m `shiftR` mComboOperand o m) m
+    (Just (OUT o)) -> Just (mComboOperand o m `mod` 8, mAdvance m)
+    Nothing
+      | mRegister 'A' m == 0 -> Nothing
+      | otherwise -> mStep $ m {mPC = 0}
+    (Just (BST o)) ->
+      mStep $ mAdvance $ mSetRegister 'B' (mComboOperand o m `mod` 8) m
+    (Just (BXL o)) ->
+      mStep $ mAdvance $ mSetRegister 'B' (o `xor` mRegister 'B' m) m
+    (Just BXC) ->
+      mStep
+        $ mAdvance
+        $ mSetRegister 'B' (mRegister 'C' m `xor` mRegister 'B' m) m
 
 mRun :: Machine -> [Int]
 mRun = unfoldr mStep
 
-part1 :: Machine -> Text
-part1 = commas . mRun
+part1 :: MachineRepr -> Text
+part1 = commas . mRun . traceShowId . uncurry mkMachine
+  where
+    commas = Text.intercalate "," . map tshow
 
-commas :: [Int] -> Text
-commas = Text.intercalate "," . map tshow
+findABits :: Machine -> Int
+findABits = fromSingleE "findABits: ASHR A" . mapMaybe go . mProgram
+  where
+    go (ASHR 'A' (CI bits)) = Just bits
+    go _                    = Nothing
+
+findStartA :: Tape -> Machine -> Int
+findStartA t m = last $ fromJustE "findStartA" $ aStarDepthGoal moves distance 0
+  where
+    moves :: Int -> [Int]
+    moves n = [n `shiftL` step + i | i <- [0 .. 1 `shiftL` step - 1]]
+    lt = length t
+    distance :: Int -> Int
+    distance n
+      | length r > lt = 100000
+      | otherwise = countIf id (zipWith (/=) r' t)
+      where
+        r = mRun $ m {mRegisters = Map.insert 'A' n $ mRegisters m}
+        r' = replicate (lt - length r) 777 ++ r
+    step = findABits m
+
+part2 :: MachineRepr -> Int
+part2 (r, t) = traceShow t $ traceShow m $ findStartA t m
+  where
+    m = mkMachine r t
 
 tasks =
   Tasks
@@ -128,4 +180,6 @@ tasks =
     17
     (CodeBlock 0)
     parser
-    [task part1 "4,6,3,5,6,3,5,2,1,0" & taskPart 1]
+    [ task part1 "4,6,3,5,6,3,5,2,1,0" & taskPart 1
+    , task part2 117440 & taskScraper (CodeBlock 1) & taskPart 2
+    ]
