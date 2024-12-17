@@ -15,9 +15,44 @@ type Register = Char
 
 type Registers = Map Register Int
 
-type Opcode = Int
+data Combo
+  = CI Int
+  | CR Register
+  deriving (Ord, Eq, Show)
 
-type Program = [Opcode]
+data Instr
+  = SHR Register Combo
+  | BXL Int
+  | BST Combo
+  | JNZ Int
+  | BXC
+  | OUT Combo
+  deriving (Ord, Eq, Show)
+
+type Program = [Instr]
+
+parseOps :: [Int] -> Program
+parseOps [] = []
+parseOps [a] = error "odd number of ops"
+parseOps (i:o:rest) = go i o : parseOps rest
+  where
+    go 0 o = SHR 'A' (mkC o)
+    go 1 o = BXL o
+    go 2 o = BST (mkC o)
+    go 3 o = JNZ o
+    go 4 _ = BXC
+    go 5 o = OUT (mkC o)
+    go 6 o = SHR 'B' (mkC o)
+    go 7 o = SHR 'C' (mkC o)
+    go i o = error $ "invalid instruction " <> show i <> " " <> show o
+    mkC 0 = CI 0
+    mkC 1 = CI 1
+    mkC 2 = CI 2
+    mkC 3 = CI 3
+    mkC 4 = CR 'A'
+    mkC 5 = CR 'B'
+    mkC 6 = CR 'C'
+    mkC c = error $ "invalid combo " <> show c
 
 data Machine = Machine
   { mRegisters :: Registers
@@ -29,26 +64,12 @@ data Machine = Machine
 mOutput :: Machine -> [Int]
 mOutput = reverse . mOutputRev
 
-mInstructions :: Machine -> [Opcode]
-mInstructions m = drop (mPC m) $ mProgram m
+mInstruction :: Machine -> Maybe Instr
+mInstruction m = listToMaybe $ drop (mPC m `div` 2) $ mProgram m
 
-mInstruction :: Machine -> Maybe Opcode
-mInstruction = listToMaybe . mInstructions
-
-mLiteralOperand :: Machine -> Int
-mLiteralOperand = (!! 1) . mInstructions
-
-mComboOperand :: Machine -> Int
-mComboOperand m =
-  case mLiteralOperand m of
-    0 -> 0
-    1 -> 1
-    2 -> 2
-    3 -> 3
-    4 -> mRegister 'A' m
-    5 -> mRegister 'B' m
-    6 -> mRegister 'C' m
-    o -> error $ "invalid combo operand" <> show o
+mComboOperand :: Combo -> Machine -> Int
+mComboOperand (CI i) _ = i
+mComboOperand (CR r) m = mRegister r m
 
 mRegister :: Register -> Machine -> Int
 mRegister r = mapLookupE "mRegister" r . mRegisters
@@ -64,7 +85,8 @@ parser =
   (\(r, p) -> Machine r p 0 [])
     <$> tsplitP "\n\n"
           &* ((Map.fromList <$> linesP &** registerValueP)
-                &+ (pureP (Text.dropWhile (/= ' ')) &* integersP ","))
+                &+ (pureP (Text.dropWhile (/= ' '))
+                      &* fmap parseOps (integersP ",")))
   where
     registerValueP :: Parser Text (Register, Int)
     registerValueP =
@@ -75,54 +97,25 @@ parser =
 mAdvance :: Machine -> Machine
 mAdvance m = m {mPC = mPC m + 2}
 
-mDiv :: Register -> Machine -> Machine
-mDiv r m = mSetRegister r v m
-  where
-    v = mRegister 'A' m `shiftR` mComboOperand m
-
-mOut :: Machine -> Machine
-mOut m = mWrite v m
-  where
-    v = mComboOperand m `mod` 8
-
-mJnz :: Machine -> Machine
-mJnz m
+mPerform :: Instr -> Machine -> Machine
+mPerform (SHR r o) m =
+  mSetRegister r (mRegister 'A' m `shiftR` mComboOperand o m) m
+mPerform (OUT o) m = mWrite (mComboOperand o m `mod` 8) m
+mPerform (JNZ o) m
   | mRegister 'A' m == 0 = m
-  | otherwise = m {mPC = mLiteralOperand m - 2} -- -2 because of mAdvance
-
-mBst :: Machine -> Machine
-mBst m = mSetRegister 'B' v m
-  where
-    v = mComboOperand m `mod` 8
-
-mBxl :: Machine -> Machine
-mBxl m = mSetRegister 'B' v m
-  where
-    v = mLiteralOperand m `xor` mRegister 'B' m
-
-mBxc :: Machine -> Machine
-mBxc m = mSetRegister 'B' v m
-  where
-    v = mRegister 'C' m `xor` mRegister 'B' m
+  | otherwise = m {mPC = o - 2} -- -2 because of mAdvance
+mPerform (BST o) m = mSetRegister 'B' (mComboOperand o m `mod` 8) m
+mPerform (BXL o) m = mSetRegister 'B' (o `xor` mRegister 'B' m) m
+mPerform BXC m = mSetRegister 'B' (mRegister 'C' m `xor` mRegister 'B' m) m
 
 mStep :: Machine -> Maybe Machine
 mStep m =
-  case mInstruction (traceShowId m) of
+  case mInstruction m of
     Nothing -> Nothing
-    Just i  -> Just $ mAdvance $ go i m
-  where
-    go 0 = mDiv 'A'
-    go 1 = mBxl
-    go 2 = mBst
-    go 3 = mJnz
-    go 4 = mBxc
-    go 5 = mOut
-    go 6 = mDiv 'B'
-    go 7 = mDiv 'C'
-    go i = error $ "invalid instruction " <> show i
+    Just i  -> Just $ mAdvance $ mPerform i m
 
 mRun :: Machine -> [Int]
-mRun = mOutput . iterateMaybeL mStep
+mRun = mOutput . iterateMaybeL (traceShowId . mStep)
 
 part1 :: Machine -> Text
 part1 = commas . mRun
