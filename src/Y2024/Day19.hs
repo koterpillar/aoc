@@ -2,8 +2,6 @@ module Y2024.Day19
   ( tasks
   ) where
 
-import qualified Data.Map  as Map
-import qualified Data.Set  as Set
 import qualified Data.Text as Text
 
 import           AOC
