@@ -10,22 +10,19 @@ import           AOC
 import           Memo
 import           Utils
 
-type Input = (Set Text, [Text])
+type Input = ([Text], [Text])
 
 parser :: Parser Text Input
-parser = tsplitP "\n\n" &* ((Set.fromList <$> tsplitP ", ") &+ linesP)
+parser = tsplitP "\n\n" &* (tsplitP ", " &+ linesP)
 
-allCreates :: Set Text -> Text -> Int
+allCreates :: [Text] -> Text -> Int
 allCreates towels pattern = stateMemo go ($ pattern)
   where
-    go _ "" = pure 1
-    go rgo p =
-      fmap sum
-        $ traverse rgo
-        $ catMaybes [Text.stripPrefix t p | t <- Set.toList towels]
+    go _ ""  = pure 1
+    go rgo p = fmap sum $ traverse rgo $ mapMaybe (`Text.stripPrefix` p) towels
 
-mapTowels :: Set Text -> [Text] -> [Int]
-mapTowels towels = map $ allCreates towels
+mapTowels :: [Text] -> [Text] -> [Int]
+mapTowels = map . allCreates
 
 part1 :: Input -> Int
 part1 = uncurry $ countIf (/= 0) .: mapTowels
