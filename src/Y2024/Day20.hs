@@ -2,12 +2,13 @@ module Y2024.Day20
   ( tasks
   ) where
 
-import qualified Data.Map  as Map
-import qualified Data.Set  as Set
-import qualified Data.Text as Text
+import qualified Data.Map   as Map
+import qualified Data.Set   as Set
+import qualified Data.Text  as Text
 
 import           AOC
 import           Grid
+import           Grid.Pixel
 import           Path
 import           Utils
 
@@ -16,6 +17,11 @@ data Item
   | Start
   | End
   deriving (Eq, Ord, Show, Enum, Bounded)
+
+itemPixel :: Item -> Pixel
+itemPixel Wall  = defaultPixel '#'
+itemPixel Start = defaultPixel 'O'
+itemPixel End   = defaultPixel 'X'
 
 instance GridItem Item where
   showInGrid Wall  = '#'
@@ -31,7 +37,7 @@ isExample :: Grid -> Bool
 isExample g =
   let (p1, p2) = boundsG g
       sz = 14
-   in traceShowId (p2 `pointMinus` p1) == Position2 sz sz
+   in p2 `pointMinus` p1 == Position2 sz sz
 
 gStart :: Grid -> Position2
 gStart = mapFindValueE "gStart" (== Start)
@@ -43,60 +49,51 @@ gMoves :: Grid -> Position2 -> [Position2]
 gMoves g p =
   filter (\p' -> Map.lookup p' g /= Just Wall) [walk d p | d <- allDir4]
 
-noCheats :: Grid -> Int
-noCheats g =
-  length
-    $ fromJustE "noCheats a*"
-    $ aStarDepthGoal (gMoves g) (manhattanDistance $ gEnd g)
-    $ gStart g
+gPath :: Grid -> [Position2]
+gPath =
+  fromJustE "gPath a*"
+    <$> (aStarDepthGoal <$> gMoves <*> (manhattanDistance . gEnd) <*> gStart)
 
--- walking from start and end simultaneously
-data Cheater = Cheater
-  { cFwd :: Position2
-  , cRev :: Position2
-  } deriving (Ord, Eq, Show)
-
-instance Hashable Cheater where
-  hashWithSalt s (Cheater a b) = hashWithSalt s (a, b)
-
-cMk :: Grid -> Cheater
-cMk = Cheater <$> gStart <*> gEnd
-
-cWin :: Forbidden -> Grid -> Cheater -> Bool
-cWin f g c = manhattanDistance (cFwd c) (cRev c) == 2 && Set.notMember c f
-
-cEstimate :: Cheater -> Int
-cEstimate = manhattanDistance <$> cFwd <*> cRev
-
-type Forbidden = Set Cheater
-
-cMoves :: Grid -> Cheater -> [Cheater]
-cMoves g (Cheater a b) =
-  (Cheater <$> gMoves g a <*> pure b) <|> (Cheater a <$> gMoves g b)
-
-withCheats :: Forbidden -> Grid -> Maybe (Int, Cheater) -- returns length and cheat position
-withCheats f g = do
-  path <- aStarDepth (cMoves g) cEstimate (cWin f g) (cMk g)
-  pure (length path + 2, lastE "withCheats last" path)
+singleLinePath :: Grid -> Map Position2 Int
+singleLinePath g
+  | totalSize == walls + pathLength = Map.fromList $ zip p [0 ..]
+  | otherwise =
+    error
+      $ "Not a single path: walls="
+          <> show walls
+          <> " pathLength="
+          <> show pathLength
+          <> " totalSize="
+          <> show totalSize
+  where
+    p = gStart g : gPath g
+    totalSize =
+      let (Position2 x1 y1, Position2 x2 y2) = boundsG g
+       in (x2 - x1 + 1) * (y2 - y1 + 1)
+    walls = length g - 2
+    pathLength = length p
 
 part1 :: Grid -> Int
-part1 g = go Set.empty
+part1 g = length $ traceShowId $ sort cheats
   where
-    noCheatTime = noCheats g
-    isE = isExample g
+    isE = isExample $ lbtraceF (displayPixels' itemPixel mempty) g
     cutoff =
       if isE
         then 1
         else 100
-    go :: Forbidden -> Int
-    go f =
-      case withCheats f g of
-        Just (time, cheat) ->
-          let saved = noCheatTime - time
-           in if saved < cutoff
-                then traceShow ("cut", saved) 0
-                else traceShow ("cnt", saved, cheat) $ succ $ go $ Set.insert cheat f
-        Nothing -> 0
+    p = singleLinePath g
+    cheats = do
+      (p1, i1) <- Map.toList p
+      (p2, i2) <- Map.toList p
+      guard $ manhattanDistance p1 p2 == 2
+      guard $ i1 < i2
+      let saved = i2 - i1 - 2
+      (if isE
+         then traceShowM
+         else const (pure ()))
+        (saved, p1, i1, p2, i2)
+      guard $ saved >= cutoff
+      pure saved
 
 tasks =
   Tasks
@@ -104,8 +101,4 @@ tasks =
     20
     (CodeBlock 0)
     parser
-    [ AssertExample "no cheats" 84 noCheats
-    , task part1 (14 + 14 + 2 + 4 + 2 + 3 + 1 + 1 + 1 + 1 + 1)
-        & taskPart 1
-        & taskTimeout 900
-    ]
+    [task part1 (14 + 14 + 2 + 4 + 2 + 3 + 1 + 1 + 1 + 1 + 1) & taskPart 1]
