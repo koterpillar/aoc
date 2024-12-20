@@ -39,76 +39,45 @@ gStart = mapFindValueE "gStart" (== Start)
 gEnd :: Grid -> Position2
 gEnd = mapFindValueE "gEnd" (== End)
 
+gMoves :: Grid -> Position2 -> [Position2]
+gMoves g p =
+  filter (\p' -> Map.lookup p' g /= Just Wall) [walk d p | d <- allDir4]
+
 noCheats :: Grid -> Int
 noCheats g =
   length
     $ fromJustE "noCheats a*"
-    $ aStarDepthGoal moves (manhattanDistance $ gEnd g)
+    $ aStarDepthGoal (gMoves g) (manhattanDistance $ gEnd g)
     $ gStart g
-  where
-    moves p =
-      filter (\p' -> Map.lookup p' g /= Just Wall) [walk d p | d <- allDir4]
 
+-- walking from start and end simultaneously
 data Cheater = Cheater
-  { cP     :: Position2
-  , cStart :: Maybe Position2
-  , cEnd   :: Maybe Position2
+  { cFwd :: Position2
+  , cRev :: Position2
   } deriving (Ord, Eq, Show)
 
 instance Hashable Cheater where
-  hashWithSalt s (Cheater p a e) = hashWithSalt s (p, a, e)
+  hashWithSalt s (Cheater a b) = hashWithSalt s (a, b)
 
 cMk :: Grid -> Cheater
-cMk g = Cheater (gStart g) Nothing Nothing
+cMk = Cheater <$> gStart <*> gEnd
 
-cWin :: Grid -> Cheater -> Bool
-cWin g c = cP c == gEnd g
+cWin :: Forbidden -> Grid -> Cheater -> Bool
+cWin f g c = manhattanDistance (cFwd c) (cRev c) == 2 && Set.notMember c f
 
-cCost :: Cheater -> Cheater -> Int
-cCost = manhattanDistance `on` cP
+cEstimate :: Cheater -> Int
+cEstimate = manhattanDistance <$> cFwd <*> cRev
 
-cEstimate :: Grid -> Cheater -> Int
-cEstimate g c = distance + startBonus + endBonus
-  where
-    distance = manhattanDistance (cP c) (gEnd g)
-    startBonus
-      | isJust (cStart c) = -1
-      | otherwise = 0
-    endBonus
-      | isJust (cEnd c) = -1
-      | otherwise = 0
+type Forbidden = Set Cheater
 
-type Cheat = (Position2, Position2)
+cMoves :: Grid -> Cheater -> [Cheater]
+cMoves g (Cheater a b) =
+  (Cheater <$> gMoves g a <*> pure b) <|> (Cheater a <$> gMoves g b)
 
-type Forbidden = Set Cheat
-
-cMoves :: Forbidden -> Grid -> Cheater -> [Cheater]
-cMoves f g c
-  | isJust (cEnd c) = plain -- already used
-  | isJust (cStart c) = filter stillAllowed $ map setEnd plain -- get out of the wall and record
-  | otherwise = plain ++ map setStart (filter (not . isFree . cP) around) -- get into the wall
-  where
-    around = [c {cP = walk d (cP c)} | d <- allDir4]
-    plain = filter (isFree . cP) around
-    isFree p = Map.lookup p g /= Just Wall
-    setStart c' = c' {cStart = Just $ cP c'}
-    setEnd c' = c' {cEnd = Just $ cP c'}
-    stillAllowed c' =
-      Set.notMember
-        ( fromJustE "stillAllowedStart" $ cStart c'
-        , fromJustE "stillAllowedEnd" $ cEnd c')
-        f
-
-withCheats :: Forbidden -> Grid -> (Int, Maybe Cheat) -- returns length and cheat position
-withCheats f g = (length path, cheat)
-  where
-    path =
-      fromJustE "withCheats a*" $ aStar (cMoves f g) cCost (cEstimate g) (cWin g) (cMk g)
-    cheat = do
-      c <- find (\c -> isJust (cStart c) && isJust (cEnd c)) path
-      (,) <$> cStart c <*> cEnd c
-    moves (p, 0) =
-      filter (\p' -> Map.lookup p' g /= Just Wall) [walk d p | d <- allDir4]
+withCheats :: Forbidden -> Grid -> Maybe (Int, Cheater) -- returns length and cheat position
+withCheats f g = do
+  path <- aStarDepth (cMoves g) cEstimate (cWin f g) (cMk g)
+  pure (length path + 2, lastE "withCheats last" path)
 
 part1 :: Grid -> Int
 part1 g = go Set.empty
@@ -121,14 +90,13 @@ part1 g = go Set.empty
         else 100
     go :: Forbidden -> Int
     go f =
-      let (time, cheat) = withCheats f g
-          saved = noCheatTime - time
-       in if saved < cutoff
-            then 0
-            else case cheat of
-                   Nothing -> traceShow ("end", saved) 0
-                   Just c ->
-                     traceShow ("cnt", saved) $ succ $ go $ Set.insert c f
+      case withCheats f g of
+        Just (time, cheat) ->
+          let saved = noCheatTime - time
+           in if saved < cutoff
+                then traceShow ("cut", saved) 0
+                else traceShow ("cnt", saved, cheat) $ succ $ go $ Set.insert cheat f
+        Nothing -> 0
 
 tasks =
   Tasks
