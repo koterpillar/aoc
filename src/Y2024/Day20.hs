@@ -73,21 +73,27 @@ singleLinePath g
     walls = length g - 2
     pathLength = length p
 
-part1 :: Grid -> Int
-part1 g = length $ traceShowId $ sort cheats
+part :: Int -> Int -> Grid -> Int
+part cheatLength exampleCutoff g =
+  length
+    $ (if isE
+         then traceShowId
+         else id)
+    $ sort cheats
   where
     isE = isExample $ lbtraceF (displayPixels' itemPixel mempty) g
     cutoff =
       if isE
-        then 1
+        then exampleCutoff
         else 100
     p = singleLinePath g
     cheats = do
       (p1, i1) <- Map.toList p
       (p2, i2) <- Map.toList p
-      guard $ manhattanDistance p1 p2 == 2
+      let d = manhattanDistance p1 p2
+      guard $ d <= cheatLength
       guard $ i1 < i2
-      let saved = i2 - i1 - 2
+      let saved = i2 - i1 - d
       (if isE
          then traceShowM
          else const (pure ()))
@@ -95,10 +101,21 @@ part1 g = length $ traceShowId $ sort cheats
       guard $ saved >= cutoff
       pure saved
 
+part1 :: Grid -> Int
+part1 = part 2 1
+
+part2 :: Grid -> Int
+part2 = part 20 50
+
 tasks =
   Tasks
     2024
     20
     (CodeBlock 0)
     parser
-    [task part1 (14 + 14 + 2 + 4 + 2 + 3 + 1 + 1 + 1 + 1 + 1) & taskPart 1]
+    [ task part1 (14 + 14 + 2 + 4 + 2 + 3 + 1 + 1 + 1 + 1 + 1) & taskPart 1
+    , task
+        part2
+        (32 + 31 + 29 + 39 + 25 + 23 + 20 + 19 + 12 + 14 + 12 + 22 + 4 + 3)
+        & taskPart 2
+    ]
