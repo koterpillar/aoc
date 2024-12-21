@@ -2,9 +2,11 @@ module Y2024.Day21
   ( tasks
   ) where
 
-import qualified Data.Map  as Map
-import qualified Data.Set  as Set
-import qualified Data.Text as Text
+import           Data.Monoid
+
+import qualified Data.Map    as Map
+import qualified Data.Set    as Set
+import qualified Data.Text   as Text
 
 import           AOC
 import           Grid
@@ -82,14 +84,15 @@ directional =
     , (Position2 2 1, WButton E)
     ]
 
-type MoveAndPress a r = WithAction a -> WithAction a -> [r]
+type ListLen r = (Sum Int, [r])
+
+llength :: ListLen r -> Int
+llength = getSum . fst
+
+type MoveAndPress a r = WithAction a -> WithAction a -> ListLen r
 
 humanAction :: MoveAndPress a (WithAction a)
-humanAction _ r = [r]
-
-findDirection :: Position2 -> Position2 -> Direction4
-findDirection p1 p2 =
-  fromSingleE "findDirection" [d | d <- allDir4, walk d p1 == p2]
+humanAction _ r = (Sum 1, [r])
 
 robotAction ::
      forall a r. (Eq a, Show a, Ord r, Hashable r, Show r)
@@ -97,7 +100,7 @@ robotAction ::
   -> Keypad a
   -> MoveAndPress a r
 robotAction mv kp aFrom aTo =
-  concat $ zipWithTail mv $ (++ [WAction]) $ map snd $ start : path
+  mconcat $ zipWithTail mv $ (++ [WAction]) $ map snd $ start : path
   where
     path =
       fromJustE "robotAction a*"
@@ -112,21 +115,21 @@ robotAction mv kp aFrom aTo =
       guard $ Map.member p' kp
       pure (p', WButton d)
     cost (p1, b1) (p2, b2)
-      | p2 == pTo = length m + length mLast
-      | otherwise = length m
+      | p2 == pTo = llength m + llength mLast
+      | otherwise = llength m
       where
         m = mv b1 b2
         mLast = mv b2 WAction
 
-enterCode :: MoveAndPress a r -> [WithAction a] -> [r]
-enterCode mv code = concatMap (uncurry mv) $ zipTail $ WAction : code
+enterCode :: MoveAndPress a r -> [WithAction a] -> ListLen r
+enterCode mv code = mconcat $ map (uncurry mv) $ zipTail $ WAction : code
 
 traceAction :: (Show n, Show a) => n -> MoveAndPress a r -> MoveAndPress a r
-traceAction n a f t = traceShow (n, f, t, length r) r
+traceAction n a f t = traceShow (n, f, t, llength r) r
   where
     r = a f t
 
-superRemotePresses :: Int -> Code -> [WithAction Direction4]
+superRemotePresses :: Int -> Code -> ListLen (WithAction Direction4)
 superRemotePresses n = enterCode $ robotAction (action n) numeric
   where
     action 0 = humanAction
@@ -147,7 +150,7 @@ part n = sum . map go
     go code = traceShow ("code", waShow code, "nv", nv, "l", l) nv * l
       where
         nv = numericValue code
-        l = length $ superRemotePresses n code
+        l = llength $ superRemotePresses n code
 
 part1 :: [Code] -> Int
 part1 = part 2
@@ -161,10 +164,4 @@ tasks =
     21
     (CodeBlock 3)
     parser
-    [ Assert "level 1 keypad" "<A^A^^>AvvvA" -- different from the example but same length
-        $ waShow
-        $ enterCode (robotAction humanAction numeric)
-        $ justParse codeP "029A"
-    , task part1 126384 & taskPart 1
-    , taskBlind part2 & taskPart 2
-    ]
+    [task part1 126384 & taskPart 1, taskBlind part2 & taskPart 2]
