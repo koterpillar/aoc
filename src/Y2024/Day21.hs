@@ -28,6 +28,16 @@ data WithAction button
   | WAction
   deriving (Ord, Eq, Show)
 
+instance Enum button => Enum (WithAction button) where
+  toEnum 0 = WAction
+  toEnum n = WButton $ toEnum $ pred n
+  fromEnum WAction     = 0
+  fromEnum (WButton b) = succ $ fromEnum b
+
+instance Bounded button => Bounded (WithAction button) where
+  minBound = WAction
+  maxBound = WButton maxBound
+
 instance GridItem a => GridItem (WithAction a) where
   showInGrid (WButton a) = showInGrid a
   showInGrid WAction     = 'A'
@@ -82,7 +92,7 @@ findDirection p1 p2 =
   fromSingleE "findDirection" [d | d <- allDir4, walk d p1 == p2]
 
 robotAction ::
-     forall a r. (Eq a, Ord r, Hashable r, Show r)
+     forall a r. (Eq a, Show a, Ord r, Hashable r, Show r)
   => MoveAndPress Direction4 r
   -> Keypad a
   -> MoveAndPress a r
@@ -111,11 +121,17 @@ robotAction mv kp aFrom aTo =
 enterCode :: MoveAndPress a r -> [WithAction a] -> [r]
 enterCode mv code = concatMap (uncurry mv) $ zipTail $ WAction : code
 
+traceAction :: (Show n, Show a) => n -> MoveAndPress a r -> MoveAndPress a r
+traceAction n a f t = traceShow (n, f, t, length r) r
+  where
+    r = a f t
+
 superRemotePresses :: Int -> Code -> [WithAction Direction4]
 superRemotePresses n = enterCode $ robotAction (action n) numeric
   where
     action 0 = humanAction
-    action n = robotAction (action $ pred n) directional
+    action n =
+      robotAction (mapMemo2 $ traceAction n $ action $ pred n) directional
 
 numericValue :: Code -> Int
 numericValue =
