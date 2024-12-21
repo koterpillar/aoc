@@ -8,6 +8,7 @@ import qualified Data.Text as Text
 
 import           AOC
 import           Grid
+import           Memo
 import           Path
 import           Utils
 
@@ -81,24 +82,16 @@ findDirection p1 p2 =
   fromSingleE "findDirection" [d | d <- allDir4, walk d p1 == p2]
 
 robotAction ::
-     forall a r. (Eq a, Ord r, Hashable r)
+     forall a r. (Eq a, Ord r, Hashable r, Show r)
   => MoveAndPress Direction4 r
   -> Keypad a
   -> MoveAndPress a r
 robotAction mv kp aFrom aTo =
-  concat
-    $ zipWithTail mv
-    $ (++ [WAction])
-    $ map snd
-    $ start : path
+  concat $ zipWithTail mv $ (++ [WAction]) $ map snd $ start : path
   where
     path =
       fromJustE "robotAction a*"
-        $ aStarGoal
-            moves
-            (length .: mv `on` snd)
-            (manhattanDistance pTo . fst)
-            start
+        $ aStarGoal moves cost (manhattanDistance pTo . fst) start
     kpRev v = mapFindValueE "robotAction kpRev" (== v) kp
     pFrom = mapFindValueE "robotAction aFrom" (== aFrom) kp
     pTo = mapFindValueE "robotAction aTo" (== aTo) kp
@@ -108,16 +101,21 @@ robotAction mv kp aFrom aTo =
       let p' = walk d p
       guard $ Map.member p' kp
       pure (p', WButton d)
+    cost (p1, b1) (p2, b2)
+      | p2 == pTo = length m + length mLast
+      | otherwise = length m
+      where
+        m = mv b1 b2
+        mLast = mv b2 WAction
 
 enterCode :: MoveAndPress a r -> [WithAction a] -> [r]
 enterCode mv code = concatMap (uncurry mv) $ zipTail $ WAction : code
 
-superRemotePresses :: Code -> [WithAction Direction4]
-superRemotePresses =
-  enterCode
-    (robotAction
-       (robotAction (robotAction humanAction directional) directional)
-       numeric)
+superRemotePresses :: Int -> Code -> [WithAction Direction4]
+superRemotePresses n = enterCode $ robotAction (action n) numeric
+  where
+    action 0 = humanAction
+    action n = robotAction (action $ pred n) directional
 
 numericValue :: Code -> Int
 numericValue =
@@ -127,13 +125,19 @@ numericValue =
            WButton n -> Just $ head $ show n
            _ -> Nothing)
 
-part1 :: [Code] -> Int
-part1 = sum . map go
+part :: Int -> [Code] -> Int
+part n = sum . map go
   where
     go code = traceShow ("code", waShow code, "nv", nv, "l", l) nv * l
       where
         nv = numericValue code
-        l = length $ superRemotePresses code
+        l = length $ superRemotePresses n code
+
+part1 :: [Code] -> Int
+part1 = part 2
+
+part2 :: [Code] -> Int
+part2 = part 25
 
 tasks =
   Tasks
@@ -146,4 +150,5 @@ tasks =
         $ enterCode (robotAction humanAction numeric)
         $ justParse codeP "029A"
     , task part1 126384 & taskPart 1
+    , taskBlind part2 & taskPart 2
     ]
