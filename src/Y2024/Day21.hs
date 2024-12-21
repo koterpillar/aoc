@@ -105,7 +105,6 @@ robotAction mv kp aFrom aTo =
     path =
       fromJustE "robotAction a*"
         $ aStarGoal moves cost (manhattanDistance pTo . fst) start
-    kpRev v = mapFindValueE "robotAction kpRev" (== v) kp
     pFrom = mapFindValueE "robotAction aFrom" (== aFrom) kp
     pTo = mapFindValueE "robotAction aTo" (== aTo) kp
     start = (pFrom, WAction)
@@ -115,7 +114,7 @@ robotAction mv kp aFrom aTo =
       guard $ Map.member p' kp
       pure (p', WButton d)
     cost (p1, b1) (p2, b2)
-      | p2 == pTo = llength m + llength mLast
+      | p2 == pTo = llength $ m <> mLast
       | otherwise = llength m
       where
         m = mv b1 b2
@@ -164,4 +163,11 @@ tasks =
     21
     (CodeBlock 3)
     parser
-    [task part1 126384 & taskPart 1, taskBlind part2 & taskPart 2]
+    [ Assert "level 1 keypad" "<A^A^^>AvvvA" -- different from the example but same length
+        $ waShow
+        $ snd
+        $ enterCode (robotAction humanAction numeric)
+        $ justParse codeP "029A"
+    , task part1 126384 & taskPart 1
+    , taskBlind part2 & taskPart 2
+    ]
