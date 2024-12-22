@@ -33,7 +33,36 @@ nextSecret s =
     modify $ mix c
     modify prune
 
-part1 :: [Int] -> Int
-part1 = sum . map (iterateNL 2000 nextSecret)
+price :: Int -> Int
+price s = s `mod` 10
 
-tasks = Tasks 2024 22 (CodeBlock 1) parser [task part1 37327623 & taskPart 1]
+secretSequence :: Int -> [Int]
+secretSequence = iterateN 2000 nextSecret
+
+part1 :: [Int] -> Int
+part1 = sum . map (last . secretSequence)
+
+earnings :: [Int] -> Map [Int] Int
+earnings ss =
+  Map.fromList $ do
+    ps' <- reverse $ tails ss
+    guard $ length ps' >= 5
+    let ps = take 5 ps'
+    let changes = zipWithTail subtract ps
+    pure (changes, last ps)
+
+part2 :: [Int] -> Int
+part2 ss = maximum es
+  where
+    ess = map (earnings . map price . secretSequence) ss
+    es = foldl1 (Map.unionWith (+)) ess
+
+tasks =
+  Tasks
+    2024
+    22
+    (CodeBlock 1)
+    parser
+    [ task part1 37327623 & taskPart 1
+    , task part2 23 & taskPart 2 & taskScraper (CodeBlock 5)
+    ]
