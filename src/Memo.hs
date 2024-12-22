@@ -7,7 +7,9 @@ module Memo
   , unsafeMemo3
   , stateMemo
   , stateMemo2
+  , mapMemo
   , mapMemo2
+  , mapMemo3
   ) where
 
 import           Control.Monad.State
@@ -75,10 +77,31 @@ stateMemo2 ::
   -> r
 stateMemo2 fn cont = stateMemo (uncurry . fn . curry) (cont . curry)
 
-mapMemo2 :: (Hashable a, Enum a, Bounded a, Hashable b, Enum b, Bounded b) => (a -> b -> c) -> a -> b -> c
+type HEB a = (Hashable a, Enum a, Bounded a)
+
+mapMemo :: HEB a => (a -> b) -> a -> b
+mapMemo f = fromJustE "mapMemo" . flip HashMap.lookup m
+  where
+    m =
+      HashMap.fromList $ do
+        a <- [minBound .. maxBound]
+        pure (a, f a)
+
+mapMemo2 :: (HEB a, HEB b) => (a -> b -> c) -> a -> b -> c
 mapMemo2 f = curry $ fromJustE "mapMemo2" . flip HashMap.lookup m
   where
-    m = HashMap.fromList $ do
-      a <- [minBound .. maxBound]
-      b <- [minBound .. maxBound]
-      pure ((a, b), f a b)
+    m =
+      HashMap.fromList $ do
+        a <- [minBound .. maxBound]
+        b <- [minBound .. maxBound]
+        pure ((a, b), f a b)
+
+mapMemo3 :: (HEB a, HEB b, HEB c) => (a -> b -> c -> d) -> a -> b -> c -> d
+mapMemo3 f = curry3 $ fromJustE "mapMemo3" . flip HashMap.lookup m
+  where
+    m =
+      HashMap.fromList $ do
+        a <- [minBound .. maxBound]
+        b <- [minBound .. maxBound]
+        c <- [minBound .. maxBound]
+        pure ((a, b, c), f a b c)
