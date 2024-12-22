@@ -3,12 +3,16 @@ module Y2024.Day22
   ) where
 
 import           Control.Monad.State
+import           Control.Parallel.Strategies (parMap, rpar)
 
 import           Data.Bits
 
-import qualified Data.Map            as Map
-import qualified Data.Set            as Set
-import qualified Data.Text           as Text
+import           Data.HashMap.Strict         (HashMap)
+import qualified Data.HashMap.Strict         as HashMap
+
+import qualified Data.Map                    as Map
+import qualified Data.Set                    as Set
+import qualified Data.Text                   as Text
 
 import           AOC
 import           Utils
@@ -42,9 +46,9 @@ secretSequence = iterateN 2000 nextSecret
 part1 :: [Int] -> Int
 part1 = sum . map (last . secretSequence)
 
-earnings :: [Int] -> Map [Int] Int
+earnings :: [Int] -> HashMap [Int] Int
 earnings ss =
-  Map.fromList $ do
+  HashMap.fromList $ do
     ps' <- reverse $ tails ss
     guard $ length ps' >= 5
     let ps = take 5 ps'
@@ -54,8 +58,8 @@ earnings ss =
 part2 :: [Int] -> Int
 part2 ss = maximum es
   where
-    ess = map (earnings . map price . secretSequence) ss
-    es = foldl1 (Map.unionWith (+)) ess
+    ess = parMap rpar (earnings . map price . secretSequence) ss
+    es = foldl1 (HashMap.unionWith (+)) ess
 
 tasks =
   Tasks
