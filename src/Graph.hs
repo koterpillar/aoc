@@ -51,23 +51,6 @@ connectedComponents graph = go (vertices graph)
             component = reachableFrom candidate graph
          in component : go (candidates `setDifference` component)
 
--- FIXME: Are all possible SCCs found?
--- Counterexample: wrapped-around grid with each vertex connected to its 8 neighbors.
-stronglyConnectedComponents ::
-     forall v. Ord v
-  => Graph v
-  -> [Set v]
-stronglyConnectedComponents g =
-  nubOrd [go (Set.singleton a) as | (a, as) <- picks $ Map.keys g]
-  where
-    go :: Set v -> [v] -> Set v
-    go as [] = as
-    go as (v:vs) = go as' vs
-      where
-        as'
-          | all (\a -> isNeighbor v a g) as = Set.insert v as
-          | otherwise = as
-
 dot :: (v -> Text) -> Graph v -> Text
 dot fmt =
   header . map (uncurry edge) . filter (not . Set.null . snd) . Map.toList

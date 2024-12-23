@@ -39,7 +39,16 @@ part1 = countIf hasCH . triads
 
 part2 :: Input -> Text
 part2 =
-  Text.intercalate "," . toList . maximumOn length . stronglyConnectedComponents
+  Text.intercalate "," . toList . maximumOn length . brokenCliques
+
+-- Not all possible cliques are found, see https://en.wikipedia.org/wiki/Clique_problem
+brokenCliques :: Ord v => Graph v -> [Set v]
+brokenCliques g =
+  nubOrd [foldr go (Set.singleton a) as | (a, as) <- picks $ Map.keys g]
+  where
+    go v as
+      | all (\a -> isNeighbor v a g) as = Set.insert v as
+      | otherwise = as
 
 tasks =
   Tasks
