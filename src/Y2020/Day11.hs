@@ -3,7 +3,6 @@ module Y2020.Day11
   ) where
 
 import           AOC
-import           Graph
 import           Grid
 import           Utils
 
