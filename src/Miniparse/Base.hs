@@ -169,8 +169,11 @@ dotP = choiceEBP ".#"
 dotsP :: Parser Text [Bool]
 dotsP = charactersP &** dotP
 
+bitP :: Parser Char Bit
+bitP = choiceEBP "01"
+
 bitsP :: Parser Text BitString
-bitsP = charactersP &** choiceEBP ['0', '1']
+bitsP = charactersP &** bitP
 
 jsonP :: Aeson.FromJSON a => Parser Text a
 jsonP = pureP Text.encodeUtf8 &* Parser Aeson.eitherDecodeStrict'
