@@ -160,7 +160,7 @@ maCleanup ma
   | Set.null unreachable = ma
   | otherwise = maCleanup $ maDelete unreachable ma
   where
-    unreachable = unreachableFrom target2 $ reverseGraph $ maGraph ma
+    unreachable = unreachableFrom1 target2 $ reverseGraph $ maGraph ma
 
 maDelete :: Set MKey -> Machine -> Machine
 maDelete ks ma =

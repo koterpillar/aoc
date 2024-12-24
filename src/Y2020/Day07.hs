@@ -43,7 +43,7 @@ shinyGold = "shiny gold"
 
 findContainers :: Rules -> Int
 findContainers =
-  pred . length . reachableFrom shinyGold . reverseGraph . mkGraph
+  pred . length . reachableFrom1 shinyGold . reverseGraph . mkGraph
 
 findCost :: Rules -> Int
 findCost rules = pred $ findCost' rules shinyGold

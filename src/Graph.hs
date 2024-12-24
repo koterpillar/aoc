@@ -32,13 +32,19 @@ bidirectional :: Ord v => Graph v -> Graph v
 bidirectional graph =
   mapFromListS $ Map.toList graph <> Map.toList (reverseGraph graph)
 
-reachableFrom :: Ord v => v -> Graph v -> Set v
-reachableFrom v graph = iterateSettleL (`vicinity` graph) (set1 v)
+reachableFrom1 :: Ord v => v -> Graph v -> Set v
+reachableFrom1 = reachableFrom . set1
+
+reachableFrom :: Ord v => Set v -> Graph v -> Set v
+reachableFrom v graph = iterateSettleL (`vicinity` graph) v
 
 vertices :: Graph v -> Set v
 vertices = Map.keysSet
 
-unreachableFrom :: Ord v => v -> Graph v -> Set v
+unreachableFrom1 :: Ord v => v -> Graph v -> Set v
+unreachableFrom1 = unreachableFrom . set1
+
+unreachableFrom :: Ord v => Set v -> Graph v -> Set v
 unreachableFrom v graph = vertices graph `setDifference` reachableFrom v graph
 
 connectedComponents :: Ord v => Graph v -> [Set v]
@@ -48,7 +54,7 @@ connectedComponents graph = go (vertices graph)
       | null candidates = []
       | otherwise =
         let candidate = head $ toList candidates
-            component = reachableFrom candidate graph
+            component = reachableFrom1 candidate graph
          in component : go (candidates `setDifference` component)
 
 dot :: (v -> Text) -> Graph v -> Text
