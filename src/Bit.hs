@@ -18,6 +18,19 @@ boolToBit True  = I
 bitInvert :: Bit -> Bit
 bitInvert = boolToBit . not . bitToBool
 
+bitAnd :: Bit -> Bit -> Bit
+bitAnd O _ = O
+bitAnd _ O = O
+bitAnd _ _ = I
+
+bitOr :: Bit -> Bit -> Bit
+bitOr I _ = I
+bitOr _ I = I
+bitOr _ _ = O
+
+bitXor :: Bit -> Bit -> Bit
+bitXor a b = boolToBit $ a /= b
+
 type BitString = [Bit]
 
 bitsValue :: BitString -> Int
