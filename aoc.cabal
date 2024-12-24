@@ -170,6 +170,7 @@ library
       Y2024.Day21
       Y2024.Day22
       Y2024.Day23
+      Y2024.Day24
   other-modules:
       Paths_aoc
   hs-source-dirs:
