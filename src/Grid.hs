@@ -6,10 +6,10 @@ module Grid
   , pixelCheckerSize
   ) where
 
-import           Data.Hashable   (Hashable (..))
+import           Data.Hashable (Hashable (..))
 
-import qualified Data.Map        as Map
-import qualified Data.Text       as Text
+import qualified Data.Map      as Map
+import qualified Data.Text     as Text
 
 import           Grid.Pixel
 import           Utils
@@ -17,10 +17,9 @@ import           Utils
 data Position2 = Position2
   { pX :: !Int
   , pY :: !Int
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Ord, Show, Generic)
 
-instance Hashable Position2 where
-  hashWithSalt s (Position2 x y) = hashWithSalt s (x, y)
+instance Hashable Position2
 
 instance Semigroup Position2 where
   Position2 x1 y1 <> Position2 x2 y2 = Position2 (x1 + x2) (y1 + y2)
@@ -121,18 +120,19 @@ displayG' fn =
 displayPixels :: GridItem a => PixelDisplayOptions -> Grid2 a -> LazyByteString
 displayPixels = displayPixels' showPixel
 
-displayPixels' :: (a -> Pixel) -> PixelDisplayOptions -> Grid2 a -> LazyByteString
-displayPixels' fn opts = kittyDisplay opts . map (map (maybe bgPixel fn)) . toMatrixG
+displayPixels' ::
+     (a -> Pixel) -> PixelDisplayOptions -> Grid2 a -> LazyByteString
+displayPixels' fn opts =
+  kittyDisplay opts . map (map (maybe bgPixel fn)) . toMatrixG
 
 data Direction4
   = E
   | N
   | W
   | S
-  deriving (Enum, Eq, Ord, Show, Bounded)
+  deriving (Enum, Eq, Ord, Show, Bounded, Generic)
 
-instance Hashable Direction4 where
-  hashWithSalt s = hashWithSalt s . fromEnum
+instance Hashable Direction4
 
 allDir4 :: [Direction4]
 allDir4 = [minBound .. maxBound]
@@ -157,10 +157,9 @@ data Direction8
   | SW
   | S_
   | SE
-  deriving (Eq, Ord, Show, Bounded, Enum)
+  deriving (Eq, Ord, Show, Bounded, Enum, Generic)
 
-instance Hashable Direction8 where
-  hashWithSalt s = hashWithSalt s . fromEnum
+instance Hashable Direction8
 
 allDir8 :: [Direction8]
 allDir8 = [minBound .. maxBound]

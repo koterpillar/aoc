@@ -17,38 +17,31 @@ data Category
   | M
   | A
   | S
-  deriving (Ord, Eq, Show, Bounded, Enum)
+  deriving (Ord, Eq, Show, Bounded, Enum, Generic)
 
-instance Hashable Category where
-  hashWithSalt x = hashWithSalt x . fromEnum
+instance Hashable Category
 
 data Sign
   = LessThan
   | GreaterThan
-  deriving (Ord, Eq, Show, Bounded, Enum)
+  deriving (Ord, Eq, Show, Bounded, Enum, Generic)
 
-instance Hashable Sign where
-  hashWithSalt x = hashWithSalt x . fromEnum
+instance Hashable Sign
 
 data Expr =
   Expr Category Sign Int
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq, Show, Generic)
 
-instance Hashable Expr where
-  hashWithSalt x (Expr c s i) = hashWithSalt x (c, s, i)
+instance Hashable Expr
 
 data Workflow
   = Condition Expr Workflow
   | Goto Text
   | Accept
   | Reject
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq, Show, Generic)
 
-instance Hashable Workflow where
-  hashWithSalt x (Condition e w) = hashWithSalt x (1 :: Int, e, w)
-  hashWithSalt x (Goto i)        = hashWithSalt x (2 :: Int, i)
-  hashWithSalt x Accept          = hashWithSalt x (3 :: Int)
-  hashWithSalt x Reject          = hashWithSalt x (4 :: Int)
+instance Hashable Workflow
 
 type Workflows = Map Text [Workflow]
 

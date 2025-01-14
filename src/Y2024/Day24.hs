@@ -4,11 +4,9 @@ module Y2024.Day24
 
 import           Data.Bits
 
-import qualified Data.Map     as Map
-import qualified Data.Set     as Set
-import qualified Data.Text    as Text
-
-import           GHC.Generics
+import qualified Data.Map  as Map
+import qualified Data.Set  as Set
+import qualified Data.Text as Text
 
 import           AOC
 import           Bit

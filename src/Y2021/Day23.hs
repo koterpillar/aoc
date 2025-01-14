@@ -14,13 +14,12 @@ data Amphi
   | B
   | C
   | D
-  deriving (Ord, Eq, Bounded, Enum, Show)
+  deriving (Ord, Eq, Bounded, Enum, Show, Generic)
 
 amphis :: [Amphi]
 amphis = enumerate
 
-instance Hashable Amphi where
-  hashWithSalt s a = hashWithSalt s (show a)
+instance Hashable Amphi
 
 aEnergy :: Amphi -> Int
 aEnergy A = 1
@@ -32,10 +31,9 @@ data Situation = Situation
   { posHallway   :: !(Map Int Amphi)
   , posRooms     :: !(Map Amphi [Amphi])
   , posRoomDepth :: !Int
-  } deriving (Ord, Eq, Show)
+  } deriving (Ord, Eq, Show, Generic)
 
-instance Hashable Situation where
-  hashWithSalt s (Situation h r d) = hashWithSalt s (h, r, d)
+instance Hashable Situation
 
 hallwayX :: [Int]
 hallwayX = [1, 2, 4, 6, 8, 10, 11]

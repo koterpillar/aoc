@@ -1,4 +1,6 @@
-module Y2023.Day12 (tasks) where
+module Y2023.Day12
+  ( tasks
+  ) where
 
 import           Control.Monad.State
 
@@ -16,10 +18,9 @@ import           Utils
 data Pos
   = Y
   | Q
-  deriving (Eq, Ord, Show, Bounded, Enum)
+  deriving (Eq, Ord, Show, Bounded, Enum, Generic)
 
-instance Hashable Pos where
-  hashWithSalt s = hashWithSalt s . fromEnum
+instance Hashable Pos
 
 posShow :: Maybe Pos -> Char
 posShow (Just Y) = '#'
@@ -127,7 +128,6 @@ fallback2 :: (a -> b -> Maybe c) -> (a -> b -> c) -> (a -> b -> c)
 fallback2 heuristic slow a b = fromMaybe (slow a b) $ heuristic a b
 
 infixr 1 `fallback2`
-
 fallback2V ::
      (Eq c, Show a, Show b, Show c)
   => (a -> b -> Maybe c)
@@ -151,7 +151,6 @@ fallback2V heuristic slow a b =
                        <> show r'
 
 infixr 1 `fallback2V`
-
 possibilitiesCounts :: PFT Int
 possibilitiesCounts ps cs =
   fromMaybe 0

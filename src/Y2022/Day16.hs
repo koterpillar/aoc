@@ -16,10 +16,9 @@ import           Utils
 
 newtype VKey = VKey
   { unVKey :: Text
-  } deriving (Eq, Ord)
+  } deriving (Eq, Ord, Generic)
 
-instance Hashable VKey where
-  hashWithSalt s = hashWithSalt s . unVKey
+instance Hashable VKey
 
 vAA :: VKey
 vAA = VKey "AA"

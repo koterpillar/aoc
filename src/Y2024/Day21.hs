@@ -28,7 +28,7 @@ parser = linesP &** codeP
 data WithAction button
   = WButton button
   | WAction
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq, Show, Generic)
 
 instance Enum button => Enum (WithAction button) where
   toEnum 0 = WAction
@@ -51,8 +51,7 @@ waToMaybe WAction     = Nothing
 waShow :: GridItem a => [WithAction a] -> Text
 waShow = Text.pack . map showInGrid
 
-instance Hashable button => Hashable (WithAction button) where
-  hashWithSalt s = hashWithSalt s . waToMaybe
+instance Hashable button => Hashable (WithAction button)
 
 type Keypad button = Map Position2 (WithAction button)
 

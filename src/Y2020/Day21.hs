@@ -2,11 +2,9 @@ module Y2020.Day21
   ( tasks
   ) where
 
-import qualified Data.Map     as Map
-import qualified Data.Set     as Set
-import qualified Data.Text    as Text
-
-import           GHC.Generics (Generic)
+import qualified Data.Map  as Map
+import qualified Data.Set  as Set
+import qualified Data.Text as Text
 
 import           AOC
 import           Path
@@ -15,17 +13,15 @@ import           Utils
 
 newtype A = A
   { getA :: Text
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Ord, Show, Generic)
 
-instance Hashable A where
-  hashWithSalt s = hashWithSalt s . getA
+instance Hashable A
 
 newtype I = I
   { getI :: Text
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Ord, Show, Generic)
 
-instance Hashable I where
-  hashWithSalt s = hashWithSalt s . getI
+instance Hashable I
 
 type Food = (Set I, Set A)
 

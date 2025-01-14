@@ -29,10 +29,9 @@ parser = charGridP
 
 data Deer =
   Deer Position2 Direction4
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq, Show, Generic)
 
-instance Hashable Deer where
-  hashWithSalt s (Deer p d) = hashWithSalt s (p, d)
+instance Hashable Deer
 
 type Path = [Deer]
 

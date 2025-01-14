@@ -20,10 +20,9 @@ data St = St
   { stP :: Position2
   , stD :: Direction4
   , stL :: Int
-  } deriving (Ord, Eq, Show)
+  } deriving (Ord, Eq, Show, Generic)
 
-instance Hashable St where
-  hashWithSalt s (St p d l) = hashWithSalt s (p, d, l)
+instance Hashable St
 
 start :: St
 start = St (Position2 0 0) E 0

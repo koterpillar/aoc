@@ -14,6 +14,7 @@ module Utils
   , module Utils.Set
   , module Utils.Text
   , module Utils.Trace
+  , Generic
   , Map
   , Set
   , Text
@@ -89,6 +90,8 @@ import           Data.Text                 (Text)
 import           Data.Traversable          (for)
 
 import           Data.Tuple
+
+import           GHC.Generics              (Generic)
 
 import           Lens.Micro.Platform
 
