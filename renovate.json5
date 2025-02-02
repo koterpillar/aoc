@@ -1,0 +1,13 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "config:recommended",
+    "github>koterpillar/renovate-haskell:default.json5",
+  ],
+  packageRules: [
+    {
+      matchFileNames: ["Dockerfile"],
+      semanticCommitType: "fix",
+    },
+  ],
+}
