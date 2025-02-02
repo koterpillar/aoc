@@ -1,0 +1,17 @@
+name: CI
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build and test
+        uses: freckle/stack-action@v5
+        with:
+          stack-build-arguments: --fast --lock-file error-on-write
