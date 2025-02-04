@@ -4,6 +4,7 @@
     "config:recommended",
     "github>koterpillar/renovate-haskell:default.json5",
   ],
+  separateMultipleMajor: true,
   packageRules: [
     {
       matchFileNames: ["Dockerfile"],
