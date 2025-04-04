@@ -14,4 +14,5 @@ jobs:
       - name: Build and test
         uses: freckle/stack-action@v5
         with:
-          stack-build-arguments: --fast --lock-file error-on-write
+          stack-arguments: --lock-file error-on-write
+          stack-build-arguments: --fast
