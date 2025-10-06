@@ -13,7 +13,7 @@ packages:
     hackage: astar-0.3.0.0
 snapshots:
 - completed:
-    sha256: 95817c7fe8ae8ca6e8f4ecfd3e876b3edc4e5fbba9f8d8f757e87b484f9bfe6b
-    size: 726101
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/24/13.yaml
-  original: lts-24.13
+    sha256: d49e388e3afe59fe7a7be6d658e4ba4beec586e6237adab1e4a15b57c1d8a10f
+    size: 726104
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/24/14.yaml
+  original: lts-24.14
