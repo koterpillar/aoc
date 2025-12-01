@@ -10,10 +10,10 @@ import AOC
 import Utils
 
 parser :: Parser Text [Int]
-parser = linesP &** (charactersP &* unconsP &* fmap (uncurry (*)) (signP &= (pureP Text.pack &* integerP)))
+parser = linesP &** (tspanP isUpper &* fmap (uncurry (*)) (signP &= integerP))
   where
-    signP :: Parser Char Int
-    signP = choiceP [('L', -1), ('R', 1)]
+    signP :: Parser Text Int
+    signP = choiceP [("L", -1), ("R", 1)]
 
 part1 :: [Int] -> Int
 part1 = go 0 50
