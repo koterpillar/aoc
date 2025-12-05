@@ -28,7 +28,7 @@ oSrcRange :: Offset -> Ranges
 oSrcRange o = Ranges.singleton (oSrc o) (oSrc o + oLen o)
 
 oIntersect :: Offset -> Ranges -> Ranges
-oIntersect o = Ranges.fromList . go . Ranges.toList
+oIntersect o = Ranges.unsafeFromList . go . Ranges.toList
   where
     go [] = []
     go ((a, b):rs)
@@ -37,7 +37,7 @@ oIntersect o = Ranges.fromList . go . Ranges.toList
       | otherwise = (max a (oSrc o), min b (oSrc o + oLen o)) : go rs
 
 oShift :: Offset -> Ranges -> Ranges
-oShift o = Ranges.fromList . map shift . Ranges.toList
+oShift o = Ranges.unsafeFromList . map shift . Ranges.toList
   where
     shift (a, b) = (a + c, b + c)
     c = oDst o - oSrc o
