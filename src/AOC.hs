@@ -15,6 +15,7 @@ module AOC (
     module Miniparse,
 ) where
 
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.IO as Text
@@ -85,6 +86,9 @@ aocRequest' request = do
     response <- getResponseBody <$> httpBS request'
     pure $ Text.decodeUtf8 response
 
+fromMaybeIO :: IO a -> Maybe a -> IO a
+fromMaybeIO = flip maybe pure
+
 class CacheFileName a where
     cacheFileName :: a -> Text
 
@@ -112,8 +116,7 @@ withCacheFile' year day cacheKey action = do
     pure result
 
 withCacheFile :: (CacheFileName a) => Integer -> Int -> a -> IO Text -> IO Text
-withCacheFile year day cacheKey action =
-    withCacheFile' year day cacheKey $ maybe action pure
+withCacheFile year day cacheKey = withCacheFile' year day cacheKey . fromMaybeIO
 
 dropAfterAll :: Text -> Text -> [Text]
 dropAfterAll marker =
@@ -204,9 +207,7 @@ selectExample (InlineCode n) = indexE "inline code" n . inlineCode
 selectExample LastInlineCode = last . inlineCode
 selectExample (Inline text) = const text
 
-newtype Answer = Answer
-    { answerPart :: Int
-    }
+newtype Answer = Answer {answerPart :: Int}
     deriving (Eq, Ord, Show)
 
 instance CacheFileName Answer where
@@ -216,7 +217,7 @@ getAnswer :: Integer -> Int -> Answer -> IO (Maybe Text)
 getAnswer year day answer =
     discardEmpty <$> withCacheFile' year day answer fetchAnswer
   where
-    fetchAnswer = maybe fetchAnswer' pure . ((=<<) discardEmpty)
+    fetchAnswer = fromMaybeIO fetchAnswer' . ((=<<) discardEmpty)
     fetchAnswer' = do
         page <- aocRequest $ baseURL year day
         let as = answers page
@@ -225,6 +226,46 @@ getAnswer year day answer =
     discardEmpty t
         | Text.null t = Nothing
         | otherwise = Just t
+
+newtype Tried = Tried {triedPart :: Int}
+    deriving (Eq, Ord, Show)
+
+instance CacheFileName Tried where
+    cacheFileName (Tried part) = "tried-" <> tshow part
+
+submitAnswer :: Integer -> Int -> Answer -> Text -> IO ()
+submitAnswer year day (Answer part) result =
+    void $ withCacheFile' year day (Tried part) go
+  where
+    fromCache = maybe Set.empty (Set.fromList . Text.lines)
+    toCache = Text.unlines . Set.toList
+    go maybeTried = do
+        let tried = fromCache maybeTried
+        if Set.member result tried
+            then terror "Answer already tried."
+            else do
+                resp <- postAnswer
+                case resp of
+                    True -> pure $ toCache tried
+                    False -> pure $ toCache $ Set.insert result tried
+    postAnswer = do
+        request' <- parseRequestThrow (Text.unpack $ baseURL year day <> "/answer")
+        let request =
+                request'
+                    & setRequestBodyURLEncoded
+                        [ ("level", Text.encodeUtf8 $ tshow part)
+                        , ("answer", Text.encodeUtf8 result)
+                        ]
+        page <- aocRequest' request
+        if Text.isInfixOf "That's the right answer" page
+            then do
+                Text.putStrLn "Submitted OK"
+                pure True
+            else do
+                Text.putStrLn "Submitted KO"
+                Text.putStrLn page
+                -- FIXME: Error after this
+                pure False
 
 currentYear :: IO Integer
 currentYear = do
@@ -361,7 +402,7 @@ processTask year day globalScraper parser (Task' solve exampleAnswer taskScraper
     for_ part $ \part' -> do
         getAnswer year day (Answer part') >>= \case
             Just answer -> assertEqual ("Answer part " <> tshow part') answer (answerToText result)
-            Nothing -> pure ()
+            Nothing -> submitAnswer year day (Answer part') (answerToText result)
 processTask _ _ _ _ (Assert message expected actual) =
     assertEqual message expected actual
 processTask year day scraper parser (AssertExample message expected fn) = do
