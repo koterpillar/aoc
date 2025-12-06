@@ -210,10 +210,7 @@ getAnswer :: Integer -> Int -> Answer -> IO (Maybe Text)
 getAnswer year day answer =
   discardEmpty <$> withCacheFile' year day answer fetchAnswer
   where
-    fetchAnswer Nothing = fetchAnswer'
-    fetchAnswer (Just cached)
-      | Text.null cached = fetchAnswer'
-      | otherwise = pure cached
+    fetchAnswer = maybe fetchAnswer' pure . ((=<<) discardEmpty)
     fetchAnswer' = do
       page <- aocRequest $ baseURL year day
       let as = answers page
@@ -353,9 +350,9 @@ processTask year day globalScraper parser (Task' solve exampleAnswer taskScraper
   let result = solve input
   Text.putStrLn $ answerToText result
   for_ part $ \part' -> do
-    answer <- getAnswer year day $ Answer part'
-    for_ answer $ \answer' ->
-      assertEqual ("Answer part " <> tshow part') answer' (answerToText result)
+    getAnswer year day (Answer part') >>= \case
+      Just answer -> assertEqual ("Answer part " <> tshow part') answer (answerToText result)
+      Nothing -> pure ()
 processTask _ _ _ _ (Assert message expected actual) =
   assertEqual message expected actual
 processTask year day scraper parser (AssertExample message expected fn) = do
