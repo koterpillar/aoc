@@ -236,6 +236,9 @@ newtype Tried = Tried {triedPart :: Int}
 instance CacheFileName Tried where
     cacheFileName (Tried part) = "tried-" <> tshow part
 
+submissionResult :: Text -> Text
+submissionResult = dropBefore "</article>" . head . dropAfterAll "<article>"
+
 submitAnswer :: Integer -> Int -> Answer -> Text -> IO ()
 submitAnswer year day (Answer part) result =
     void $ withCacheFile' year day (Tried part) go
@@ -268,11 +271,12 @@ submitAnswer year day (Answer part) result =
                 if Text.isInfixOf "That's not the right answer" page
                     then do
                         Text.putStrLn "Submitted KO"
+                        Text.putStrLn $ submissionResult page
                         -- FIXME: Error after this
                         pure False
                     else do
                         Text.putStrLn "Unexpected response:"
-                        terror page
+                        terror $ submissionResult page
 
 currentYear :: IO Integer
 currentYear = do
