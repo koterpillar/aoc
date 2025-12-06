@@ -56,6 +56,9 @@ baseURL :: Integer -> Int -> Text
 baseURL year day =
     "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
 
+baseRequest :: Integer -> Int -> Text -> IO Request
+baseRequest year day path = parseRequestThrow $ Text.unpack $ baseURL year day <> path
+
 readIfExists :: Text -> IO (Maybe Text)
 readIfExists fileName = do
     let fileName' = Text.unpack fileName
@@ -74,8 +77,8 @@ addHeader name value request =
             (fromString name, Text.encodeUtf8 value) : requestHeaders request
         }
 
-aocRequest :: Text -> IO Text
-aocRequest url = parseRequestThrow (Text.unpack url) >>= aocRequest'
+aocRequest :: Integer -> Int -> Text -> IO Text
+aocRequest year day path = baseRequest year day path >>= aocRequest'
 
 aocRequest' :: Request -> IO Text
 aocRequest' request = do
@@ -185,7 +188,7 @@ instance CacheFileName ExampleScraper where
 getExample :: Integer -> Int -> ExampleScraper -> IO Text
 getExample year day scraper =
     withCacheFile year day scraper $ do
-        page <- aocRequest $ baseURL year day
+        page <- aocRequest year day ""
         pure $! selectExample scraper page
 
 showExamples :: Text -> Text
@@ -219,7 +222,7 @@ getAnswer year day answer =
   where
     fetchAnswer = fromMaybeIO fetchAnswer' . ((=<<) discardEmpty)
     fetchAnswer' = do
-        page <- aocRequest $ baseURL year day
+        page <- aocRequest year day ""
         let as = answers page
         let a = fromMaybe mempty $ as !? pred (answerPart answer)
         pure $! a
@@ -261,11 +264,15 @@ submitAnswer year day (Answer part) result =
             then do
                 Text.putStrLn "Submitted OK"
                 pure True
-            else do
-                Text.putStrLn "Submitted KO"
-                Text.putStrLn page
-                -- FIXME: Error after this
-                pure False
+            else
+                if Text.isInfixOf "That's not the right answer" page
+                    then do
+                        Text.putStrLn "Submitted KO"
+                        -- FIXME: Error after this
+                        pure False
+                    else do
+                        Text.putStrLn "Unexpected response:"
+                        terror page
 
 currentYear :: IO Integer
 currentYear = do
@@ -281,7 +288,7 @@ instance CacheFileName Input where
 
 getInput :: Integer -> Int -> IO Text
 getInput year day =
-    withCacheFile year day Input $ aocRequest $ baseURL year day <> "/input"
+    withCacheFile year day Input $ aocRequest year day "/input"
 
 data Tasks where
     Tasks ::
