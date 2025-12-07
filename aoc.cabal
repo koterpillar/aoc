@@ -179,6 +179,7 @@ library
       Y2025.Day04
       Y2025.Day05
       Y2025.Day06
+      Y2025.Day07
   other-modules:
       Paths_aoc
   hs-source-dirs:
