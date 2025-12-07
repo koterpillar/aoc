@@ -21,66 +21,33 @@ instance GridItem Item where
 parser :: Parser Text Grid
 parser = charGridP
 
-type St = (Int, Set Position2)
+type Split = Int -> (Int, Int)
 
-mergeSt :: Int -> [St] -> St
-mergeSt existing sts = (existing + sum counts, Set.unions positions)
+step :: Split -> Grid -> Map Position2 Int -> Map Position2 Int
+step split grid = Map.unionsWith (+) . map go . Map.toList
   where
-    (counts, positions) = unzip sts
-
-step1 :: Grid -> St -> St
-step1 grid st = mergeSt counts $ map go $ Set.toList positions
-  where
-    (counts, positions) = st
-    go pos =
+    go (pos, w) =
         let pos' = walk S pos
          in case Map.lookup (walk S pos) grid of
-                Just V -> (1, Set.fromList [walk W pos', walk E pos'])
-                Nothing -> (0, Set.singleton pos')
+                Just V -> let (w1, w2) = split w in Map.fromList [(walk W pos', w1), (walk E pos', w2)]
+                Nothing -> Map.singleton pos' w
 
-finished1 :: Grid -> Set Position2 -> Bool
-finished1 grid positions =  stY > maxV
+part :: Split -> Int -> Grid -> Int
+part split start g = sum $ go $ Map.singleton (mapFindValueE "src" (== Src) g) start
   where
-    stY :: Int
-    stY = pY $ fromJustE "stY" $ Set.lookupMin positions
-    maxV = pY $ maximumOn pY $ Map.keys grid
+    maxY = pY (maximumOn pY $ Map.keys g)
+    go st
+        | pY (fst $ Map.findMin st) > maxY = st
+        | otherwise = go $ step split g st
 
-part1 :: Grid -> Int
-part1 g = fst $ go g ist
-  where
-    ist = (0, Set.singleton src)
-    src = fst $ fromJustE "src" $ find (\(_, v) -> v == Src) $ Map.toList g
-    go g st | finished1 g (snd st) = st
-            | otherwise = go g $ step1 g st
+split1 :: Split
+split1 n = (n, 1)
 
-finished2 :: Grid -> Map Position2 Int -> Bool
-finished2 grid positions =  stY > maxV
-  where
-    stY :: Int
-    stY = pY $ fst $ fromJustE "stY" $ Map.lookupMin positions
-    maxV = pY $ maximumOn pY $ Map.keys grid
+split2 :: Split
+split2 n = (n, n)
 
-type St2 = Map Position2 Int
-
-mergeSt2 :: [St2] -> St2
-mergeSt2 = Map.unionsWith (+)
-
-step2 :: Grid -> St2 -> St2
-step2 grid st = mergeSt2 $ map go $ Map.toList st
-  where
-    go (pos, count) =
-        let pos' = walk S pos
-         in case Map.lookup (walk S pos) grid of
-                Just V -> Map.fromList [(walk W pos', count), (walk E pos', count)]
-                Nothing -> Map.singleton pos' count
-
-part2 :: Grid -> Int
-part2 g = sum $ go g ist
-  where
-    ist = Map.singleton src 1
-    src = fst $ fromJustE "src" $ find (\(_, v) -> v == Src) $ Map.toList g
-    go g st | finished2 g st = st
-            | otherwise = go g $ step2 g st
+part1 = part split1 0
+part2 = part split2 1
 
 tasks =
     Tasks
