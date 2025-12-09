@@ -81,6 +81,26 @@ shrinkWithG scale fn = Map.mapKeysWith fn scalePoint
   where
     scalePoint (Position2 x y) = Position2 (x `div` scale) (y `div` scale)
 
+-- | Given significant values, remaps integers to a smaller range, preserving
+-- their relative order to all the significant values.
+compressValues :: [Int] -> Int -> Int
+compressValues xs = f
+  where
+    xss = sort xs
+    mv = Map.fromList $ zip xss [1, 3 ..]
+    f x = case Map.lookupLE x mv of
+        Just (x', v)
+            | x == x' -> v
+            | otherwise -> succ v
+        Nothing -> 0
+
+-- | Compress X and Y ranges of the points separately.
+compressPoints :: [Position2] -> Position2 -> Position2
+compressPoints ps = \(Position2 x y) -> Position2 (cx x) (cy y)
+  where
+    cx = compressValues $ map pX ps
+    cy = compressValues $ map pY ps
+
 class GridItem a where
   showInGrid :: a -> Char
   showPixel :: a -> Pixel
