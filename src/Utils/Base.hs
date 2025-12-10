@@ -124,7 +124,8 @@ inRange :: Ord k => k -> k -> k -> Bool
 inRange lo hi k = lo <= k && k <= hi
 
 zipTail :: [a] -> [(a, a)]
-zipTail a = zip a (tail a)
+zipTail [] = []
+zipTail a@(_:t) = zip a t
 
 zipWithTail :: (a -> a -> b) -> [a] -> [b]
 zipWithTail f = map (uncurry f) . zipTail
@@ -153,8 +154,8 @@ fromSingleE _ [a]  = a
 fromSingleE msg as = error $ "fromSingleE: " <> show as <> " " <> msg
 
 headE :: String -> [a] -> a
-headE msg [] = error msg
-headE _ x    = head x
+headE msg []  = error msg
+headE _ (x:_) = x
 
 lastE :: String -> [a] -> a
 lastE msg [] = error msg

@@ -237,7 +237,7 @@ instance CacheFileName Tried where
     cacheFileName (Tried part) = "tried-" <> tshow part
 
 submissionResult :: Text -> Text
-submissionResult = dropBefore "</article>" . head . dropAfterAll "<article>"
+submissionResult = dropBefore "</article>" . headE "submissionResult" . dropAfterAll "<article>"
 
 submitAnswer :: Integer -> Int -> Answer -> Text -> IO ()
 submitAnswer year day (Answer part) result =
