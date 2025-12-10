@@ -7,3 +7,6 @@ extra-deps:
   commit: b77a17e5eeb7db82656bcbcd66c6e952207e69ca
 extra-include-dirs:
 - /usr/include/z3
+- /opt/homebrew/Cellar/z3/4.15.4/include
+extra-lib-dirs:
+- /opt/homebrew/Cellar/z3/4.15.4/lib
