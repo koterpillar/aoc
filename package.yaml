@@ -38,6 +38,7 @@ dependencies:
 - time
 - vector
 - unordered-containers
+- z3
 
 language: GHC2021
 default-extensions:

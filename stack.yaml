@@ -3,3 +3,7 @@ packages:
 - .
 extra-deps:
 - astar-0.3.0.0
+- git: https://github.com/IagoAbal/haskell-z3.git
+  commit: b77a17e5eeb7db82656bcbcd66c6e952207e69ca
+extra-include-dirs:
+- /usr/include/z3
