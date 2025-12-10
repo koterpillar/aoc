@@ -9,6 +9,7 @@ import qualified Data.Text as Text
 import AOC
 import Path
 import Utils
+import Z3A
 
 data Machine = Machine {mLights :: Set Int, mButtons :: [Set Int], mJoltage :: Map Int Int} deriving (Eq, Ord, Show, Generic)
 
@@ -43,19 +44,26 @@ toggle a b = Set.difference a b `Set.union` Set.difference b a
 part1 :: [Machine] -> Int
 part1 = sum . map solve1
 
-solve2 :: Machine -> Int
-solve2 m = traceShowId $ length $ fromJustE "solve2" $ aStarDepthGoal moves estimate init
-  where
-    init = mJoltage m
-    moves j
-        | any (< 0) j = []
-        | otherwise = [toggle2 j b | b <- mButtons m]
-    estimate = maximum
+solve2 :: Machine -> Integer
+solve2 = sum . runZ3 . solve2z
 
-toggle2 :: Map Int Int -> Set Int -> Map Int Int
-toggle2 a = foldr (Map.adjust pred) a . Set.toList
+buttonsFor :: Int -> Machine -> [Int]
+buttonsFor k = filterTuple (Set.member k) . zip [0 ..] . mButtons
 
-part2 :: [Machine] -> Int
+solve2z :: Machine -> Z3 [Integer]
+solve2z m@(Machine _ buttons target) = do
+    zButtons <- replicateM (length buttons) (mkFreshIntVar "b")
+    _0 <- mkInteger 0
+    for_ zButtons $ \b -> optimizeAssert =<< mkGe b _0
+    for_ (Map.toList target) $ \(k, v) -> do
+        zResult <- mkInteger (fromIntegral v)
+        let relevant = [zButtons !! i | i <- buttonsFor k m]
+        optimizeAssert =<< mkEq zResult =<< mkAdd relevant
+    optimizeMinimize =<< mkAdd zButtons
+    m <- optimizeRun
+    for zButtons $ fmap fromJust . evalInt m
+
+part2 :: [Machine] -> Integer
 part2 = sum . map solve2
 
 tasks =
