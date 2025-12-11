@@ -40,7 +40,7 @@ union :: Ranges -> Ranges -> Ranges
 union = _apply _add1
 
 fromList :: [(Int, Int)] -> Ranges
-fromList = foldr union empty . map (uncurry singleton)
+fromList = foldr (union . uncurry singleton) empty
 
 _remove1 :: Int -> Int -> Ranges -> Ranges
 _remove1 a b = unsafeFromList . go . toList
