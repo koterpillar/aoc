@@ -41,8 +41,7 @@ part2 input =
 
 tasks =
   Tasks
-    2021
-    2
+    (AOC 2021 2)
     LastCodeBlock
     (linesP &** movementP)
     [Task part1 150, Task part2 900]

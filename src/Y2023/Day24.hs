@@ -215,8 +215,7 @@ part2 hs0 =
 
 tasks =
   Tasks
-    2023
-    24
+    (AOC 2023 24)
     (CodeBlock 0)
     parser
     [ Assert "hIntersectXY" (Just (2, 1, (2, 2)))

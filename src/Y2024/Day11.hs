@@ -38,8 +38,7 @@ part2 = evolveN 75
 
 tasks =
   Tasks
-    2024
-    11
+    (AOC 2024 11)
     (Inline "125 17")
     parser
     [task part1 55312 & taskPart 1, taskBlind part2 & taskPart 2]

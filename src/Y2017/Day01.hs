@@ -28,8 +28,7 @@ splitintwo lst = zip (take half lst) (drop half lst)
 
 tasks =
   Tasks
-    2017
-    1
+    (AOC 2017 1)
     (Inline "91212129")
     (linesP &* singleP &* charactersP)
     [Task go 9, Task go2 6]

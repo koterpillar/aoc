@@ -99,4 +99,4 @@ part2 = totals hType2 . map (first jokers)
     joker1 CJ = CL
     joker1 c  = c
 
-tasks = Tasks 2023 7 (CodeBlock 0) parser [Task part1 6440, Task part2 5905]
+tasks = Tasks (AOC 2023 7) (CodeBlock 0) parser [Task part1 6440, Task part2 5905]

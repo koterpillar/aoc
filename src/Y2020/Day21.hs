@@ -68,8 +68,7 @@ part2 foods =
 
 tasks =
   Tasks
-    2020
-    21
+    (AOC 2020 21)
     (CodeBlock 0)
     (linesP &** parseFood)
     [Task part1 5, Task part2 "mxmxvkd,sqjhc,fvjkl"]

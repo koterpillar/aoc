@@ -329,8 +329,7 @@ testCubify = length . _gGrids . cubify . fst
 
 tasks =
   Tasks
-    2022
-    22
+    (AOC 2022 22)
     (CodeBlock 0)
     parser
     [Task part1 6032, Task testCubify 6, Task part2 5031]

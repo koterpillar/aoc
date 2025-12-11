@@ -61,8 +61,7 @@ part2 = solve 40
 
 tasks =
   Tasks
-    2021
-    14
+    (AOC 2021 14)
     (CodeBlock 0)
     parse
     [ AssertExample "step" (toPairs "NCNBCHB") (\(p, i) -> step i $ toPairs p)

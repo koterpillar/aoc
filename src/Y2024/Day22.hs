@@ -63,8 +63,7 @@ part2 ss = maximum es
 
 tasks =
   Tasks
-    2024
-    22
+    (AOC 2024 22)
     (CodeBlock 1)
     parser
     [ task part1 37327623 & taskPart 1

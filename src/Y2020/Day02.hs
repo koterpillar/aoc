@@ -34,8 +34,7 @@ countValid = countIf . uncurry
 
 tasks =
   Tasks
-    2020
-    2
+    (AOC 2020 2)
     (CodeBlock 0)
     parsePolicy
     [Task (countValid isValid1) 2, Task (countValid isValid2) 1]

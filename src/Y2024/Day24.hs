@@ -328,8 +328,7 @@ part2' rules =
 
 tasks =
   Tasks
-    2024
-    24
+    (AOC 2024 24)
     (CodeBlock 1)
     parser
     [ task part1 4 & taskScraper (CodeBlock 0)

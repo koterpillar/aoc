@@ -328,7 +328,7 @@ part2 :: [InputLine] -> Int
 part2 = part1 . map part2unfold
 
 tasks =
-  Tasks 2023 12 (CodeBlock 1) parser
+  Tasks (AOC 2023 12) (CodeBlock 1) parser
     $ [ Assert "countsAppend" (Map.fromList [([], 1), ([1], 2), ([1, 1], 1)])
           $ let m = Map.fromList [([], 1), ([1], 1)]
              in countsAppend m m

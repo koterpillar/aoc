@@ -52,8 +52,7 @@ part2 ps = maxRectangle $ filter (not . uncurry hasHoles) $ pairs ps
 
 tasks =
     Tasks
-        2025
-        9
+        (AOC 2025 9)
         (CodeBlock 0)
         parser
         [ task part1 50 & taskPart 1

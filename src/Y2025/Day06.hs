@@ -34,8 +34,7 @@ part2 = sum . map calc2 . splitOn [""] . map trim . transpose . reverse
 
 tasks =
     Tasks
-        2025
-        6
+        (AOC 2025 6)
         (CodeBlock 0)
         parser
         [ task part1 4277556 & taskPart 1

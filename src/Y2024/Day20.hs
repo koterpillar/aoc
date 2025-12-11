@@ -109,8 +109,7 @@ part2 = part 20 50
 
 tasks =
   Tasks
-    2024
-    20
+    (AOC 2024 20)
     (CodeBlock 0)
     parser
     [ task part1 (14 + 14 + 2 + 4 + 2 + 3 + 1 + 1 + 1 + 1 + 1) & taskPart 1

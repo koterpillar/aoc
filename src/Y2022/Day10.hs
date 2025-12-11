@@ -86,8 +86,7 @@ pixelVisible pc cpu = traceShowF (pc, spr, scan, ) $ abs (spr - scan) <= 1
 
 tasks =
   Tasks
-    2022
-    10
+    (AOC 2022 10)
     (CodeBlock 1)
     (linesP &** instrP)
     [ task part1test (-1) & taskScraper (CodeBlock 0)

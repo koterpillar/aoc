@@ -116,8 +116,7 @@ part2 ns = maximum [magnitude (snadd n1 n2) | n1 <- ns, n2 <- ns]
 
 tasks =
   Tasks
-    2021
-    18
+    (AOC 2021 18)
     (CodeBlock 7)
     (linesP &** snailIntP)
     [ Assert "split 9" Nothing (snsplit $ PNumber 9)

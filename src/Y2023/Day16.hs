@@ -82,4 +82,4 @@ runBeam g p d = do
       let ds' = applyItem item d
       traverse_ (\d' -> runBeam g (walk d' p) d') ds'
 
-tasks = Tasks 2023 16 (CodeBlock 0) parser [Task part1 46, Task part2 51]
+tasks = Tasks (AOC 2023 16) (CodeBlock 0) parser [Task part1 46, Task part2 51]

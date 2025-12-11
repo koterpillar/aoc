@@ -57,8 +57,7 @@ findCost' rules = unsafeMemo go
 
 tasks =
   Tasks
-    2020
-    7
+    (AOC 2020 7)
     (CodeBlock 0)
     parseRules
     [Task findContainers 4, Task findCost 32]

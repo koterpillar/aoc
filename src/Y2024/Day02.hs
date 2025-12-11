@@ -27,8 +27,7 @@ safeStep x1 x2 = x1 > x2 && x1 <= x2 + 3
 
 tasks =
   Tasks
-    2024
-    2
+    (AOC 2024 2)
     (CodeBlock 0)
     parser
     [task part1 2 & taskPart 1, task part2 4 & taskPart 2]

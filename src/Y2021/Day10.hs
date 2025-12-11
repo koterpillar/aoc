@@ -64,8 +64,7 @@ part2 lns =
 
 tasks =
   Tasks
-    2021
-    10
+    (AOC 2021 10)
     LastCodeBlock
     (linesP &** stringP)
     [ Assert "incomplete" (Left $ Incomplete ")]}") (parseBR "{[(")

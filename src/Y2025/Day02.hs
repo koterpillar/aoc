@@ -35,8 +35,7 @@ part2 = part sillyId2
 
 tasks =
     Tasks
-        2025
-        2
+        (AOC 2025 2)
         (CodeBlock 0)
         parser
         [ task part1 1227775554 & taskPart 1

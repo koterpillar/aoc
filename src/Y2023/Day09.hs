@@ -26,4 +26,4 @@ part1 = sum . map predict
 
 part2 = part1 . map reverse
 
-tasks = Tasks 2023 9 (CodeBlock 0) parser [Task part1 114, Task part2 2]
+tasks = Tasks (AOC 2023 9) (CodeBlock 0) parser [Task part1 114, Task part2 2]

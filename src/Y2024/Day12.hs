@@ -68,8 +68,7 @@ part2 = part discountedPerimeter
 
 tasks =
   Tasks
-    2024
-    12
+    (AOC 2024 12)
     (CodeBlock 3)
     parser
     [ task part1 1930 & taskPart 1

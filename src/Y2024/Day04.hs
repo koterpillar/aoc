@@ -55,8 +55,7 @@ part2 = length . findXMas
 
 tasks =
   Tasks
-    2024
-    4
+    (AOC 2024 4)
     (CodeBlock 1)
     parser
     [task part1 18 & taskPart 1, task part2 9 & taskPart 2]

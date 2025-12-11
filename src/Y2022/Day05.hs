@@ -66,8 +66,7 @@ solve app (stacks, instructions) =
 
 tasks =
   Tasks
-    2022
-    5
+    (AOC 2022 5)
     (CodeBlock 0)
     parser
     [Task (solve applyInstruction) "CMZ", Task (solve applyInstruction2) "MCD"]

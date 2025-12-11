@@ -78,4 +78,4 @@ part1 g = product $ map Set.size $ connectedComponents g3
     e3 = traceShowF ("e3", ) $ mostCommonEdge g2
     g3 = deleteEdges [e3] g2
 
-tasks = Tasks 2023 25 (CodeBlock 1) parser [task part1 54 & taskPart 1]
+tasks = Tasks (AOC 2023 25) (CodeBlock 1) parser [task part1 54 & taskPart 1]

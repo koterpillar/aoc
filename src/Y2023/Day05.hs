@@ -89,8 +89,7 @@ part2 = plantAll str2
 
 tasks =
   Tasks
-    2023
-    5
+    (AOC 2023 5)
     (CodeBlock 0)
     parser
     [ Assert "dMinimum" (Just 20) (Ranges.minimum $ Ranges.singleton 20 30)

@@ -44,4 +44,4 @@ enlarge times grid = mapFromList $ concatMap copyP $ mapToList grid
 
 part2 = part1 . enlarge 5
 
-tasks = Tasks 2021 15 (CodeBlock 0) digitGridP [Task part1 40, Task part2 315]
+tasks = Tasks (AOC 2021 15) (CodeBlock 0) digitGridP [Task part1 40, Task part2 315]

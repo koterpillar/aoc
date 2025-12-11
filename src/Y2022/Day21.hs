@@ -91,4 +91,4 @@ solve (Powers [b, a]) = negate $ b / a
 part2 :: Exprs -> Int
 part2 = round . solve . mapLookupE "part2" "root" . convert . fixup
 
-tasks = Tasks 2022 21 (CodeBlock 0) parser [Task part1 152, Task part2 301]
+tasks = Tasks (AOC 2022 21) (CodeBlock 0) parser [Task part1 152, Task part2 301]

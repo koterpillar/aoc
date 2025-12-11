@@ -44,8 +44,7 @@ part2 = sum . map (decimal . extractChars)
 
 tasks =
   Tasks
-    2023
-    1
+    (AOC 2023 1)
     (CodeBlock 0)
     parser
     [task part1 142, task part2 281 & taskScraper (CodeBlock 1)]

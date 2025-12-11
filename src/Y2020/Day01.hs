@@ -28,8 +28,7 @@ findSum count total candidates =
 
 tasks =
   Tasks
-    2020
-    1
+    (AOC 2020 1)
     (CodeBlock 0)
     (linesP &** integerP)
     [ Task (product . findSum 2 2020) 514579

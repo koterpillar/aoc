@@ -112,4 +112,4 @@ part2 g = l1 + l2 + l3
     (l2, st2) = rt st1 p1
     (l3, _) = rt st2 p2
 
-tasks = Tasks 2022 24 (CodeBlock 6) parser [Task part1 18, Task part2 54]
+tasks = Tasks (AOC 2022 24) (CodeBlock 6) parser [Task part1 18, Task part2 54]

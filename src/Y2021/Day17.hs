@@ -114,8 +114,7 @@ targetAreaP =
 
 tasks =
   Tasks
-    2021
-    17
+    (AOC 2021 17)
     (CodeBlock 0)
     targetAreaP
     [ Task part1 45

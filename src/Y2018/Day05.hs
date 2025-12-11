@@ -33,8 +33,7 @@ part2 p = minimum $ map (\c -> part1 $ removeChar c p) alpha
 
 tasks =
     Tasks
-        2018
-        5
+        (AOC 2018 5)
         (InlineCode 0)
         parser
         [ task part1 10 & taskPart 1

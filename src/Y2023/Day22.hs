@@ -184,8 +184,7 @@ part2 bs = ttrace (dotDependencies deps) $ sum $ fmap Set.size spof
 
 tasks =
   Tasks
-    2023
-    22
+    (AOC 2023 22)
     (CodeBlock 0)
     parser
     [task part1 5 & taskPart 1, task part2 7 & taskPart 2]

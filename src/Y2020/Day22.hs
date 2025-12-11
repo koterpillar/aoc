@@ -61,8 +61,7 @@ winHand = either id id
 
 tasks =
   Tasks
-    2020
-    22
+    (AOC 2020 22)
     (CodeBlock 0)
     gameP
     [Task (score . play) 306, Task (score . winHand . play2) 291]

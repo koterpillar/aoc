@@ -31,8 +31,7 @@ part2 = go 12
 
 tasks =
     Tasks
-        2025
-        3
+        (AOC 2025 3)
         (CodeBlock 0)
         parser
         [ task part1 357 & taskPart 1

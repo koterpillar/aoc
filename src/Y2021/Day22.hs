@@ -156,8 +156,7 @@ part2 input = dtCount I $ applyInput input initial
 
 tasks =
   Tasks
-    2021
-    22
+    (AOC 2021 22)
     (CodeBlock 2)
     parse
     [ Assert "split range" (Just $ mkRangeLT 10, Just $ mkRangeGE 10)

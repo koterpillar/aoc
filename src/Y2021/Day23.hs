@@ -186,8 +186,7 @@ part2 = part1 . toPart2
 tasks :: Tasks
 tasks =
   Tasks
-    2021
-    23
+    (AOC 2021 23)
     (CodeBlock 0)
     parse
     [ AssertExample "top in room" (Just (B, 2)) (`topInRoom` A)

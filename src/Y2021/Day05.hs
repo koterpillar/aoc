@@ -50,8 +50,7 @@ part2 = countOnLines vlOn2
 
 tasks =
   Tasks
-    2021
-    5
+    (AOC 2021 5)
     (CodeBlock 0)
     (linesP &** ventLineP)
     [ Assert "On point" True

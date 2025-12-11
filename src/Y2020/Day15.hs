@@ -56,8 +56,7 @@ part1 n input =
 
 tasks =
   Tasks
-    2020
-    15
+    (AOC 2020 15)
     (Inline "0,3,6")
     (tsplitP "," &** integerP)
     [Task (part1 2020) 436, Task (part1 30000000) 175594]

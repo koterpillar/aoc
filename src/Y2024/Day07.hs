@@ -43,8 +43,7 @@ part2 = resultsOfSolvable [(+), (*), appendDigits]
 
 tasks =
   Tasks
-    2024
-    7
+    (AOC 2024 7)
     (CodeBlock 0)
     parser
     [task part1 3749 & taskPart 1, task part2 11387 & taskPart 2]

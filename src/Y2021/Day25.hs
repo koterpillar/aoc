@@ -30,7 +30,7 @@ gtrace = ttraceF (displayG . fst)
 part1 :: Grid -> Int
 part1 = length . iterateSettle step
 
-tasks = Tasks 2021 25 (CodeBlock 0) parse [Task part1 58]
+tasks = Tasks (AOC 2021 25) (CodeBlock 0) parse [Task part1 58]
 
 mkGrid :: Grid2 Direction4 -> Grid
 mkGrid g = (g, b)

@@ -121,8 +121,7 @@ assertPacket msg packet input = Assert msg (Right packet) (runParse parse input)
 
 tasks =
   Tasks
-    2021
-    16
+    (AOC 2021 16)
     (InlineCode 8)
     (pureP ttrim &* parse)
     [ assertPacket "literal packet" (Literal 6 2021) "D2FE28"

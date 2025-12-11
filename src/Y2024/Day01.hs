@@ -25,8 +25,7 @@ part2 (as, bs) = sum $ map similarity as
 
 tasks =
   Tasks
-    2024
-    1
+    (AOC 2024 1)
     (CodeBlock 0)
     parser
     [task part1 11 & taskPart 1, task part2 31 & taskPart 2]

@@ -220,8 +220,7 @@ parser =
 
 tasks =
   Tasks
-    2023
-    20
+    (AOC 2023 20)
     (CodeBlock 0)
     parser
     [ AssertExample "simple" 32000000 part1

@@ -51,8 +51,7 @@ part2 = part split2 1
 
 tasks =
     Tasks
-        2025
-        7
+        (AOC 2025 7)
         (CodeBlock 0)
         parser
         [ task part1 21 & taskPart 1

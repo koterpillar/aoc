@@ -142,8 +142,7 @@ part2 = maximum . allPathsGrid . ttraceF mkdot . optimize . mkGraph
 
 tasks =
   Tasks
-    2023
-    23
+    (AOC 2023 23)
     (CodeBlock 0)
     parser
     [ AssertExample "all paths" [94, 90, 86, 82, 82, 74]

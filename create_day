@@ -45,8 +45,7 @@ part1 = error . show
 
 tasks =
   Tasks
-    ${YEAR}
-    ${DAY}
+    (AOC ${YEAR} ${DAY})
     ShowExamples
     parser
     [ task part1 () & taskPart 1

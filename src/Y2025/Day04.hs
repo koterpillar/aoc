@@ -34,8 +34,7 @@ part2 g
 
 tasks =
     Tasks
-        2025
-        4
+        (AOC 2025 4)
         (CodeBlock 0)
         parser
         [ task part1 13 & taskPart 1

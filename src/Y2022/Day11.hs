@@ -144,4 +144,4 @@ part2 :: Situation -> Int
 part2 = part 1 10000
 
 tasks =
-  Tasks 2022 11 (CodeBlock 0) parser [Task part1 10605, Task part2 2713310158]
+  Tasks (AOC 2022 11) (CodeBlock 0) parser [Task part1 10605, Task part2 2713310158]

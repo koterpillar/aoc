@@ -22,4 +22,4 @@ part1 gs =
     g2 <- r
     guard $ Map.disjoint g1 g2
 
-tasks = Tasks 2024 25 (CodeBlock 0) parser [task part1 3 & taskPart 1]
+tasks = Tasks (AOC 2024 25) (CodeBlock 0) parser [task part1 3 & taskPart 1]

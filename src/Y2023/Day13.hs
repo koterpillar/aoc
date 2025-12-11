@@ -59,4 +59,4 @@ part1 = sum . map (reflectionValue findReflectionV)
 part2 :: [Grid] -> Int
 part2 = sum . map (reflectionValue findSmudgeV)
 
-tasks = Tasks 2023 13 (CodeBlock 0) parser [Task part1 405, Task part2 400]
+tasks = Tasks (AOC 2023 13) (CodeBlock 0) parser [Task part1 405, Task part2 400]

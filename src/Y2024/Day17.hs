@@ -176,8 +176,7 @@ part2 (r, t) = traceShow t $ traceShow m $ findStartA t m
 
 tasks =
   Tasks
-    2024
-    17
+    (AOC 2024 17)
     (CodeBlock 0)
     parser
     [ task part1 "4,6,3,5,6,3,5,2,1,0" & taskPart 1

@@ -33,4 +33,4 @@ fromInt = Snafu . unfoldr f
 
 part1 = show . fromInt . sum . map toInt
 
-tasks = Tasks 2022 25 (CodeBlock 0) parser [Task part1 "2=-1=0"]
+tasks = Tasks (AOC 2022 25) (CodeBlock 0) parser [Task part1 "2=-1=0"]

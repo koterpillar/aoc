@@ -65,4 +65,4 @@ part2 =
     . traceShowF (\c -> (length (cycleStart c), length (cycleLoop c)))
     . cycleFind rollCycle
 
-tasks = Tasks 2023 14 (CodeBlock 0) parser [Task part1 136, Task part2 64]
+tasks = Tasks (AOC 2023 14) (CodeBlock 0) parser [Task part1 136, Task part2 64]

@@ -102,8 +102,7 @@ part2 rs =
 
 tasks =
   Tasks
-    2024
-    14
+    (AOC 2024 14)
     (CodeBlock 0)
     parser
     [ AssertExample "example size" 12 (part1 exampleSize)

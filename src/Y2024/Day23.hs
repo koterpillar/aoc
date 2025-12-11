@@ -52,8 +52,7 @@ brokenCliques g =
 
 tasks =
   Tasks
-    2024
-    23
+    (AOC 2024 23)
     (CodeBlock 0)
     parser
     [task part1 7 & taskPart 1, task part2 "co,de,ka,ta" & taskPart 2]

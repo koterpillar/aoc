@@ -305,8 +305,7 @@ testMachine = mkMachine (Position2 10 1) (Position2 1 10) (Position2 p p)
 
 tasks =
   Tasks
-    2024
-    13
+    (AOC 2024 13)
     (CodeBlock 0)
     parser
     [ task part1 480 & taskPart 1

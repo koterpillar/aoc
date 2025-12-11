@@ -63,8 +63,7 @@ part2 falls = format $ (falls !!) $ go 0 (length falls)
 
 tasks =
   Tasks
-    2024
-    18
+    (AOC 2024 18)
     (CodeBlock 0)
     parser
     [task part1 22 & taskPart 1, task part2 "6,1" & taskPart 2]

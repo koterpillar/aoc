@@ -59,8 +59,7 @@ part2 = result . parseIn part2Expr
 
 tasks =
   Tasks
-    2024
-    3
+    (AOC 2024 3)
     (CodeBlock 0)
     stringP
     [ task part1 161 & taskPart 1

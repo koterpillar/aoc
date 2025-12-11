@@ -93,8 +93,7 @@ part2 = checksum . toLong . ttraceF displayFSC . compact2
 
 tasks =
   Tasks
-    2024
-    9
+    (AOC 2024 9)
     (CodeBlock 0)
     parser
     [task part1 1928 & taskPart 1, task part2 2858 & taskPart 2]

@@ -113,4 +113,4 @@ findOOB program =
     r       -> error $ "No OOB, got: " ++ show r
 
 tasks =
-  Tasks 2020 8 (CodeBlock 0) parseProgram [Task findLoop 5, Task findOOB 8]
+  Tasks (AOC 2020 8) (CodeBlock 0) parseProgram [Task findLoop 5, Task findOOB 8]

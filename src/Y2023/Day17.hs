@@ -66,8 +66,7 @@ part2 = solve ultraMoves $ \st -> stL st >= 4
 
 tasks =
   Tasks
-    2023
-    17
+    (AOC 2023 17)
     (CodeBlock 0)
     parser
     [task part1 102 & taskPart 1, task part2 94 & taskPart 2]

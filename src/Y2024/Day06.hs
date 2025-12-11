@@ -116,8 +116,7 @@ part2 (start, grid, bounds) = countIf makesLoop allObstacles
 
 tasks =
   Tasks
-    2024
-    6
+    (AOC 2024 6)
     (CodeBlock 0)
     parser
     [task part1 41 & taskPart 1, task part2 6 & taskPart 2]

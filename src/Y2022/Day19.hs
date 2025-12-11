@@ -147,4 +147,4 @@ part1 = sum . map qs
 
 part2 = product . map (maxGeodes 32) . take 3
 
-tasks = Tasks 2022 19 (CodeBlock 0) parser [Task part1 33, Task part2 (56 * 62)]
+tasks = Tasks (AOC 2022 19) (CodeBlock 0) parser [Task part1 33, Task part2 (56 * 62)]

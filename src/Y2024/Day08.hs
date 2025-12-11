@@ -72,8 +72,7 @@ part2 = part antinode2
 
 tasks =
   Tasks
-    2024
-    8
+    (AOC 2024 8)
     (CodeBlock 0)
     parser
     [task part1 14 & taskPart 1, task part2 34 & taskPart 2]

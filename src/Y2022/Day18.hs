@@ -116,4 +116,4 @@ part2 input = countTrue $ evalState (traverse isOutside sides) St1 {..}
     _st1map = Map.fromList $ map (, Lava) input
     (_st1min, _st1max) = bounds input
 
-tasks = Tasks 2022 18 (CodeBlock 0) parser [Task part1 64, Task part2 58]
+tasks = Tasks (AOC 2022 18) (CodeBlock 0) parser [Task part1 64, Task part2 58]

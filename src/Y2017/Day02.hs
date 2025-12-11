@@ -21,8 +21,7 @@ divideDivisible lst =
 
 tasks =
   Tasks
-    2017
-    2
+    (AOC 2017 2)
     (CodeBlock 0)
     (linesP &** integersSpaceP)
     [ task checksum 18

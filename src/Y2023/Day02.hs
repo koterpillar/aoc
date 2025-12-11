@@ -52,4 +52,4 @@ part2 :: [Gm] -> Int
 part2 = sum . map (power . necessary . gmRolls)
 
 tasks :: Tasks
-tasks = Tasks 2023 2 (CodeBlock 0) parser [Task part1 8, Task part2 2286]
+tasks = Tasks (AOC 2023 2) (CodeBlock 0) parser [Task part1 8, Task part2 2286]

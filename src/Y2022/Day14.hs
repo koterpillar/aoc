@@ -74,4 +74,4 @@ floorY g =
   let (_, Position2 _ maxY) = boundsG g
    in maxY + 2
 
-tasks = Tasks 2022 14 (CodeBlock 0) parser [Task part1 24, Task part2 93]
+tasks = Tasks (AOC 2022 14) (CodeBlock 0) parser [Task part1 24, Task part2 93]

@@ -70,4 +70,4 @@ gearRatio :: [Number] -> Maybe Int
 gearRatio [(n1, _), (n2, _)] = Just $ n1 * n2
 gearRatio _                  = Nothing
 
-tasks = Tasks 2023 3 (CodeBlock 0) parser [Task part1 4361, Task part2 467835]
+tasks = Tasks (AOC 2023 3) (CodeBlock 0) parser [Task part1 4361, Task part2 467835]

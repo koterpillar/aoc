@@ -42,8 +42,7 @@ findSum' target xs rest
 
 tasks =
   Tasks
-    2020
-    9
+    (AOC 2020 9)
     (CodeBlock 0)
     (linesP &** integerP)
     [Task findInvalid 127, Task findSum 62]

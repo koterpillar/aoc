@@ -60,8 +60,7 @@ part2 = traceTail 10
 
 tasks =
   Tasks
-    2022
-    9
+    (AOC 2022 9)
     (CodeBlock 3)
     parser
     [ Assert

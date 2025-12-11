@@ -67,4 +67,4 @@ scenicScore g p = product $ [go g d (walk d p) | d <- [N, S, E, W]]
 part2 :: Grid -> Int
 part2 g = maximum $ map (scenicScore g) $ Map.keys g
 
-tasks = Tasks 2022 8 (CodeBlock 0) digitGridP [Task part1 21, Task part2 8]
+tasks = Tasks (AOC 2022 8) (CodeBlock 0) digitGridP [Task part1 21, Task part2 8]

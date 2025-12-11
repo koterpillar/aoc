@@ -155,8 +155,7 @@ testWorkflows =
 
 tasks =
   Tasks
-    2023
-    19
+    (AOC 2023 19)
     (CodeBlock 0)
     parser
     [ task (uncurry part1) 19114 & taskPart 1

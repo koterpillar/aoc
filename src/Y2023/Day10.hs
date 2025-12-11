@@ -117,8 +117,7 @@ part2 g = countInside l g
 
 tasks =
   Tasks
-    2023
-    10
+    (AOC 2023 10)
     (CodeBlock 4)
     parser
     [ task part1 8

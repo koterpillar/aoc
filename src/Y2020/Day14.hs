@@ -89,8 +89,7 @@ part2 = sum . cMem . foldl' applyInstruction2 (CPU undefined mempty)
 
 tasks =
   Tasks
-    2020
-    14
+    (AOC 2020 14)
     (CodeBlock 0)
     (linesP &** parseInstruction)
     [ task part1 165

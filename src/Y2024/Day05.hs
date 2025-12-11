@@ -69,8 +69,7 @@ part2 Input {..} =
 
 tasks =
   Tasks
-    2024
-    5
+    (AOC 2024 5)
     (CodeBlock 0)
     parser
     [task part1 143 & taskPart 1, task part2 123 & taskPart 2]

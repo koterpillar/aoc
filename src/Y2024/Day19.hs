@@ -30,8 +30,7 @@ part2 = uncurry $ sum .: mapTowels
 
 tasks =
   Tasks
-    2024
-    19
+    (AOC 2024 19)
     (CodeBlock 0)
     parser
     [task part1 6 & taskPart 1, task part2 16 & taskPart 2]

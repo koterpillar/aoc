@@ -158,8 +158,7 @@ part2 = part 25
 
 tasks =
   Tasks
-    2024
-    21
+    (AOC 2024 21)
     (CodeBlock 3)
     parser
     [ Assert "level 1 keypad" "<A^A^^>AvvvA" -- different from the example but same length

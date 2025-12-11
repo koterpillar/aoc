@@ -27,14 +27,14 @@ part1 = go 0 50
 part2 = part1 . go
   where
     go [] = []
-    go (x : xs) | x > 0 = replicate x 1 ++ go xs
-                | x < 0 = replicate (abs x) (-1) ++ go xs
-                | otherwise = go xs
+    go (x : xs)
+        | x > 0 = replicate x 1 ++ go xs
+        | x < 0 = replicate (abs x) (-1) ++ go xs
+        | otherwise = go xs
 
 tasks =
     Tasks
-        2025
-        1
+        (AOC 2025 1)
         (CodeBlock 0)
         parser
         [ task part1 3 & taskPart 1

@@ -309,8 +309,7 @@ subtractMonstersFlips = minimum . map subtractMonsters . flips
 tasks :: Tasks
 tasks =
   Tasks
-    2020
-    20
+    (AOC 2020 20)
     (CodeBlock 0)
     parseTiles
     [ task (product . findCorners) 20899048083289 & taskPart 1

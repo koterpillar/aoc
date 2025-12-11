@@ -115,4 +115,4 @@ part1 = sum . map countSimple
 part2 :: [Reading] -> Int
 part2 = sum . map readDisplay
 
-tasks = Tasks 2021 8 (CodeBlock 2) readingsP [Task part1 26, Task part2 61229]
+tasks = Tasks (AOC 2021 8) (CodeBlock 2) readingsP [Task part1 26, Task part2 61229]

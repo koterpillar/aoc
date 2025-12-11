@@ -46,8 +46,7 @@ part2 = coordinates . mix 10 . map (811589153 *)
 
 tasks =
   Tasks
-    2022
-    20
+    (AOC 2022 20)
     (CodeBlock 0)
     (linesP &** integerP)
     [ AssertExample "mix 1" [2, 1, -3, 3, -2, 0, 4] assert1

@@ -69,8 +69,7 @@ part2 = go 0
 
 tasks =
   Tasks
-    2021
-    11
+    (AOC 2021 11)
     (CodeBlock 0)
     (mkGrid <$> digitGridP)
     [Task part1 1656, Task part2 195]

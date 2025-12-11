@@ -109,8 +109,7 @@ part2 (g, ms) = gps $ foldl' (flip moveRobot) (ttraceF displayGrid $ widen g) ms
 
 tasks =
   Tasks
-    2024
-    15
+    (AOC 2024 15)
     (CodeBlock 0)
     parser
     [ task part1 2028 & taskScraper (CodeBlock 1)

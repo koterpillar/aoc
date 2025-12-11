@@ -158,8 +158,8 @@ testGoodMessages =
 tasks :: Tasks
 tasks =
   Tasks
-    2020
-    19
+    (AOC 2020 19)
+
     (CodeBlock 4)
     parser
     [ AssertExample "countValid" 3 countValid

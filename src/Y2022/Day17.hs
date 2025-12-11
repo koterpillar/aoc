@@ -188,8 +188,7 @@ start n = stHeight . execState (dropRocks n) . stInit
 
 tasks =
   Tasks
-    2022
-    17
+    (AOC 2022 17)
     (CodeBlock 1)
     parser
     [Task (start 2022) 3068, Task (start 1000000000000) 1514285714288]

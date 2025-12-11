@@ -48,8 +48,7 @@ part2 input = go (initClusters input) $ pairs input
 
 tasks =
     Tasks
-        2025
-        8
+        (AOC 2025 8)
         (CodeBlock 0)
         parser
         [ AssertExample "part1" 40 (part1 10)

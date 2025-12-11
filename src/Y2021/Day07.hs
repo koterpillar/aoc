@@ -39,8 +39,7 @@ part2 = minimum . fuelOptions fuelConsumption2
 
 tasks =
   Tasks
-    2021
-    7
+    (AOC 2021 7)
     LastCodeBlock
     crabsP
     [ Assert "groupPositions" [2, 0, 1] $ groupPositions [0, 2, 0]

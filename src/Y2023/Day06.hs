@@ -36,4 +36,4 @@ mergeRaces rs = Race (unkern times) (unkern distances)
 
 part2 = waysToWin . mergeRaces
 
-tasks = Tasks 2023 6 (CodeBlock 0) parser [Task part1 288, Task part2 71503]
+tasks = Tasks (AOC 2023 6) (CodeBlock 0) parser [Task part1 288, Task part2 71503]

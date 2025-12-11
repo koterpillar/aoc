@@ -33,8 +33,7 @@ missing = go . sort
 
 tasks =
   Tasks
-    2020
-    5
+    (AOC 2020 5)
     (Inline "FBFBBFFRLR\nFBFBBFFLRR")
     parseCodes
     [Task maximum 357, Task missing 356]

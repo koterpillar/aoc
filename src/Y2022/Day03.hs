@@ -43,4 +43,4 @@ part2 =
            . map (uncurry Set.union))
     . chunksOf 3
 
-tasks = Tasks 2022 3 (CodeBlock 0) parser [Task part1 157, Task part2 70]
+tasks = Tasks (AOC 2022 3) (CodeBlock 0) parser [Task part1 157, Task part2 70]

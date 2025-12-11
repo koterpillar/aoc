@@ -38,4 +38,4 @@ part2 input = oxygen * co2
     co2 = bitsValue $ byCriteria (fromJust . leastCommon) input
 
 tasks =
-  Tasks 2021 3 LastCodeBlock (linesP &** bitsP) [Task part1 198, Task part2 230]
+  Tasks (AOC 2021 3) LastCodeBlock (linesP &** bitsP) [Task part1 198, Task part2 230]

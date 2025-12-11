@@ -63,8 +63,7 @@ betterValid passport =
 
 tasks =
   Tasks
-    2020
-    4
+    (AOC 2020 4)
     (CodeBlock 0)
     parsePassports
     [Task (countIf isValid) 2, Task (countIf betterValid) 2]

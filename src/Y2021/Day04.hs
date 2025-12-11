@@ -84,8 +84,7 @@ part2 = last . pAllWins
 
 tasks =
   Tasks
-    2021
-    4
+    (AOC 2021 4)
     (CodeBlock 0)
     parsePlayP
     [ Assert "Expected win" True $ bWin drawn board

@@ -16,7 +16,7 @@ parser :: Parser Text Input
 parser = fmap Map.fromList $ linesP &** tsplitP ": " &* (idP &+ wordsP)
 
 paths :: (Hashable a, Ord a, Show a) => a -> a -> Map a [a] -> Int
-paths from to graph = traceShowF (from, to,) $ stateMemo go ($ from)
+paths from to graph = traceShowF (from,to,) $ stateMemo go ($ from)
   where
     go rgo current
         | current == to = pure 1
@@ -37,8 +37,7 @@ part2 g = a1 * b1 * c1 + a2 * b2 * c2
 
 tasks =
     Tasks
-        2025
-        11
+        (AOC 2025 11)
         (CodeBlock 0)
         parser
         [ task part1 5 & taskPart 1

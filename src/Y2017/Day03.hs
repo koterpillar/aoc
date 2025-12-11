@@ -39,8 +39,7 @@ part2 input = head $ filter (> input) $ map lastValue manhattanSpiral
 
 tasks =
   Tasks
-    2017
-    3
+    (AOC 2017 3)
     (Inline "")
     integerP
     [ task part1 31 & taskScraper (Inline "1024")

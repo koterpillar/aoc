@@ -50,8 +50,7 @@ part2 (p, fs) = displayG $ foldl (flip applyFold) p fs
 
 tasks =
   Tasks
-    2021
-    13
+    (AOC 2021 13)
     (CodeBlock 1)
     parseInstructions
     [ Assert "foldY" (Position2 1 4) (applyFoldPoint (FoldY 7) (Position2 1 10))

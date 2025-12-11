@@ -159,8 +159,7 @@ testDirac = Quantum.flatMap droll (\a -> Quantum.map (a +) droll)
 
 tasks =
   Tasks
-    2021
-    21
+    (AOC 2021 21)
     LastCodeBlock
     parse
     [ Task part1 739785

@@ -60,8 +60,7 @@ part2 instructions = manhattanDistance (sPosition2 start) (sPosition2 end)
 
 tasks =
   Tasks
-    2020
-    12
+    (AOC 2020 12)
     (CodeBlock 0)
     (linesP &** parseInstruction)
     [Task part1 25, Task part2 286]

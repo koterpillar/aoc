@@ -39,8 +39,7 @@ normalEvaluate = evaluate normalPriority opApply
 
 tasks =
   Tasks
-    2020
-    18
+    (AOC 2020 18)
     (InlineCode 4)
     (linesP &** parseExpr)
     [ Assert

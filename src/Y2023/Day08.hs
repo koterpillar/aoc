@@ -95,8 +95,7 @@ part2 cm =
 
 tasks =
   Tasks
-    2023
-    8
+    (AOC 2023 8)
     (CodeBlock 0)
     parser
     [ task part1 2

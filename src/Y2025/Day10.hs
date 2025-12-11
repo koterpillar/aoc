@@ -68,8 +68,7 @@ part2 = sum . map solve2
 
 tasks =
     Tasks
-        2025
-        10
+        (AOC 2025 10)
         (CodeBlock 0)
         parser
         [ task part1 7 & taskPart 1

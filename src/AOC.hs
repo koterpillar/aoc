@@ -3,6 +3,7 @@
 module AOC (
     getExample,
     getInput,
+    Puzzle (..),
     ExampleScraper (..),
     Tasks (..),
     Task (..),
@@ -52,12 +53,17 @@ import Utils
 userAgent :: Text
 userAgent = "github.com/koterpillar/aoc by a@koterpillar.com"
 
-baseURL :: Integer -> Int -> Text
-baseURL year day =
+data Puzzle = AOC {aocYear :: Integer, aocDay :: Int} deriving (Eq, Ord)
+
+instance Show Puzzle where
+    show (AOC year day) = "AOC year " <> show year <> ", day " <> show day
+
+baseURL :: Puzzle -> Text
+baseURL (AOC year day) =
     "https://adventofcode.com/" <> tshow year <> "/day/" <> tshow day
 
-baseRequest :: Integer -> Int -> Text -> IO Request
-baseRequest year day path = parseRequestThrow $ Text.unpack $ baseURL year day <> path
+baseRequest :: Puzzle -> Text -> IO Request
+baseRequest puzzle path = parseRequestThrow $ Text.unpack $ baseURL puzzle <> path
 
 readIfExists :: Text -> IO (Maybe Text)
 readIfExists fileName = do
@@ -77,8 +83,8 @@ addHeader name value request =
             (fromString name, Text.encodeUtf8 value) : requestHeaders request
         }
 
-aocRequest :: Integer -> Int -> Text -> IO Text
-aocRequest year day path = baseRequest year day path >>= aocRequest'
+aocRequest :: Puzzle -> Text -> IO Text
+aocRequest puzzle path = baseRequest puzzle path >>= aocRequest'
 
 aocRequest' :: Request -> IO Text
 aocRequest' request = do
@@ -95,19 +101,19 @@ fromMaybeIO = flip maybe pure
 class CacheFileName a where
     cacheFileName :: a -> Text
 
+cacheDir :: Puzzle -> Text
+cacheDir (AOC year day) = tshow year <> "/" <> tshow day
+
 withCacheFile' ::
     (CacheFileName a) =>
-    Integer ->
-    Int ->
+    Puzzle ->
     a ->
     (Maybe Text -> IO Text) ->
     IO Text
-withCacheFile' year day cacheKey action = do
+withCacheFile' puzzle cacheKey action = do
     let fileName =
             ".cache/"
-                <> tshow year
-                <> "/"
-                <> tshow day
+                <> cacheDir puzzle
                 <> "/"
                 <> cacheFileName cacheKey
     cached <- readIfExists fileName
@@ -118,8 +124,8 @@ withCacheFile' year day cacheKey action = do
         Text.writeFile fileName' result
     pure result
 
-withCacheFile :: (CacheFileName a) => Integer -> Int -> a -> IO Text -> IO Text
-withCacheFile year day cacheKey = withCacheFile' year day cacheKey . fromMaybeIO
+withCacheFile :: (CacheFileName a) => Puzzle -> a -> IO Text -> IO Text
+withCacheFile puzzle cacheKey = withCacheFile' puzzle cacheKey . fromMaybeIO
 
 dropAfterAll :: Text -> Text -> [Text]
 dropAfterAll marker =
@@ -185,10 +191,10 @@ data ExampleScraper
 instance CacheFileName ExampleScraper where
     cacheFileName = ("example-" <>) . Text.replace " " "-" . terase "\"" . tshow
 
-getExample :: Integer -> Int -> ExampleScraper -> IO Text
-getExample year day scraper =
-    withCacheFile year day scraper $ do
-        page <- aocRequest year day ""
+getExample :: Puzzle -> ExampleScraper -> IO Text
+getExample puzzle scraper =
+    withCacheFile puzzle scraper $ do
+        page <- aocRequest puzzle ""
         pure $! selectExample scraper page
 
 showExamples :: Text -> Text
@@ -216,13 +222,13 @@ newtype Answer = Answer {answerPart :: Int}
 instance CacheFileName Answer where
     cacheFileName (Answer part) = "answer-" <> tshow part
 
-getAnswer :: Integer -> Int -> Answer -> IO (Maybe Text)
-getAnswer year day answer =
-    discardEmpty <$> withCacheFile' year day answer fetchAnswer
+getAnswer :: Puzzle -> Answer -> IO (Maybe Text)
+getAnswer puzzle answer =
+    discardEmpty <$> withCacheFile' puzzle answer fetchAnswer
   where
     fetchAnswer = fromMaybeIO fetchAnswer' . ((=<<) discardEmpty)
     fetchAnswer' = do
-        page <- aocRequest year day ""
+        page <- aocRequest puzzle ""
         let as = answers page
         let a = fromMaybe mempty $ as !? pred (answerPart answer)
         pure $! a
@@ -239,9 +245,9 @@ instance CacheFileName Tried where
 submissionResult :: Text -> Text
 submissionResult = dropBefore "</article>" . headE "submissionResult" . dropAfterAll "<article>"
 
-submitAnswer :: Integer -> Int -> Answer -> Text -> IO ()
-submitAnswer year day (Answer part) result =
-    void $ withCacheFile' year day (Tried part) go
+submitAnswer :: Puzzle -> Answer -> Text -> IO ()
+submitAnswer puzzle (Answer part) result =
+    void $ withCacheFile' puzzle (Tried part) go
   where
     fromCache = maybe Set.empty (Set.fromList . Text.lines)
     toCache = Text.unlines . Set.toList
@@ -255,7 +261,7 @@ submitAnswer year day (Answer part) result =
                     True -> pure $ toCache tried
                     False -> pure $ toCache $ Set.insert result tried
     postAnswer = do
-        request' <- parseRequestThrow (Text.unpack $ baseURL year day <> "/answer")
+        request' <- parseRequestThrow (Text.unpack $ baseURL puzzle <> "/answer")
         let request =
                 request'
                     & setRequestBodyURLEncoded
@@ -290,13 +296,13 @@ data Input
 instance CacheFileName Input where
     cacheFileName Input = "input"
 
-getInput :: Integer -> Int -> IO Text
-getInput year day =
-    withCacheFile year day Input $ aocRequest year day "/input"
+getInput :: Puzzle -> IO Text
+getInput puzzle =
+    withCacheFile puzzle Input $ aocRequest puzzle "/input"
 
 data Tasks where
     Tasks ::
-        Integer -> Int -> ExampleScraper -> Parser Text a -> [Task a] -> Tasks
+        Puzzle -> ExampleScraper -> Parser Text a -> [Task a] -> Tasks
 
 class
     (Eq a) =>
@@ -376,29 +382,28 @@ getTimeout (Task' _ _ _ _ (Just t)) = t
 getTimeout _ = 40
 
 processTasks :: Tasks -> IO ()
-processTasks (Tasks year day scraper parser tasks) = do
-    Text.putStrLn $ "Year " <> tshow year <> ", day " <> tshow day
+processTasks (Tasks puzzle scraper parser tasks) = do
+    Text.putStrLn $ tshow puzzle
     for_ tasks $ \task -> do
         let timeoutValue = getTimeout task
         result <-
             timeout (timeoutValue * 1000000) $
-                processTask year day scraper parser task
+                processTask puzzle scraper parser task
         when (isNothing result) $
             terror $
                 taskName task <> ": timeout after " <> tshow timeoutValue <> " seconds"
 
 processTask ::
-    Integer -> Int -> ExampleScraper -> Parser Text a -> Task a -> IO ()
-processTask year day globalScraper parser (Task solve expected) =
+    Puzzle -> ExampleScraper -> Parser Text a -> Task a -> IO ()
+processTask puzzle globalScraper parser (Task solve expected) =
     processTask
-        year
-        day
+        puzzle
         globalScraper
         parser
         (Task' solve (Just expected) Nothing Nothing Nothing)
-processTask year day globalScraper parser (Task' solve exampleAnswer taskScraper part _) = do
+processTask puzzle globalScraper parser (Task' solve exampleAnswer taskScraper part _) = do
     let scraper = fromMaybe globalScraper taskScraper
-    example <- justParse parser <$> getExample year day scraper
+    example <- justParse parser <$> getExample puzzle scraper
     let exampleResult = solve example
     case exampleAnswer of
         Just answer ->
@@ -407,17 +412,17 @@ processTask year day globalScraper parser (Task' solve exampleAnswer taskScraper
                 (answerToText answer)
                 (answerToText exampleResult)
         Nothing -> Text.putStrLn $ "Example result " <> answerToText exampleResult
-    input <- justParse parser <$> getInput year day
+    input <- justParse parser <$> getInput puzzle
     let result = solve input
     Text.putStrLn $ answerToText result
     for_ part $ \part' -> do
-        getAnswer year day (Answer part') >>= \case
+        getAnswer puzzle (Answer part') >>= \case
             Just answer -> assertEqual ("Answer part " <> tshow part') answer (answerToText result)
-            Nothing -> submitAnswer year day (Answer part') (answerToText result)
-processTask _ _ _ _ (Assert message expected actual) =
+            Nothing -> submitAnswer puzzle (Answer part') (answerToText result)
+processTask _ _ _ (Assert message expected actual) =
     assertEqual message expected actual
-processTask year day scraper parser (AssertExample message expected fn) = do
-    example <- justParse parser <$> getExample year day scraper
+processTask puzzle scraper parser (AssertExample message expected fn) = do
+    example <- justParse parser <$> getExample puzzle scraper
     assertEqual ("Example " <> message) expected $ fn example
 
 assertEqual :: (Eq a, Show a) => Text -> a -> a -> IO ()

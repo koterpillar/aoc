@@ -56,8 +56,7 @@ part2 = part $ trailScore tPath
 
 tasks =
   Tasks
-    2024
-    10
+    (AOC 2024 10)
     (CodeBlock 4)
     parser
     [ task part1 36 & taskPart 1

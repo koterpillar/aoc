@@ -26,8 +26,7 @@ part2 = Ranges.length . fst
 
 tasks =
     Tasks
-        2025
-        5
+        (AOC 2025 5)
         (CodeBlock 0)
         parser
         [ task part1 3 & taskPart 1

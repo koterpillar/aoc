@@ -28,8 +28,7 @@ countChains allAdapters = go (Map.singleton 0 1) $ sort allAdapters
 
 tasks =
   Tasks
-    2020
-    10
+    (AOC 2020 10)
     (CodeBlock 1)
     (linesP &** integerP)
     [Task oneAndThree 220, Task countChains 19208]

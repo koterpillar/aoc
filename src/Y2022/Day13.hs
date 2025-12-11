@@ -49,8 +49,7 @@ part2 =
 
 tasks =
   Tasks
-    2022
-    13
+    (AOC 2022 13)
     (CodeBlock 0)
     parser
     [ Assert

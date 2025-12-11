@@ -150,7 +150,7 @@ part2 :: [(Instr, Instr)] -> Int
 part2 = filledArea . map snd
 
 tasks =
-  Tasks 2023 18 (CodeBlock 0) parser
+  Tasks (AOC 2023 18) (CodeBlock 0) parser
     $ let s = shrink $ Set.fromList [2, 5, 6, 10]
        in [ Assert "shrink map" [0, 0, 1, 2, 2, 3, 5, 6, 6, 6, 7]
               $ map (shrinkMap s) [0 .. 10]

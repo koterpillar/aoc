@@ -50,8 +50,7 @@ stabilizedSeats2 = countOccupied . iterateSettleL (step occupiedNeighbors2 5)
 
 tasks =
   Tasks
-    2020
-    11
+    (AOC 2020 11)
     (CodeBlock 1)
     charGridP
     [Task stabilizedSeats 37, Task stabilizedSeats2 26]

@@ -270,7 +270,7 @@ traceGrid :: Grid -> Grid
 traceGrid = lbtraceF displayGrid
 
 tasks =
-  Tasks 2023 21 (CodeBlock 0) parser
+  Tasks (AOC 2023 21) (CodeBlock 0) parser
     $ [ AssertExample "part 1" 16 $ part1 6
       , taskBlind (part1 64) & taskPart 1
       , Assert "part 1 test 0" 1 $ part1 0 testInput

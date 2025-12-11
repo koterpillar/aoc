@@ -102,8 +102,7 @@ displayPath g s = displayG $ fmap showInGrid g `Map.union` Map.fromList g'
 
 tasks =
   Tasks
-    2024
-    16
+    (AOC 2024 16)
     (CodeBlock 0)
     parser
     [ task part1 7036 & taskPart 1

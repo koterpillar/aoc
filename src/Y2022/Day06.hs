@@ -19,4 +19,4 @@ go requiredDifferent idx lst =
     then idx + requiredDifferent
     else go requiredDifferent (idx + 1) (tail lst)
 
-tasks = Tasks 2022 6 (InlineCode 3) charactersP [Task part1 11, Task part2 26]
+tasks = Tasks (AOC 2022 6) (InlineCode 3) charactersP [Task part1 11, Task part2 26]

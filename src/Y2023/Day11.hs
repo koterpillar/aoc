@@ -43,8 +43,7 @@ part1 = distances 2
 
 tasks =
   Tasks
-    2023
-    11
+    (AOC 2023 11)
     (CodeBlock 0)
     parser
     [ task part1 374

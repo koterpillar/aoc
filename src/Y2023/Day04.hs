@@ -45,8 +45,7 @@ part2 cards = sum $ Map.elems $ foldl' scratch state0 cards
 
 tasks =
   Tasks
-    2023
-    4
+    (AOC 2023 4)
     (CodeBlock 0)
     parser
     [task part1 13 & taskPart 1, task part2 30 & taskPart 2]

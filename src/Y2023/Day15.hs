@@ -67,4 +67,4 @@ setupLens (LAdd x v) m = Map.insert k e' m
 
 part2 = focusingPowers . setupLenses . justParse lensOpsP
 
-tasks = Tasks 2023 15 (CodeBlock 0) parser [Task part1 1320, Task part2 145]
+tasks = Tasks (AOC 2023 15) (CodeBlock 0) parser [Task part1 1320, Task part2 145]

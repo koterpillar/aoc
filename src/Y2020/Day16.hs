@@ -81,4 +81,4 @@ part2 n =
 decode :: Map Text Int -> Ticket -> Map Text Int
 decode assignment (Ticket fs) = Map.mapWithKey (\t i -> fs !! i) assignment
 
-tasks = Tasks 2020 16 (CodeBlock 1) notesP [Task part1 71, Task part2 1]
+tasks = Tasks (AOC 2020 16) (CodeBlock 1) notesP [Task part1 71, Task part2 1]

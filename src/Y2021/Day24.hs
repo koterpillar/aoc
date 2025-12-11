@@ -217,8 +217,7 @@ traceShowIt f x = trace (show $ f x) ()
 
 tasks =
   Tasks
-    2021
-    24
+    (AOC 2021 24)
     (Inline "")
     parse
     [ Assert "part1" (Just [7])

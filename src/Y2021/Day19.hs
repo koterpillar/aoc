@@ -194,8 +194,7 @@ testBasis =
 
 tasks =
   Tasks
-    2021
-    19
+    (AOC 2021 19)
     (CodeBlock 5)
     parse
     [ let p1 = mkPosition 1 2 3
