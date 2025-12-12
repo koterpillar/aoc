@@ -184,6 +184,7 @@ library
       Y2025.Day09
       Y2025.Day10
       Y2025.Day11
+      Y2025.Day12
       Z3A
   other-modules:
       Paths_aoc
