@@ -233,3 +233,10 @@ toMatrixG m =
   [[mapLookup (Position2 x y) m | x <- [xmin .. xmax]] | y <- [ymin .. ymax]]
   where
     (Position2 xmin ymin, Position2 xmax ymax) = boundsG m
+
+normaliseG :: Grid2 a -> Grid2 a
+normaliseG g = Map.mapKeys shift g
+  where
+    xs = map pX $ Map.keys g
+    ys = map pY $ Map.keys g
+    shift (Position2 x y) = Position2 (x - minimum xs) (y - minimum ys)
