@@ -24,7 +24,7 @@ packages:
     git: https://github.com/IagoAbal/haskell-z3.git
 snapshots:
 - completed:
-    sha256: f9f775487e1678844b9f031919ed508a88097aa883002a970d3cd6fc6308b5d2
-    size: 732679
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/24/50.yaml
-  original: lts-24.50
+    sha256: ee1c47465e66f2e8f295308e8ffba905d68fb32e047d7df1fc9ea752583b0f4d
+    size: 732684
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/24/51.yaml
+  original: lts-24.51
